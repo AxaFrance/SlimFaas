@@ -1,8 +1,8 @@
-﻿namespace WebApplication1;
+﻿namespace SlimFaas;
 
 public interface IQueue
 {
-    public IList<QueueKey> Keys { get; }
     void EnqueueAsync(string key, string message);
     string DequeueAsync(string type);
+    public long Count(string key);
 }
