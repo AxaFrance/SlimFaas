@@ -35,30 +35,46 @@ public class FaasMiddleware
     
         IList<CustomForm> customForms = new List<CustomForm>();
         IList<CustomFormFile> customFormFiles = new List<CustomFormFile>();
+        string body = null;
+        string contentType = null;
         if (method == "POST")
         {
-            foreach (var formData in contextRequest.Form)
+            var rawList = new List<string>() { "text/plain", "application/json" };
+            var ct = rawList
+                .FirstOrDefault(r => contextRequest.Headers.ContentType.ToString().ToLower().Contains(r));
+            if( ct != null)
             {
-                var customForm = new CustomForm()
-                {
-                    Key = formData.Key,
-                    Values = formData.Value.ToArray()
-                };
-                customForms.Add(customForm);
+                contentType = ct;
+                using var reader = new StreamReader(contextRequest.Body);
+                body = await reader.ReadToEndAsync();
             }
-            if (contextRequest.Form.Files != null && contextRequest.Form.Files.Count > 0)
+            else
             {
-                foreach (var formFile in contextRequest.Form.Files)
+                contentType = "multipart/form-data";
+                foreach (var formData in contextRequest.Form)
                 {
-                    using var memoryStream = new MemoryStream();
-                    await formFile.CopyToAsync(memoryStream);
-                    var customFormFile = new CustomFormFile()
+                    var customForm = new CustomForm()
                     {
-                        Key = formFile.Name,
-                        Value = memoryStream.ToArray(),
-                        Filename = formFile.FileName
+                        Key = formData.Key,
+                        Values = formData.Value.ToArray()
                     };
-                    customFormFiles.Add(customFormFile);
+                    customForms.Add(customForm);
+                }
+
+                if (contextRequest.Form.Files != null && contextRequest.Form.Files.Count > 0)
+                {
+                    foreach (var formFile in contextRequest.Form.Files)
+                    {
+                        using var memoryStream = new MemoryStream();
+                        await formFile.CopyToAsync(memoryStream);
+                        var customFormFile = new CustomFormFile()
+                        {
+                            Key = formFile.Name,
+                            Value = memoryStream.ToArray(),
+                            Filename = formFile.FileName
+                        };
+                        customFormFiles.Add(customFormFile);
+                    }
                 }
             }
         }
@@ -88,10 +104,12 @@ public class FaasMiddleware
                     Headers = customHeaders,
                     FunctionName = functionName,
                     Path = functionPath,
+                    Body = body,
                     Query= queryString.ToUriComponent(),
                     Form = customForms,
                     FormFiles = customFormFiles,
-                    Method = method
+                    Method = method,
+                    ContentType = contentType
                 };
                 _contextResponse = context.Response;
                 if (isAsync)
@@ -114,8 +132,8 @@ public class FaasMiddleware
                         _contextResponse.Headers.Add(responseHeader.Key, value);
                     }
                 }
-                var body = await response.Content.ReadAsStringAsync();
-                await _contextResponse.WriteAsync(body);
+                var bodyResponse = await response.Content.ReadAsStringAsync();
+                await _contextResponse.WriteAsync(bodyResponse);
                 return;
             }
         }

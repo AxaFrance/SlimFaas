@@ -26,7 +26,9 @@ public record CustomRequest
     public string FunctionName { get; init; }
     public string Path { get; init; }
     public string Method { get; init; }
-    public string Query { get; set; }
+    public string Query { get; set; }   
+    public string Body { get; set; }
+    public string ContentType { get; set; }
 }
 
 public record CustomHeader
