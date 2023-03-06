@@ -37,7 +37,7 @@ jobs:
       image_version: "${{ needs.tags.outputs.new_version }}"
       image_build_args: ""
       image_context: ./src/LightFaas
-      image_file: "./Dockerfile"
+      image_file: "./src/LightFaas/Dockerfile"
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
