@@ -22,7 +22,7 @@ public class FaasWorker : BackgroundService
             foreach (var queueKey in _queue.Keys)
             {
                 using var scope = _serviceProvider.CreateScope();
-                ILogger<FaasWorker> faasLogger = scope.ServiceProvider.GetRequiredService<ILogger<FaasWorker>>();
+                var faasLogger = scope.ServiceProvider.GetRequiredService<ILogger<FaasWorker>>();
                  if(_processingTasks.ContainsKey(queueKey.Key) == false)
                  {
                      _processingTasks.Add(queueKey.Key, new List<Task<HttpResponseMessage>>());
@@ -30,12 +30,10 @@ public class FaasWorker : BackgroundService
                  var httpResponseMessages = new List<Task<HttpResponseMessage>>();
                  foreach (var processing in _processingTasks[queueKey.Key])
                  {
-                        if (processing.IsCompleted)
-                        {
-                            var httpResponseMessage = processing.Result;
-                            faasLogger.LogInformation($"{httpResponseMessage.StatusCode}");
-                            httpResponseMessages.Add(processing);
-                        }
+                     if (!processing.IsCompleted) continue;
+                     var httpResponseMessage = processing.Result;
+                     faasLogger.LogInformation($"{httpResponseMessage.StatusCode}");
+                     httpResponseMessages.Add(processing);
                  }
 
                  foreach (var httpResponseMessage in httpResponseMessages)

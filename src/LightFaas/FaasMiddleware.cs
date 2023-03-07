@@ -6,7 +6,6 @@ public class FaasMiddleware
     private readonly RequestDelegate _next;
     private readonly IServiceProvider _serviceProvider;
     private readonly IQueue _queue;
-    private HttpResponse _contextResponse;
 
     public FaasMiddleware(RequestDelegate next,IServiceProvider serviceProvider, IQueue queue)
     {
@@ -91,7 +90,6 @@ public class FaasMiddleware
             functionBeginPath = "/function/";
         }
         
-        
         if(!string.IsNullOrEmpty(functionBeginPath))
         {
             var pathString = path.ToUriComponent();
@@ -112,29 +110,28 @@ public class FaasMiddleware
                     Method = method,
                     ContentType = contentType
                 };
-                _contextResponse = context.Response;
+                
                 if (isAsync)
                 {
                     _queue.EnqueueAsync(functionName, JsonSerializer.Serialize(customRequest));
-                    _contextResponse.StatusCode = 202;
+                    context.Response.StatusCode = 202;
                     return;
                 }
                 using var scope = _serviceProvider.CreateScope();
                 var response =  await scope.ServiceProvider.GetRequiredService<SendClient>().SendHttpRequestAsync(customRequest);
-                
-                _contextResponse.StatusCode = (int)response.StatusCode;
-                _contextResponse.ContentType = response.Content.Headers.ContentType?.ToString();
+                context.Response.StatusCode = (int)response.StatusCode;
+                context.Response.ContentType = response.Content.Headers.ContentType?.ToString();
                 foreach (var responseHeader in response.Headers)
                 {
                     if(responseHeader.Key == "Content-Length")
                         continue;
                     foreach (var value in responseHeader.Value)
                     {
-                        _contextResponse.Headers.Add(responseHeader.Key, value);
+                        context.Response.Headers.Add(responseHeader.Key, value);
                     }
                 }
                 var bodyResponse = await response.Content.ReadAsStringAsync();
-                await _contextResponse.WriteAsync(bodyResponse);
+                await context.Response.WriteAsync(bodyResponse);
                 return;
             }
         }
