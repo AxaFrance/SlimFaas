@@ -24,7 +24,8 @@ public class SendClient
             var response = await client.GetAsync(url);
             return response;
         }
-        else if (customRequest.Method == "POST" || customRequest.Method == "PUT")
+
+        if (customRequest.Method == "POST" || customRequest.Method == "PUT")
         {
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, url);
             foreach (var customRequestHeader in customRequest.Headers)

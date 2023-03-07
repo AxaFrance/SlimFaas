@@ -5,22 +5,24 @@ namespace WebApplication1;
 public class FaasWorker : BackgroundService
 {
     private readonly IQueue _queue;
-    private readonly SendClient _sendClient;
+    private readonly IServiceProvider _serviceProvider;
     private readonly IDictionary<string, IList<Task<HttpResponseMessage>>> _processingTasks = new Dictionary<string, IList<Task<HttpResponseMessage>>>();
 
-    public FaasWorker(IQueue queue, SendClient sendClient)
+    public FaasWorker(IQueue queue, IServiceProvider serviceProvider)
     {
         _queue = queue;
-        _sendClient = sendClient;
+        _serviceProvider = serviceProvider;
     }
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (stoppingToken.IsCancellationRequested == false)
         {
-            await Task.Delay(1);
+            await Task.Delay(10);
             foreach (var queueKey in _queue.Keys)
             {
+                using var scope = _serviceProvider.CreateScope();
+                ILogger<FaasWorker> faasLogger = scope.ServiceProvider.GetRequiredService<ILogger<FaasWorker>>();
                  if(_processingTasks.ContainsKey(queueKey.Key) == false)
                  {
                      _processingTasks.Add(queueKey.Key, new List<Task<HttpResponseMessage>>());
@@ -31,7 +33,7 @@ public class FaasWorker : BackgroundService
                         if (processing.IsCompleted)
                         {
                             var httpResponseMessage = processing.Result;
-                            Console.WriteLine(httpResponseMessage.StatusCode);
+                            faasLogger.LogInformation($"{httpResponseMessage.StatusCode}");
                             httpResponseMessages.Add(processing);
                         }
                  }
@@ -46,7 +48,8 @@ public class FaasWorker : BackgroundService
                  var data = _queue.DequeueAsync(queueKey.Key);
                  if (string.IsNullOrEmpty(data)) continue;
                  var customRequest = JsonSerializer.Deserialize<CustomRequest>(data);
-                 var taskResponse = _sendClient.SendHttpRequestAsync(customRequest);
+                 
+                 var taskResponse = scope.ServiceProvider.GetRequiredService<SendClient>().SendHttpRequestAsync(customRequest);
                  _processingTasks[queueKey.Key].Add(taskResponse);
             }
         }

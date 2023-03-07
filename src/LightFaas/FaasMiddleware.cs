@@ -4,18 +4,18 @@ using WebApplication1;
 public class FaasMiddleware 
 {
     private readonly RequestDelegate _next;
-    private readonly SendClient _sendClient;
+    private readonly IServiceProvider _serviceProvider;
     private readonly IQueue _queue;
     private HttpResponse _contextResponse;
 
-    public FaasMiddleware(RequestDelegate next,SendClient sendClient, IQueue queue)
+    public FaasMiddleware(RequestDelegate next,IServiceProvider serviceProvider, IQueue queue)
     {
         _next = next;
-        _sendClient = sendClient;
+        _serviceProvider = serviceProvider;
         _queue = queue;
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, ILogger<FaasMiddleware> faasLogger)
     {
         IList<CustomHeader> customHeaders = new List<CustomHeader>();
         var contextRequest = context.Request;
@@ -90,15 +90,16 @@ public class FaasMiddleware
         {
             functionBeginPath = "/function/";
         }
+        
+        
         if(!string.IsNullOrEmpty(functionBeginPath))
         {
             var pathString = path.ToUriComponent();
             var paths = path.ToUriComponent().Split("/");
             if(paths.Length > 2) {
                 var functionName = paths[2];
-                Console.WriteLine(functionName);
                 var functionPath = pathString.Replace(functionBeginPath + functionName, "");
-                Console.WriteLine(functionPath);
+                faasLogger.LogInformation($"{method}: {pathString}{queryString.ToUriComponent()}");
                 var customRequest = new CustomRequest()
                 {
                     Headers = customHeaders,
@@ -118,8 +119,8 @@ public class FaasMiddleware
                     _contextResponse.StatusCode = 202;
                     return;
                 }
-
-                var response = await _sendClient.SendHttpRequestAsync(customRequest);
+                using var scope = _serviceProvider.CreateScope();
+                var response =  await scope.ServiceProvider.GetRequiredService<SendClient>().SendHttpRequestAsync(customRequest);
                 
                 _contextResponse.StatusCode = (int)response.StatusCode;
                 _contextResponse.ContentType = response.Content.Headers.ContentType?.ToString();
@@ -137,8 +138,7 @@ public class FaasMiddleware
                 return;
             }
         }
-
-        // Do work that can write to the Response.
+        
         await _next(context);
     }
 }

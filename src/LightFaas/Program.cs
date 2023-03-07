@@ -5,7 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<FaasWorker>();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IQueue, Queue>();
-builder.Services.AddSingleton<SendClient, SendClient>();
+builder.Services.AddScoped<SendClient, SendClient>();
 var app = builder.Build();
 
 
