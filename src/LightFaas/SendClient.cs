@@ -2,12 +2,12 @@
 
 public class SendClient
 {
-    private readonly IHttpClientFactory _clientFactory;
+    private readonly HttpClient _httpClient;
     private readonly string _baseFunctionUrl;
 
-    public SendClient(IHttpClientFactory clientFactory)
+    public SendClient(HttpClient httpClient)
     {
-        _clientFactory = clientFactory;
+        _httpClient = httpClient;
         _baseFunctionUrl =
             Environment.GetEnvironmentVariable("BASE_FUNCTION_URL") ?? "http://localhost:5123/"; //""http://{function_name}:8080";
     }
@@ -20,8 +20,8 @@ public class SendClient
 
         if (customRequest.Method == "GET" || customRequest.Method == "DELETE")
         {
-            var client = _clientFactory.CreateClient();
-            var response = await client.GetAsync(url);
+            
+            var response = await _httpClient.GetAsync(url);
             return response;
         }
 
@@ -69,9 +69,8 @@ public class SendClient
                 httpRequestMessage.Content = new StringContent(customRequest.Body);
                 httpRequestMessage.Method = new HttpMethod(customRequest.Method);
             }
-
-            var client = _clientFactory.CreateClient();
-            var response = await client.SendAsync(httpRequestMessage);
+            
+            var response = await _httpClient.SendAsync(httpRequestMessage);
             return response;
         }
 

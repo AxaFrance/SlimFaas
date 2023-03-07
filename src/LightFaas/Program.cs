@@ -1,3 +1,6 @@
+using System.Net;
+using Polly;
+using Polly.Extensions.Http;
 using WebApplication1;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +9,9 @@ builder.Services.AddHostedService<FaasWorker>();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IQueue, Queue>();
 builder.Services.AddScoped<SendClient, SendClient>();
+builder.Services.AddHttpClient<SendClient, SendClient>()
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddPolicyHandler(GetRetryPolicy());
 var app = builder.Build();
 
 
@@ -16,6 +22,27 @@ app.Run(async context =>
 });
 
 app.Run();
+
+
+
+static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+{
+    return HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(msg =>
+        {
+            HttpStatusCode[] httpStatusCodesWorthRetrying = {
+                HttpStatusCode.RequestTimeout, // 408
+                HttpStatusCode.InternalServerError, // 500
+                HttpStatusCode.BadGateway, // 502
+                HttpStatusCode.ServiceUnavailable, // 503
+                HttpStatusCode.GatewayTimeout // 504
+            };
+            return httpStatusCodesWorthRetrying.Contains(msg.StatusCode);
+        })
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(5,
+            retryAttempt)));
+}
 
 
 public record CustomRequest
