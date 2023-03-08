@@ -70,7 +70,6 @@ public class FaasWorker : BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 var faasLogger = scope.ServiceProvider.GetRequiredService<ILogger<FaasWorker>>();
                 faasLogger.LogError("Error in FaasWorker: " + e.Message + " " + e.StackTrace);
-                throw;
             }
         }
     }
