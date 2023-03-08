@@ -1,6 +1,7 @@
 using System.Net;
 using Polly;
 using Polly.Extensions.Http;
+using Prometheus;
 using WebApplication1;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,17 +14,20 @@ builder.Services.AddHttpClient<SendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
 var app = builder.Build();
-
-
+app.UseMetricServer();
+app.UseHttpMetrics();
 app.UseMiddleware<FaasMiddleware>();
+
+/*app.UseEndpoints(endpoints =>
+{
+    endpoints.MapMetrics();
+});*/
 app.Run(async context =>
 {
     context.Response.StatusCode = 404;
 });
 
 app.Run();
-
-
 
 static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
 {
@@ -40,7 +44,7 @@ static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
             };
             return httpStatusCodesWorthRetrying.Contains(msg.StatusCode);
         })
-        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(5,
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(3,
             retryAttempt)));
 }
 

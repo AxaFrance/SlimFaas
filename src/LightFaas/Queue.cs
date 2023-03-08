@@ -33,7 +33,7 @@ public class Queue : IQueue
                 _keys.Add(new QueueKey()
                 {
                     Key = key,
-                    NumberParallel = 1,
+                    NumberParallel = 10,
                 });
             }
         }
