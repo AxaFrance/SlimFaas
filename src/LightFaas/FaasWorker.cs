@@ -40,11 +40,17 @@ public class FaasWorker : BackgroundService
                     var httpResponseMessagesToDelete = new List<RequestToWait>();
                     foreach (var processing in _processingTasks[queueKey.Key])
                     {
-                        if (!processing.Task.IsCompleted) continue;
-                        var httpResponseMessage = processing.Task.Result;
-                        faasLogger.LogInformation(
-                            $"{processing.CustomRequest.Method}: {processing.CustomRequest.Path}{processing.CustomRequest.Query} {httpResponseMessage.StatusCode}");
-                        httpResponseMessagesToDelete.Add(processing);
+                        try
+                        {
+                            if (!processing.Task.IsCompleted) continue;
+                            var httpResponseMessage = processing.Task.Result;
+                            faasLogger.LogInformation(
+                                $"{processing.CustomRequest.Method}: /async-function/{processing.CustomRequest.Path}{processing.CustomRequest.Query} {httpResponseMessage.StatusCode}");
+                            httpResponseMessagesToDelete.Add(processing);
+                        } catch (Exception e)
+                        {
+                            faasLogger.LogError("Request Error: " + e.Message + " " + e.StackTrace);
+                        }
                     }
 
                     foreach (var httpResponseMessage in httpResponseMessagesToDelete)
@@ -69,7 +75,7 @@ public class FaasWorker : BackgroundService
             {
                 using var scope = _serviceProvider.CreateScope();
                 var faasLogger = scope.ServiceProvider.GetRequiredService<ILogger<FaasWorker>>();
-                faasLogger.LogError("Error in FaasWorker: " + e.Message + " " + e.StackTrace);
+                faasLogger.LogError("Global Error in FaasWorker: " + e.Message + " " + e.StackTrace);
             }
         }
     }
