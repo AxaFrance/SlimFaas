@@ -16,15 +16,24 @@ builder.Services.AddHttpClient<SendClient, SendClient>()
 var app = builder.Build();
 app.UseMetricServer();
 app.UseHttpMetrics();
+app.MapGet("/health", () => "ok");
 app.UseMiddleware<FaasMiddleware>();
 
 /*app.UseEndpoints(endpoints =>
 {
     endpoints.MapMetrics();
 });*/
+
 app.Run(async context =>
 {
-    context.Response.StatusCode = 404;
+    if (context.Request.Path == "/health")
+    {
+        await context.Response.WriteAsync("OK");
+    }
+    else
+    {
+        context.Response.StatusCode = 404;
+    }
 });
 
 app.Run();
