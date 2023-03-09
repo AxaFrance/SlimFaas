@@ -49,6 +49,7 @@ public class FaasWorker : BackgroundService
                             httpResponseMessagesToDelete.Add(processing);
                         } catch (Exception e)
                         {
+                            httpResponseMessagesToDelete.Add(processing);
                             faasLogger.LogError("Request Error: " + e.Message + " " + e.StackTrace);
                         }
                     }
