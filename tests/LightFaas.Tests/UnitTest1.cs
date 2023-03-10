@@ -21,6 +21,8 @@ public class UnitTest1
         var namespaceList = client.ListNamespace();
         
         var podList = client.ListNamespacedPod("license-preproduction");
+
+        var deploymentList = client.ListNamespacedDeployment("license-preproduction");
         
         Assert.NotNull(podList);
     }

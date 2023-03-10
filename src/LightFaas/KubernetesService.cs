@@ -27,7 +27,7 @@ public class KubernetesService
         k8sConfig.SkipTlsVerify = true;
     }
     
-    public void Scale(ReplicaRequest request)
+    public async Task ScaleAsync(ReplicaRequest request)
     {
         try
         {
@@ -38,7 +38,7 @@ public class KubernetesService
             var patch = new V1Patch(patchString, V1Patch.PatchType.MergePatch);
 
             // Patch the "minions" Deployment in the "default" namespace
-            client.PatchNamespacedDeploymentScale(patch, request.Deployment, request.Namespace);
+            await client.PatchNamespacedDeploymentScaleAsync(patch, request.Deployment, request.Namespace);
         }
         catch (HttpOperationException e)
         {
@@ -46,5 +46,13 @@ public class KubernetesService
             Console.WriteLine(e.Response.ReasonPhrase);
             Console.WriteLine(e.Response.Content);
         }
+    }
+
+    public async Task<int?> GetCurrentScaleAsync(string kubeNamespace, string deploymentName)
+    {
+        using var client = new Kubernetes(k8sConfig);
+        var deploymentList = await client.ListNamespacedDeploymentAsync(kubeNamespace);
+        var deployment = deploymentList.Items.FirstOrDefault(i => i.Metadata.Name == deploymentName);
+        return deployment?.Spec.Replicas;
     }
 }
