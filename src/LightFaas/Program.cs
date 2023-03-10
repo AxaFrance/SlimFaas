@@ -8,7 +8,7 @@ using WebApplication1;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHostedService<FaasWorker>();
-builder.Services.AddHttpClient(Options.DefaultName).ConfigurePrimaryHttpMessageHandler(() =>
+builder.Services.AddHttpClient();/*Options.DefaultName).ConfigurePrimaryHttpMessageHandler(() =>
 {
     return new HttpClientHandler
     {
@@ -16,7 +16,7 @@ builder.Services.AddHttpClient(Options.DefaultName).ConfigurePrimaryHttpMessageH
         ServerCertificateCustomValidationCallback =
             (httpRequestMessage, cert, certChain, policyErrors) => true
     };
-});;
+});;*/
 builder.Services.AddSingleton<IQueue, Queue>();
 builder.Services.AddSingleton<KubernetesService, KubernetesService>();
 builder.Services.AddScoped<SendClient, SendClient>();

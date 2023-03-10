@@ -69,11 +69,12 @@ public class FaasWorker : BackgroundService
                     if (_processingTasks[queueKey.Key].Count >= queueKey.NumberParallel) continue;
 
                     var data = _queue.DequeueAsync(queueKey.Key);
-                    _kubernetesService.Scale(new ReplicaRequest(){Replicas = 1, Deployment = queueKey.Key, Namespace = _namespace});
                     if (string.IsNullOrEmpty(data)) continue;
                     var customRequest = JsonSerializer.Deserialize<CustomRequest>(data);
                     faasLogger.LogInformation(
                         $"{customRequest.Method}: {customRequest.Path}{customRequest.Query} Sending");
+                    
+                    _kubernetesService.Scale(new ReplicaRequest(){Replicas = 1, Deployment = queueKey.Key, Namespace = _namespace});
                     var taskResponse = scope.ServiceProvider.GetRequiredService<SendClient>()
                         .SendHttpRequestAsync(customRequest);
                     _processingTasks[queueKey.Key].Add(new RequestToWait()
