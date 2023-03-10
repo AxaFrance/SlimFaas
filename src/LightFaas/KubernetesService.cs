@@ -24,6 +24,7 @@ public class KubernetesService
         k8sConfig = !useKubeConfig ? KubernetesClientConfiguration.InClusterConfig() :
             // Running on dev machine
             KubernetesClientConfiguration.BuildConfigFromConfigFile();
+        k8sConfig.SkipTlsVerify = true;
     }
     
     public void Scale(ReplicaRequest request)
