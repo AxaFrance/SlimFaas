@@ -2,7 +2,7 @@
 using k8s.Autorest;
 using k8s.Models;
 
-namespace WebApplication1;
+namespace LightFaas;
 
 
 public record ReplicaRequest
@@ -18,11 +18,8 @@ public class KubernetesService
 
     public KubernetesService(IConfiguration config)
     {
-        // Reading configuration to know if running inside a cluster or in local mode.
         var useKubeConfig = bool.Parse(config["UseKubeConfig"]);
-        // Running inside a k8s cluser
         k8sConfig = !useKubeConfig ? KubernetesClientConfiguration.InClusterConfig() :
-            // Running on dev machine
             KubernetesClientConfiguration.BuildConfigFromConfigFile();
         k8sConfig.SkipTlsVerify = true;
     }
@@ -31,13 +28,9 @@ public class KubernetesService
     {
         try
         {
-            // Use the config object to create a client.
             using var client = new Kubernetes(k8sConfig);
-            // Set the new number of replicas
             var patchString = "{\"spec\": {\"replicas\": " + request.Replicas + "}}";
             var patch = new V1Patch(patchString, V1Patch.PatchType.MergePatch);
-
-            // Patch the "minions" Deployment in the "default" namespace
             await client.PatchNamespacedDeploymentScaleAsync(patch, request.Deployment, request.Namespace);
         }
         catch (HttpOperationException e)
@@ -50,9 +43,19 @@ public class KubernetesService
 
     public async Task<int?> GetCurrentScaleAsync(string kubeNamespace, string deploymentName)
     {
-        using var client = new Kubernetes(k8sConfig);
-        var deploymentList = await client.ListNamespacedDeploymentAsync(kubeNamespace);
-        var deployment = deploymentList.Items.FirstOrDefault(i => i.Metadata.Name == deploymentName);
-        return deployment?.Spec.Replicas;
+        try
+        {
+            using var client = new Kubernetes(k8sConfig);
+            var deploymentList = await client.ListNamespacedDeploymentAsync(kubeNamespace);
+            var deployment = deploymentList.Items.FirstOrDefault(i => i.Metadata.Name == deploymentName);
+            return deployment?.Spec.Replicas;
+        }
+        catch (HttpOperationException e)
+        {
+            Console.WriteLine(e);
+            Console.WriteLine(e.Response.ReasonPhrase);
+            Console.WriteLine(e.Response.Content);
+            return null;
+        }
     }
 }

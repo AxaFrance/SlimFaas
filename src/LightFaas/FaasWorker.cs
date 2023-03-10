@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
+using LightFaas;
 
-namespace WebApplication1;
+namespace LightFaas;
 
 
 record RequestToWait
@@ -52,7 +53,7 @@ public class FaasWorker : BackgroundService
                             if (currentScale is 0)
                             {
                                 await _kubernetesService.ScaleAsync(new ReplicaRequest()
-                                    { Replicas = 1, Deployment = queueKey.Key, Namespace = _namespace });
+                                    { Replicas = 0, Deployment = queueKey.Key, Namespace = _namespace });
                                 _lastHttpCall[queueKey.Key] = DateTime.Now.Ticks;
                             }
                         }

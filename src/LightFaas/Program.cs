@@ -1,9 +1,9 @@
 using System.Net;
+using LightFaas;
 using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Extensions.Http;
 using Prometheus;
-using WebApplication1;
 
 var builder = WebApplication.CreateBuilder(args);
 
