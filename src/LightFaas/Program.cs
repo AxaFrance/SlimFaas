@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Extensions.Http;
 using Prometheus;
@@ -7,7 +8,15 @@ using WebApplication1;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHostedService<FaasWorker>();
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient(Options.DefaultName).ConfigurePrimaryHttpMessageHandler(() =>
+{
+    return new HttpClientHandler
+    {
+        ClientCertificateOptions = ClientCertificateOption.Manual,
+        ServerCertificateCustomValidationCallback =
+            (httpRequestMessage, cert, certChain, policyErrors) => true
+    };
+});;
 builder.Services.AddSingleton<IQueue, Queue>();
 builder.Services.AddSingleton<KubernetesService, KubernetesService>();
 builder.Services.AddScoped<SendClient, SendClient>();
