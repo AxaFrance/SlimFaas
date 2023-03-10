@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<FaasWorker>();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IQueue, Queue>();
+builder.Services.AddSingleton<KubernetesService, KubernetesService>();
 builder.Services.AddScoped<SendClient, SendClient>();
 builder.Services.AddHttpClient<SendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
@@ -16,13 +17,7 @@ builder.Services.AddHttpClient<SendClient, SendClient>()
 var app = builder.Build();
 app.UseMetricServer();
 app.UseHttpMetrics();
-app.MapGet("/health", () => "ok");
 app.UseMiddleware<FaasMiddleware>();
-
-/*app.UseEndpoints(endpoints =>
-{
-    endpoints.MapMetrics();
-});*/
 
 app.Run(async context =>
 {

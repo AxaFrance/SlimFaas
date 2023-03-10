@@ -13,12 +13,17 @@ public class FaasWorker : BackgroundService
 {
     private readonly IQueue _queue;
     private readonly IServiceProvider _serviceProvider;
+    private readonly KubernetesService _kubernetesService;
     private readonly IDictionary<string, IList<RequestToWait>> _processingTasks = new Dictionary<string, IList<RequestToWait>>();
+    private readonly string _namespace;
 
-    public FaasWorker(IQueue queue, IServiceProvider serviceProvider)
+    public FaasWorker(IQueue queue, IServiceProvider serviceProvider, KubernetesService kubernetesService)
     {
         _queue = queue;
         _serviceProvider = serviceProvider;
+        _kubernetesService = kubernetesService;
+        _namespace =
+            Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
     }
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -47,10 +52,12 @@ public class FaasWorker : BackgroundService
                             faasLogger.LogInformation(
                                 $"{processing.CustomRequest.Method}: /async-function/{processing.CustomRequest.Path}{processing.CustomRequest.Query} {httpResponseMessage.StatusCode}");
                             httpResponseMessagesToDelete.Add(processing);
+                            _kubernetesService.Scale(new ReplicaRequest(){Replicas = 0, Deployment = queueKey.Key, Namespace = _namespace});
                         } catch (Exception e)
                         {
                             httpResponseMessagesToDelete.Add(processing);
                             faasLogger.LogError("Request Error: " + e.Message + " " + e.StackTrace);
+                            _kubernetesService.Scale(new ReplicaRequest(){Replicas = 0, Deployment = queueKey.Key, Namespace = _namespace});
                         }
                     }
 
@@ -62,6 +69,7 @@ public class FaasWorker : BackgroundService
                     if (_processingTasks[queueKey.Key].Count >= queueKey.NumberParallel) continue;
 
                     var data = _queue.DequeueAsync(queueKey.Key);
+                    _kubernetesService.Scale(new ReplicaRequest(){Replicas = 1, Deployment = queueKey.Key, Namespace = _namespace});
                     if (string.IsNullOrEmpty(data)) continue;
                     var customRequest = JsonSerializer.Deserialize<CustomRequest>(data);
                     faasLogger.LogInformation(

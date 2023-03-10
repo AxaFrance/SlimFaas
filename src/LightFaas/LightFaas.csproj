@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="KubernetesClient" Version="10.1.4" />
       <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="7.0.3" />
       <PackageReference Include="prometheus-net" Version="8.0.0" />
       <PackageReference Include="prometheus-net.AspNetCore" Version="8.0.0" />
