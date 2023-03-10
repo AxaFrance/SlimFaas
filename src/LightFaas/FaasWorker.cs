@@ -50,7 +50,7 @@ public class FaasWorker : BackgroundService
                             var currentScale = await
                                 _kubernetesService.GetCurrentScaleAsync(kubeNamespace: _namespace,
                                     deploymentName: queueKey.Key);
-                            if (currentScale is 0)
+                            if (currentScale is > 0)
                             {
                                 await _kubernetesService.ScaleAsync(new ReplicaRequest()
                                     { Replicas = 0, Deployment = queueKey.Key, Namespace = _namespace });
