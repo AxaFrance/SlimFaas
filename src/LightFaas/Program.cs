@@ -1,6 +1,5 @@
 using System.Net;
 using LightFaas;
-using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Extensions.Http;
 using Prometheus;
@@ -8,16 +7,15 @@ using Prometheus;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHostedService<FaasWorker>();
-builder.Services.AddHttpClient();/*Options.DefaultName).ConfigurePrimaryHttpMessageHandler(() =>
-{
-    return new HttpClientHandler
-    {
-        ClientCertificateOptions = ClientCertificateOption.Manual,
-        ServerCertificateCustomValidationCallback =
-            (httpRequestMessage, cert, certChain, policyErrors) => true
-    };
-});;*/
+builder.Services.AddHostedService<ScaleReplicasWorker>();
+builder.Services.AddHostedService<MasterWorker>();
+builder.Services.AddHttpClient();
+builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IQueue, Queue>();
+builder.Services.AddSingleton<ReplicasService, ReplicasService>();
+builder.Services.AddSingleton<RedisService, RedisService>();
+builder.Services.AddSingleton<MasterService, MasterService>();
+builder.Services.AddSingleton<HistoryHttpService, HistoryHttpService>();
 builder.Services.AddSingleton<KubernetesService, KubernetesService>();
 builder.Services.AddScoped<SendClient, SendClient>();
 builder.Services.AddHttpClient<SendClient, SendClient>()

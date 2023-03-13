@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dailyclean-api
+  labels:
+    axa.com/dailyclean: 'false'
+spec:
+  selector:
+    matchLabels:
+      app: dailyclean-api
+  template:
+    metadata:
+      labels:
+        app: dailyclean-api
+    spec:
+      serviceAccountName: dailyclean
+      containers:
+        - name: dailyclean-api
+          image: axaguildev/dailyclean-api:latest
+          env:
+            - name: SERVICE_JOB_IMAGENAME
+              value: axaguildev/dailyclean-job:latest
+            - name: SERVICE_JOB_SERVICEACCOUNTNAME
+              value: dailyclean
+          resources:
+            limits:
+              memory: "96Mi"
+              cpu: "50m"
+            requests:
+              memory: "96Mi"
+              cpu: "10m"
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dailyclean-api
+spec:
+  selector:
+    app: dailyclean-api
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30011

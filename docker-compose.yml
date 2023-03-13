@@ -1,0 +1,7 @@
+﻿version: '3.7'
+
+services:
+  redis:
+    image: docker.io/redislabs/rejson:latest
+    ports:
+      - 6379:6379
