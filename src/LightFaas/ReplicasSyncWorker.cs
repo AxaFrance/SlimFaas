@@ -19,8 +19,8 @@ public class ReplicasSyncWorker: BackgroundService
         {
             try
             {
-                await Task.Delay(3000);
                 await _replicasService.SyncFunctionsAsync(_namespace);
+                await Task.Delay(3000);
             }
             catch (Exception e)
             {
