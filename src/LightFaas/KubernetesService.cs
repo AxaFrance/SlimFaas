@@ -124,7 +124,7 @@ public class KubernetesService
                     }
                 }
 
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(10);
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(5);
                 entry.SlidingExpiration = TimeSpan.FromMinutes(1);
                 return deploymentInformationList;
             });

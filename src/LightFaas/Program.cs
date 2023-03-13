@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<FaasWorker>();
 builder.Services.AddHostedService<ScaleReplicasWorker>();
 builder.Services.AddHostedService<MasterWorker>();
+builder.Services.AddHostedService<ReplicasSyncWorker>();
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IQueue, Queue>();

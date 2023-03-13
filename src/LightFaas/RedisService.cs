@@ -8,7 +8,8 @@ public class RedisService
 
     public RedisService()
     {
-        var redisConnectionString = $"localhost:6379";
+        var redisConnectionString = 
+        Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? "localhost:6379";
         var redis = ConnectionMultiplexer.Connect(redisConnectionString);
         _database = redis.GetDatabase();
     }
@@ -32,5 +33,15 @@ public class RedisService
     {
         return _database.HashGetAll(key).ToStringDictionary();
     }
+    
+    public void ListLeftPush(string key, string field)
+    {
+        _database.ListLeftPush(key, field);
+    }
 
+    public string ListRightPop(string key)
+    {
+        var result = _database.ListRightPop(key);
+        return result.HasValue ? result.ToString() : string.Empty;
+    }
 }
