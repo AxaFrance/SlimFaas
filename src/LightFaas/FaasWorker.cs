@@ -13,23 +13,21 @@ record RequestToWait
 public class FaasWorker : BackgroundService
 {
     private readonly HistoryHttpService _historyHttpService;
-    private readonly IQueue _queue;
+    private readonly ILogger<FaasWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IQueue _queue;
     private readonly ReplicasService _replicasService;
 
     //private readonly IDictionary<string, long> _lastHttpCall = new Dictionary<string, long>();
     private readonly IDictionary<string, IList<RequestToWait>> _processingTasks = new Dictionary<string, IList<RequestToWait>>();
-    private readonly string _namespace;
 
-    public FaasWorker(IQueue queue, IServiceProvider serviceProvider, ReplicasService replicasService, HistoryHttpService historyHttpService)
+    public FaasWorker(IQueue queue, ReplicasService replicasService, HistoryHttpService historyHttpService, ILogger<FaasWorker> logger, IServiceProvider serviceProvider)
     {
         _historyHttpService = historyHttpService;
-        _queue = queue;
+        _logger = logger;
         _serviceProvider = serviceProvider;
+        _queue = queue;
         _replicasService = replicasService;
-        
-        _namespace =
-            Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
     }
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -41,8 +39,6 @@ public class FaasWorker : BackgroundService
                 await Task.Delay(10);
                 foreach (var function in _replicasService.Functions)
                 {
-                   using var scope = _serviceProvider.CreateScope();
-                    var faasLogger = scope.ServiceProvider.GetRequiredService<ILogger<FaasWorker>>();
                     var functionDeployment = function.Deployment;
                     if (_processingTasks.ContainsKey(functionDeployment) == false)
                     {
@@ -56,7 +52,7 @@ public class FaasWorker : BackgroundService
                         {
                             if (!processing.Task.IsCompleted) continue;
                             var httpResponseMessage = processing.Task.Result;
-                            faasLogger.LogInformation(
+                            _logger.LogInformation(
                                 $"{processing.CustomRequest.Method}: /async-function/{processing.CustomRequest.Path}{processing.CustomRequest.Query} {httpResponseMessage.StatusCode}");
                             httpResponseMessagesToDelete.Add(processing);
                             _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
@@ -64,7 +60,7 @@ public class FaasWorker : BackgroundService
                         catch (Exception e)
                         {
                             httpResponseMessagesToDelete.Add(processing);
-                            faasLogger.LogError("Request Error: " + e.Message + " " + e.StackTrace);
+                            _logger.LogError("Request Error: " + e.Message + " " + e.StackTrace);
                             _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
                         }
                     }
@@ -79,10 +75,10 @@ public class FaasWorker : BackgroundService
                     var data = _queue.DequeueAsync(functionDeployment);
                     if (string.IsNullOrEmpty(data)) continue;
                     var customRequest = JsonSerializer.Deserialize<CustomRequest>(data);
-                    faasLogger.LogInformation(
+                    _logger.LogInformation(
                         $"{customRequest.Method}: {customRequest.Path}{customRequest.Query} Sending");
                     _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
-
+                    using var scope = _serviceProvider.CreateScope();
                     var taskResponse = scope.ServiceProvider.GetRequiredService<SendClient>()
                         .SendHttpRequestAsync(customRequest);
                     _processingTasks[functionDeployment].Add(new RequestToWait()
@@ -91,9 +87,7 @@ public class FaasWorker : BackgroundService
             }
             catch (Exception e)
             {
-                using var scope = _serviceProvider.CreateScope();
-                var faasLogger = scope.ServiceProvider.GetRequiredService<ILogger<FaasWorker>>();
-                faasLogger.LogError("Global Error in FaasWorker: " + e.Message + " " + e.StackTrace);
+                _logger.LogError("Global Error in FaasWorker: " + e.Message + " " + e.StackTrace);
             }
         }
     }
