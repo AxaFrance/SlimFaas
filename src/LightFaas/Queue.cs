@@ -12,12 +12,13 @@ public class Queue : IQueue
 
     public void EnqueueAsync(string key, string data)
     {
-       _redisService.ListLeftPush(key, data);
+       _redisService.ListLeftPush($"faaslight_{key}", data);
     }
         
     public string? DequeueAsync(string key)
     {
-        return _redisService.ListRightPop(key);
+        var data = _redisService.ListRightPop($"faaslight_{key}");
+        return data;
     }
 
 }
