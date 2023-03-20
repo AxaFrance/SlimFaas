@@ -6,6 +6,7 @@ public class FaasMiddleware
     private readonly RequestDelegate _next;
     private readonly IServiceProvider _serviceProvider;
     private readonly IQueue _queue;
+    private HttpContent _responseContent;
 
     public FaasMiddleware(RequestDelegate next,IServiceProvider serviceProvider, IQueue queue)
     {
@@ -14,7 +15,7 @@ public class FaasMiddleware
         _queue = queue;
     }
 
-    public async Task InvokeAsync(HttpContext context, ILogger<FaasMiddleware> faasLogger)
+    public async Task InvokeAsync(HttpContext context, ILogger<FaasMiddleware> faasLogger, HistoryHttpService historyHttpService, SendClient sendClient)
     {
         IList<CustomHeader> customHeaders = new List<CustomHeader>();
         var contextRequest = context.Request;
@@ -60,9 +61,10 @@ public class FaasMiddleware
                     customForms.Add(customForm);
                 }
 
-                if (contextRequest.Form.Files != null && contextRequest.Form.Files.Count > 0)
+                var formFileCollection = contextRequest.Form.Files;
+                if (formFileCollection != null && formFileCollection.Count > 0)
                 {
-                    foreach (var formFile in contextRequest.Form.Files)
+                    foreach (var formFile in formFileCollection)
                     {
                         using var memoryStream = new MemoryStream();
                         await formFile.CopyToAsync(memoryStream);
@@ -79,7 +81,7 @@ public class FaasMiddleware
         }
 
         var functionBeginPath = String.Empty;
-        bool isAsync = false;
+        var isAsync = false;
         if (path.StartsWithSegments("/async-function"))
         {
             functionBeginPath = "/async-function/";
@@ -93,7 +95,7 @@ public class FaasMiddleware
         if(!string.IsNullOrEmpty(functionBeginPath))
         {
             var pathString = path.ToUriComponent();
-            var paths = path.ToUriComponent().Split("/");
+            var paths = pathString.Split("/");
             if(paths.Length > 2) {
                 var functionName = paths[2];
                 var functionPath = pathString.Replace(functionBeginPath + functionName, "");
@@ -110,28 +112,31 @@ public class FaasMiddleware
                     Method = method,
                     ContentType = contentType
                 };
-                
+
+                var contextResponse = context.Response;
                 if (isAsync)
                 {
                     _queue.EnqueueAsync(functionName, JsonSerializer.Serialize(customRequest));
-                    context.Response.StatusCode = 202;
+                    contextResponse.StatusCode = 202;
                     return;
                 }
-                using var scope = _serviceProvider.CreateScope();
-                var response =  await scope.ServiceProvider.GetRequiredService<SendClient>().SendHttpRequestAsync(customRequest);
-                context.Response.StatusCode = (int)response.StatusCode;
-                context.Response.ContentType = response.Content.Headers.ContentType?.ToString();
+                historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+                var response =  await sendClient.SendHttpRequestAsync(customRequest);
+                historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+                contextResponse.StatusCode = (int)response.StatusCode;
+                _responseContent = response.Content;
+                contextResponse.ContentType = _responseContent.Headers.ContentType?.ToString();
                 foreach (var responseHeader in response.Headers)
                 {
                     if(responseHeader.Key == "Content-Length")
                         continue;
                     foreach (var value in responseHeader.Value)
                     {
-                        context.Response.Headers.Add(responseHeader.Key, value);
+                        contextResponse.Headers.Add(responseHeader.Key, value);
                     }
                 }
-                var bodyResponse = await response.Content.ReadAsStringAsync();
-                await context.Response.WriteAsync(bodyResponse);
+                var bodyResponse = await _responseContent.ReadAsStringAsync();
+                await contextResponse.WriteAsync(bodyResponse);
                 return;
             }
         }
