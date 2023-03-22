@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
-using LightFaas;
+using SlimFaas;
 
-namespace LightFaas;
+namespace SlimFaas;
 
 
 record RequestToWait
@@ -10,10 +10,10 @@ record RequestToWait
     public CustomRequest CustomRequest { get; set; }
 }
 
-public class FaasWorker : BackgroundService
+public class SlimWorker : BackgroundService
 {
     private readonly HistoryHttpService _historyHttpService;
-    private readonly ILogger<FaasWorker> _logger;
+    private readonly ILogger<SlimWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly IQueue _queue;
     private readonly ReplicasService _replicasService;
@@ -21,7 +21,7 @@ public class FaasWorker : BackgroundService
     //private readonly IDictionary<string, long> _lastHttpCall = new Dictionary<string, long>();
     private readonly IDictionary<string, IList<RequestToWait>> _processingTasks = new Dictionary<string, IList<RequestToWait>>();
 
-    public FaasWorker(IQueue queue, ReplicasService replicasService, HistoryHttpService historyHttpService, ILogger<FaasWorker> logger, IServiceProvider serviceProvider)
+    public SlimWorker(IQueue queue, ReplicasService replicasService, HistoryHttpService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider)
     {
         _historyHttpService = historyHttpService;
         _logger = logger;

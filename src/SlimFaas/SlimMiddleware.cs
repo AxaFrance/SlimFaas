@@ -1,21 +1,21 @@
 ﻿using System.Text.Json;
-using LightFaas;
+using SlimFaas;
 
-public class FaasMiddleware 
+public class SlimMiddleware 
 {
     private readonly RequestDelegate _next;
     private readonly IServiceProvider _serviceProvider;
     private readonly IQueue _queue;
     private HttpContent _responseContent;
 
-    public FaasMiddleware(RequestDelegate next,IServiceProvider serviceProvider, IQueue queue)
+    public SlimMiddleware(RequestDelegate next,IServiceProvider serviceProvider, IQueue queue)
     {
         _next = next;
         _serviceProvider = serviceProvider;
         _queue = queue;
     }
 
-    public async Task InvokeAsync(HttpContext context, ILogger<FaasMiddleware> faasLogger, HistoryHttpService historyHttpService, SendClient sendClient)
+    public async Task InvokeAsync(HttpContext context, ILogger<SlimMiddleware> faasLogger, HistoryHttpService historyHttpService, SendClient sendClient)
     {
         IList<CustomHeader> customHeaders = new List<CustomHeader>();
         var contextRequest = context.Request;

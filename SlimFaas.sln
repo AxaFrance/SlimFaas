@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightFaas", "src\LightFaas\LightFaas.csproj", "{49E9C467-8F38-4D53-B803-0960FC44F690}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlimFaas", "src\SlimFaas\SlimFaas.csproj", "{49E9C467-8F38-4D53-B803-0960FC44F690}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightFaas.Tests", "tests\LightFaas.Tests\LightFaas.Tests.csproj", "{A9BEA991-B9D5-4526-BD3A-63B8434FAC81}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlimFaas.Tests", "tests\SlimFaas.Tests\SlimFaas.Tests.csproj", "{A9BEA991-B9D5-4526-BD3A-63B8434FAC81}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

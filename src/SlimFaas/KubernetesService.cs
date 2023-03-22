@@ -3,7 +3,7 @@ using k8s.Autorest;
 using k8s.Models;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace LightFaas;
+namespace SlimFaas;
 
 
 public record ReplicaRequest
@@ -75,12 +75,12 @@ public class KubernetesService
         }
     }
 
-    private const string ReplicasMin = "LightFaas/ReplicasMin";
-    private const string Function = "LightFaas/Function";
-    private const string ReplicasAtStart = "LightFaas/ReplicasAtStart";
-    private const string ReplicasStartAsSoonAsOneFunctionRetrieveARequest = "LightFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest";
-    private const string TimeoutSecondBeforeSetReplicasMin = "LightFaas/TimeoutSecondBeforeSetReplicasMin";
-    private const string NumberParallelRequest = "LightFaas/NumberParallelRequest";
+    private const string ReplicasMin = "SlimFaas/ReplicasMin";
+    private const string Function = "SlimFaas/Function";
+    private const string ReplicasAtStart = "SlimFaas/ReplicasAtStart";
+    private const string ReplicasStartAsSoonAsOneFunctionRetrieveARequest = "SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest";
+    private const string TimeoutSecondBeforeSetReplicasMin = "SlimFaas/TimeoutSecondBeforeSetReplicasMin";
+    private const string NumberParallelRequest = "SlimFaas/NumberParallelRequest";
 
     public async Task<IList<DeploymentInformation>> ListFunctionsAsync(string kubeNamespace)
     {

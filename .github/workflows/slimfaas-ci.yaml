@@ -33,11 +33,11 @@ jobs:
     needs: tags
     uses: ./.github/workflows/Docker.yml
     with:
-      image_name: "axaguildev/lightfaas"
+      image_name: "axaguildev/slimfaas"
       image_version: "${{ needs.tags.outputs.new_version }}"
       image_build_args: ""
       image_context: ./src/LightFaas
-      image_file: "./src/LightFaas/Dockerfile"
+      image_file: "./src/SlimFaas/Dockerfile"
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

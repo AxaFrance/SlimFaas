@@ -1,4 +1,4 @@
-﻿namespace LightFaas;
+﻿namespace SlimFaas;
 
 public class HistoryHttpService
 {

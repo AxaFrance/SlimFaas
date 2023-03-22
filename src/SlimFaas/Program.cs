@@ -1,12 +1,12 @@
 using System.Net;
-using LightFaas;
+using SlimFaas;
 using Polly;
 using Polly.Extensions.Http;
 using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHostedService<FaasWorker>();
+builder.Services.AddHostedService<SlimWorker>();
 builder.Services.AddHostedService<ScaleReplicasWorker>();
 builder.Services.AddHostedService<MasterWorker>();
 builder.Services.AddHostedService<ReplicasSyncWorker>();
@@ -25,7 +25,7 @@ builder.Services.AddHttpClient<SendClient, SendClient>()
 var app = builder.Build();
 app.UseMetricServer();
 app.UseHttpMetrics();
-app.UseMiddleware<FaasMiddleware>();
+app.UseMiddleware<SlimMiddleware>();
 
 app.Run(async context =>
 {

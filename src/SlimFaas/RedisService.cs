@@ -1,6 +1,6 @@
 ﻿using StackExchange.Redis;
 
-namespace LightFaas;
+namespace SlimFaas;
 
 public class RedisService
 {

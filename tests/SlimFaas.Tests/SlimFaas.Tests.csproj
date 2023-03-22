@@ -6,6 +6,8 @@
         <Nullable>enable</Nullable>
 
         <IsPackable>false</IsPackable>
+
+        <RootNamespace>LightFaas.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -23,7 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\LightFaas\LightFaas.csproj" />
+      <ProjectReference Include="..\..\src\SlimFaas\SlimFaas.csproj" />
     </ItemGroup>
 
 </Project>
