@@ -36,7 +36,7 @@ jobs:
       image_name: "axaguildev/slimfaas"
       image_version: "${{ needs.tags.outputs.new_version }}"
       image_build_args: ""
-      image_context: ./src/LightFaas
+      image_context: ./src/SlimFaas
       image_file: "./src/SlimFaas/Dockerfile"
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}

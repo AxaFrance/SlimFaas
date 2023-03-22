@@ -97,35 +97,32 @@ public class KubernetesService
                 foreach (var deploymentListItem in deploymentList.Items)
                 {
                     var annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
-                    if (annotations != null && annotations.ContainsKey(Function) &&
-                        annotations[Function].ToLower() == "true")
-                    {
-                        var deploymentInformation = new DeploymentInformation();
-                        deploymentInformation.Deployment = deploymentListItem.Metadata.Name;
-                        deploymentInformation.Namespace = kubeNamespace;
-                        deploymentInformation.Replicas = deploymentListItem.Spec.Replicas;
-                        deploymentInformation.ReplicasAtStart = annotations.ContainsKey(ReplicasAtStart)
-                            ? int.Parse(annotations[ReplicasAtStart])
-                            : 1;
-                        deploymentInformation.ReplicasMin = annotations.ContainsKey(ReplicasMin)
-                            ? int.Parse(annotations[ReplicasMin])
-                            : 1;
-                        deploymentInformation.TimeoutSecondBeforeSetReplicasMin =
-                            annotations.ContainsKey(TimeoutSecondBeforeSetReplicasMin)
-                                ? int.Parse(annotations[TimeoutSecondBeforeSetReplicasMin])
-                                : 300;
-                        deploymentInformation.NumberParallelRequest = annotations.ContainsKey(NumberParallelRequest)
-                            ? int.Parse(annotations[NumberParallelRequest])
-                            : 10;
-                        deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest =
-                            annotations.ContainsKey(ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
-                            annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true";
-                        deploymentInformationList.Add(deploymentInformation);
-                    }
+                    if (annotations == null || !annotations.ContainsKey(Function) ||
+                        annotations[Function].ToLower() != "true") continue;
+                    var deploymentInformation = new DeploymentInformation();
+                    deploymentInformation.Deployment = deploymentListItem.Metadata.Name;
+                    deploymentInformation.Namespace = kubeNamespace;
+                    deploymentInformation.Replicas = deploymentListItem.Spec.Replicas;
+                    deploymentInformation.ReplicasAtStart = annotations.ContainsKey(ReplicasAtStart)
+                        ? int.Parse(annotations[ReplicasAtStart])
+                        : 1;
+                    deploymentInformation.ReplicasMin = annotations.ContainsKey(ReplicasMin)
+                        ? int.Parse(annotations[ReplicasMin])
+                        : 1;
+                    deploymentInformation.TimeoutSecondBeforeSetReplicasMin =
+                        annotations.ContainsKey(TimeoutSecondBeforeSetReplicasMin)
+                            ? int.Parse(annotations[TimeoutSecondBeforeSetReplicasMin])
+                            : 300;
+                    deploymentInformation.NumberParallelRequest = annotations.ContainsKey(NumberParallelRequest)
+                        ? int.Parse(annotations[NumberParallelRequest])
+                        : 10;
+                    deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest =
+                        annotations.ContainsKey(ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
+                        annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true";
+                    deploymentInformationList.Add(deploymentInformation);
                 }
 
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(5);
-                entry.SlidingExpiration = TimeSpan.FromMinutes(1);
                 return deploymentInformationList;
             });
             return cacheEntry;
