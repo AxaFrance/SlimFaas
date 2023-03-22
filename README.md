@@ -1,5 +1,19 @@
-# LightFaas Proof Of Concept
- 
+# SlimFaas : The slimest and simplest Function As A Service
+
+Why we build SlimFaas ?
+
+We were using OpenFaas, but is was too intricate and heavy for our need. We did not have enough money to buy a support. Monitoring was not adapted to our need.
+It has many impact on classic Kubernetes scripts and it require to be maintained.
+
+So we decided to build our own FaaS, with the following requirements:
+- Simple to install: just add a classic pod
+- No big impact on kubernetes scripts: just add annotation to a pod you want to be auto-scaled
+- Scale to 0 after a period of inactivity and let classic HPA auto scale when needed
+- Asynchronous and synchronous calls
+- Retry: 3 times with graduation
+- No need to buy a support MIT licence
+- Very Slim and very Fast 
+
  ![image](https://user-images.githubusercontent.com/52236059/224073808-b4517320-3540-46c9-95c2-61928c0bc2e1.png)
 
 ## Getting Started
