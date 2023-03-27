@@ -24,7 +24,7 @@ public class ReplicasSyncWorker: BackgroundService
             }
             catch (Exception e)
             {
-                _logger.LogError("Global Error in ScaleReplicasWorker: " + e.Message + " " + e.StackTrace);
+                _logger.LogError(e, "Global Error in ScaleReplicasWorker");
             }
         }
     }

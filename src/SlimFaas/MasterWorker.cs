@@ -22,7 +22,7 @@ public class MasterWorker : BackgroundService
             }
             catch (Exception e)
             {
-                _logger.LogError("Global Error in FaasWorker: " + e.Message + " " + e.StackTrace);
+                _logger.LogError(e, "Global Error in MasterWorker");
             }
         }
        

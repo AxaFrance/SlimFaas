@@ -1,20 +1,20 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using SlimFaas;
 
 public class SlimMiddleware 
 {
     private readonly RequestDelegate _next;
-    private readonly IServiceProvider _serviceProvider;
     private readonly IQueue _queue;
     private HttpContent _responseContent;
 
-    public SlimMiddleware(RequestDelegate next,IServiceProvider serviceProvider, IQueue queue)
+    public SlimMiddleware(RequestDelegate next, IQueue queue)
     {
         _next = next;
-        _serviceProvider = serviceProvider;
         _queue = queue;
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
     public async Task InvokeAsync(HttpContext context, ILogger<SlimMiddleware> faasLogger, HistoryHttpService historyHttpService, SendClient sendClient)
     {
         IList<CustomHeader> customHeaders = new List<CustomHeader>();
@@ -62,7 +62,7 @@ public class SlimMiddleware
                 }
 
                 var formFileCollection = contextRequest.Form.Files;
-                if (formFileCollection != null && formFileCollection.Count > 0)
+                if (formFileCollection.Count > 0)
                 {
                     foreach (var formFile in formFileCollection)
                     {
@@ -99,7 +99,7 @@ public class SlimMiddleware
             if(paths.Length > 2) {
                 var functionName = paths[2];
                 var functionPath = pathString.Replace(functionBeginPath + functionName, "");
-                faasLogger.LogInformation($"{method}: {pathString}{queryString.ToUriComponent()}");
+                faasLogger.LogInformation("{Method}: {PathString}{UriComponent}", method, pathString, queryString.ToUriComponent());
                 var customRequest = new CustomRequest()
                 {
                     Headers = customHeaders,

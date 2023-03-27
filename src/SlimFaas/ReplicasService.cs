@@ -51,27 +51,49 @@ public class ReplicasService
             {
                 if (currentScale.HasValue && currentScale > deploymentInformation.ReplicasMin)
                 {
+                    // Fire and Forget
                     Task.Run(async () =>
                     {
                         var scope = _serviceProvider.CreateScope();
-                        var kubernetesService = scope.ServiceProvider.GetService<KubernetesService>();
-                        await kubernetesService.ScaleAsync(new ReplicaRequest()
+                        var scopeServiceProvider = scope.ServiceProvider;
+                        var logger = scopeServiceProvider.GetService<ILogger<ReplicasService>>();
+                        try
                         {
-                            Replicas = deploymentInformation.ReplicasMin, Deployment = deploymentInformation.Deployment,
-                            Namespace = kubeNamespace
-                        });
+                            var kubernetesService = scopeServiceProvider.GetService<KubernetesService>();
+                            await kubernetesService.ScaleAsync(new ReplicaRequest()
+                            {
+                                Replicas = deploymentInformation.ReplicasMin,
+                                Deployment = deploymentInformation.Deployment,
+                                Namespace = kubeNamespace
+                            });
+                        }catch(Exception e)
+                        {
+                            logger.LogError(e, "Error while scaling Down");
+                        }
                     });
 
                 }
             }
             else if (currentScale is 0)
             {
+                // Fire and Forget
                 Task.Run(async () =>
                 {
                     var scope = _serviceProvider.CreateScope();
-                    var kubernetesService = scope.ServiceProvider.GetService<KubernetesService>();
-                    await kubernetesService.ScaleAsync(new ReplicaRequest()
-                    { Replicas = deploymentInformation.ReplicasAtStart, Deployment = deploymentInformation.Deployment, Namespace = kubeNamespace });
+                    var scopeServiceProvider = scope.ServiceProvider;
+                    var kubernetesService = scopeServiceProvider.GetService<KubernetesService>();
+                    var logger = scopeServiceProvider.GetService<ILogger<ReplicasService>>();
+                    try
+                    {
+                        await kubernetesService.ScaleAsync(new ReplicaRequest()
+                        {
+                            Replicas = deploymentInformation.ReplicasAtStart,
+                            Deployment = deploymentInformation.Deployment, Namespace = kubeNamespace
+                        });
+                    }catch(Exception e)
+                    {
+                        logger.LogError(e, "Error while scaling Up");
+                    }
                 });
 
             }

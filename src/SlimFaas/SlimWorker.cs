@@ -18,7 +18,6 @@ public class SlimWorker : BackgroundService
     private readonly IQueue _queue;
     private readonly ReplicasService _replicasService;
 
-    //private readonly IDictionary<string, long> _lastHttpCall = new Dictionary<string, long>();
     private readonly IDictionary<string, IList<RequestToWait>> _processingTasks = new Dictionary<string, IList<RequestToWait>>();
 
     public SlimWorker(IQueue queue, ReplicasService replicasService, HistoryHttpService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider)
@@ -60,7 +59,7 @@ public class SlimWorker : BackgroundService
                         catch (Exception e)
                         {
                             httpResponseMessagesToDelete.Add(processing);
-                            _logger.LogError("Request Error: " + e.Message + " " + e.StackTrace);
+                            _logger.LogWarning("Request Error: " + e.Message + " " + e.StackTrace);
                             _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
                         }
                     }
@@ -87,7 +86,7 @@ public class SlimWorker : BackgroundService
             }
             catch (Exception e)
             {
-                _logger.LogError("Global Error in FaasWorker: " + e.Message + " " + e.StackTrace);
+                _logger.LogError(e, "Global Error in FaasWorker");
             }
         }
     }
