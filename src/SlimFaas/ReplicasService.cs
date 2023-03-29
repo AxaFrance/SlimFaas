@@ -2,12 +2,12 @@
 
 public class ReplicasService
 {
-    private readonly KubernetesService _kubernetesService;
+    private readonly IKubernetesService _kubernetesService;
     private readonly HistoryHttpService _historyHttpService;
     private readonly IServiceProvider _serviceProvider;
     private  IList<DeploymentInformation> _functions;
 
-    public ReplicasService(KubernetesService kubernetesService, HistoryHttpService historyHttpService, IServiceProvider serviceProvider)
+    public ReplicasService(IKubernetesService kubernetesService, HistoryHttpService historyHttpService, IServiceProvider serviceProvider)
     {
         _kubernetesService = kubernetesService;
         _historyHttpService = historyHttpService;
@@ -59,7 +59,7 @@ public class ReplicasService
                         var logger = scopeServiceProvider.GetService<ILogger<ReplicasService>>();
                         try
                         {
-                            var kubernetesService = scopeServiceProvider.GetService<KubernetesService>();
+                            var kubernetesService = scopeServiceProvider.GetService<IKubernetesService>();
                             await kubernetesService.ScaleAsync(new ReplicaRequest()
                             {
                                 Replicas = deploymentInformation.ReplicasMin,
@@ -81,7 +81,7 @@ public class ReplicasService
                 {
                     var scope = _serviceProvider.CreateScope();
                     var scopeServiceProvider = scope.ServiceProvider;
-                    var kubernetesService = scopeServiceProvider.GetService<KubernetesService>();
+                    var kubernetesService = scopeServiceProvider.GetService<IKubernetesService>();
                     var logger = scopeServiceProvider.GetService<ILogger<ReplicasService>>();
                     try
                     {
