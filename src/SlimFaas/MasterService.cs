@@ -5,9 +5,9 @@ public class MasterService
     private readonly RedisService _redisService;
     private readonly string _id = Guid.NewGuid().ToString();
     public bool IsMaster { get; private set; }
-    private const string lightFaasMaster = "lightfaas_master";
-    private const string masterId = "master_id";
-    private const string lastTicks = "last_ticks";
+    private const string LightFaasMaster = "lightfaas_master";
+    private const string MasterId = "master_id";
+    private const string LastTicks = "last_ticks";
 
     public MasterService(RedisService redisService)
     {
@@ -16,19 +16,19 @@ public class MasterService
 
     public void Check()
     {
-        var dictionary= _redisService.HashGetAll(lightFaasMaster);
+        var dictionary= _redisService.HashGetAll(LightFaasMaster);
         if (dictionary.Count == 0)
         {
-            _redisService.HashSet(lightFaasMaster, new Dictionary<string, string>
+            _redisService.HashSet(LightFaasMaster, new Dictionary<string, string>
             {
-                { masterId, _id },
-                { lastTicks, DateTime.Now.Ticks.ToString() },
+                { MasterId, _id },
+                { LastTicks, DateTime.Now.Ticks.ToString() },
             });
             return;
         }
 
-        var currentMasterId = dictionary[masterId];
-        var currentTicks = long.Parse(dictionary[lastTicks]);
+        var currentMasterId = dictionary[MasterId];
+        var currentTicks = long.Parse(dictionary[LastTicks]);
         var isMaster = currentMasterId == _id;
         if (isMaster != IsMaster)
         {
@@ -38,15 +38,15 @@ public class MasterService
             }
         }
 
-        var isMasterTimeElaped = TimeSpan.FromTicks(currentTicks) + TimeSpan.FromSeconds(2) < TimeSpan.FromTicks(DateTime.Now.Ticks);
+        var isMasterTimeElapsed = TimeSpan.FromTicks(currentTicks) + TimeSpan.FromSeconds(2) < TimeSpan.FromTicks(DateTime.Now.Ticks);
         switch (isMaster)
         {
-            case false when isMasterTimeElaped:
-            case true when !isMasterTimeElaped:
-                _redisService.HashSet(lightFaasMaster, new Dictionary<string, string>
+            case false when isMasterTimeElapsed:
+            case true when !isMasterTimeElapsed:
+                _redisService.HashSet(LightFaasMaster, new Dictionary<string, string>
                 {
-                    { masterId, _id },
-                    { lastTicks, DateTime.Now.Ticks.ToString() },
+                    { MasterId, _id },
+                    { LastTicks, DateTime.Now.Ticks.ToString() },
                 });
                 break;
         }

@@ -25,26 +25,26 @@ public record DeploymentInformation
     public int NumberParallelRequest { get; set; }
 }
 
-public class KubernetesService
+public class KubernetesService : IKubernetesService
 {
     private readonly IMemoryCache _memoryCache;
-    private KubernetesClientConfiguration k8sConfig = null;
-    private IList<string> cacheKeys = new List<string>();
+    private readonly KubernetesClientConfiguration _k8SConfig;
+    private readonly IList<string> _cacheKeys = new List<string>();
 
     public KubernetesService(IConfiguration config, IMemoryCache memoryCache)
     {
         _memoryCache = memoryCache;
         var useKubeConfig = bool.Parse(config["UseKubeConfig"]);
-        k8sConfig = !useKubeConfig ? KubernetesClientConfiguration.InClusterConfig() :
+        _k8SConfig = !useKubeConfig ? KubernetesClientConfiguration.InClusterConfig() :
             KubernetesClientConfiguration.BuildConfigFromConfigFile();
-        k8sConfig.SkipTlsVerify = true;
+        _k8SConfig.SkipTlsVerify = true;
     }
     
     public async Task ScaleAsync(ReplicaRequest request)
     {
         try
         {
-            using var client = new Kubernetes(k8sConfig);
+            using var client = new Kubernetes(_k8SConfig);
             var patchString = "{\"spec\": {\"replicas\": " + request.Replicas + "}}";
             var patch = new V1Patch(patchString, V1Patch.PatchType.MergePatch);
             await client.PatchNamespacedDeploymentScaleAsync(patch, request.Deployment, request.Namespace);
@@ -54,24 +54,6 @@ public class KubernetesService
             Console.WriteLine(e);
             Console.WriteLine(e.Response.ReasonPhrase);
             Console.WriteLine(e.Response.Content);
-        }
-    }
-
-    public async Task<int?> GetCurrentScaleAsync(string kubeNamespace, string deploymentName)
-    {
-        try
-        {
-            using var client = new Kubernetes(k8sConfig);
-            var deploymentList = await client.ListNamespacedDeploymentAsync(kubeNamespace);
-            var deployment = deploymentList.Items.FirstOrDefault(i => i.Metadata.Name == deploymentName);
-            return deployment?.Spec.Replicas;
-        }
-        catch (HttpOperationException e)
-        {
-            Console.WriteLine(e);
-            Console.WriteLine(e.Response.ReasonPhrase);
-            Console.WriteLine(e.Response.Content);
-            return null;
         }
     }
 
@@ -87,12 +69,12 @@ public class KubernetesService
         try
         {
             var _key = $"ListFunctionsAsync({kubeNamespace})";
-            if (!cacheKeys.Contains(_key))
-                cacheKeys.Add(_key);
+            if (!_cacheKeys.Contains(_key))
+                _cacheKeys.Add(_key);
             var cacheEntry = await _memoryCache.GetOrCreateAsync(_key, async entry =>
             {
                 IList<DeploymentInformation> deploymentInformationList = new List<DeploymentInformation>();
-                using var client = new Kubernetes(k8sConfig);
+                using var client = new Kubernetes(_k8SConfig);
                 var deploymentList = await client.ListNamespacedDeploymentAsync(kubeNamespace);
                 foreach (var deploymentListItem in deploymentList.Items)
                 {

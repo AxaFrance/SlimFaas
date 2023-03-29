@@ -12,12 +12,21 @@ builder.Services.AddHostedService<MasterWorker>();
 builder.Services.AddHostedService<ReplicasSyncWorker>();
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<IQueue, Queue>();
+builder.Services.AddSingleton<IQueue, RedisQueue>();
 builder.Services.AddSingleton<ReplicasService, ReplicasService>();
 builder.Services.AddSingleton<RedisService, RedisService>();
 builder.Services.AddSingleton<MasterService, MasterService>();
 builder.Services.AddSingleton<HistoryHttpService, HistoryHttpService>();
-builder.Services.AddSingleton<KubernetesService, KubernetesService>();
+
+var mockKubernetesFunction = Environment.GetEnvironmentVariable("MOCK_KUBERNETES_FUNCTIONS");
+if (!string.IsNullOrEmpty(mockKubernetesFunction))
+{
+    builder.Services.AddSingleton<IKubernetesService, MockKubernetesService>();
+}
+else
+{
+    builder.Services.AddSingleton<IKubernetesService, KubernetesService>();
+}
 builder.Services.AddScoped<SendClient, SendClient>();
 builder.Services.AddHttpClient<SendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))

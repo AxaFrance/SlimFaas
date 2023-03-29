@@ -7,7 +7,7 @@
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <PublishReadyToRun>true</PublishReadyToRun>
         <PublishTrimmed>true</PublishTrimmed>
-        <RootNamespace>LightFaas</RootNamespace>
+        <RootNamespace>SlimFaas</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

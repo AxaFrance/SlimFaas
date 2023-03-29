@@ -29,7 +29,7 @@ public class ReplicasService
         }
     }
     
-    public async Task CheckScaleAsync(string kubeNamespace)
+    public Task CheckScaleAsync(string kubeNamespace)
     {
         var maximumTicks = 0L;
         IDictionary<string, long> ticksLastCall = new Dictionary<string, long>();
@@ -98,6 +98,8 @@ public class ReplicasService
 
             }
         }
+
+        return Task.CompletedTask;
     }
 
 }

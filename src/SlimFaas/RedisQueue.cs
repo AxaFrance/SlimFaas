@@ -1,11 +1,11 @@
 ﻿namespace SlimFaas;
 
 
-public class Queue : IQueue
+public class RedisQueue : IQueue
 {
     private readonly RedisService _redisService;
 
-    public Queue(RedisService redisService)
+    public RedisQueue(RedisService redisService)
     {
         _redisService = redisService;
     }
