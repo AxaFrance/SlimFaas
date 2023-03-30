@@ -11,7 +11,6 @@ builder.Services.AddHostedService<ScaleReplicasWorker>();
 builder.Services.AddHostedService<MasterWorker>();
 builder.Services.AddHostedService<ReplicasSyncWorker>();
 builder.Services.AddHttpClient();
-builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IQueue, RedisQueue>();
 builder.Services.AddSingleton<ReplicasService, ReplicasService>();
 builder.Services.AddSingleton<RedisService, RedisService>();
@@ -32,9 +31,6 @@ builder.Services.AddHttpClient<SendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
 var app = builder.Build();
-app.UseMetricServer();
-app.UseHttpMetrics();
-app.UseMiddleware<SlimMiddleware>();
 
 app.Run(async context =>
 {
@@ -42,10 +38,14 @@ app.Run(async context =>
     {
         await context.Response.WriteAsync("OK");
     }
-    else
-    {
-        context.Response.StatusCode = 404;
-    }
+});
+app.UseMetricServer();
+app.UseHttpMetrics();
+app.UseMiddleware<SlimMiddleware>();
+
+app.Run(async context =>
+{
+    context.Response.StatusCode = 404;
 });
 
 app.Run();

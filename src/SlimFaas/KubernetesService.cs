@@ -5,7 +5,6 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace SlimFaas;
 
-
 public record ReplicaRequest
 {
     public string Deployment { get; set; }
@@ -27,20 +26,18 @@ public record DeploymentInformation
 
 public class KubernetesService : IKubernetesService
 {
-    private readonly IMemoryCache _memoryCache;
     private readonly KubernetesClientConfiguration _k8SConfig;
     private readonly IList<string> _cacheKeys = new List<string>();
 
-    public KubernetesService(IConfiguration config, IMemoryCache memoryCache)
+    public KubernetesService(IConfiguration config)
     {
-        _memoryCache = memoryCache;
         var useKubeConfig = bool.Parse(config["UseKubeConfig"]);
         _k8SConfig = !useKubeConfig ? KubernetesClientConfiguration.InClusterConfig() :
             KubernetesClientConfiguration.BuildConfigFromConfigFile();
         _k8SConfig.SkipTlsVerify = true;
     }
     
-    public async Task ScaleAsync(ReplicaRequest request)
+    public async Task<ReplicaRequest> ScaleAsync(ReplicaRequest request)
     {
         try
         {
@@ -55,6 +52,8 @@ public class KubernetesService : IKubernetesService
             Console.WriteLine(e.Response.ReasonPhrase);
             Console.WriteLine(e.Response.Content);
         }
+
+        return request;
     }
 
     private const string ReplicasMin = "SlimFaas/ReplicasMin";
@@ -68,12 +67,7 @@ public class KubernetesService : IKubernetesService
     {
         try
         {
-            var _key = $"ListFunctionsAsync({kubeNamespace})";
-            if (!_cacheKeys.Contains(_key))
-                _cacheKeys.Add(_key);
-            var cacheEntry = await _memoryCache.GetOrCreateAsync(_key, async entry =>
-            {
-                IList<DeploymentInformation> deploymentInformationList = new List<DeploymentInformation>();
+            IList<DeploymentInformation> deploymentInformationList = new List<DeploymentInformation>();
                 using var client = new Kubernetes(_k8SConfig);
                 var deploymentList = await client.ListNamespacedDeploymentAsync(kubeNamespace);
                 foreach (var deploymentListItem in deploymentList.Items)
@@ -104,10 +98,8 @@ public class KubernetesService : IKubernetesService
                     deploymentInformationList.Add(deploymentInformation);
                 }
 
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(5);
                 return deploymentInformationList;
-            });
-            return cacheEntry;
+
         }
         catch (HttpOperationException e)
         {

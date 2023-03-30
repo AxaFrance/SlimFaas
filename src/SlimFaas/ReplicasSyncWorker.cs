@@ -20,7 +20,7 @@ public class ReplicasSyncWorker: BackgroundService
             try
             {
                 await _replicasService.SyncFunctionsAsync(_namespace);
-                await Task.Delay(3000);
+                await Task.Delay(10000, stoppingToken);
             }
             catch (Exception e)
             {

@@ -17,6 +17,10 @@ public class ReplicasService
     public async Task SyncFunctionsAsync(string kubeNamespace)
     {
         var functions = await _kubernetesService.ListFunctionsAsync(kubeNamespace);
+        if (functions == null)
+        {
+            return;
+        }
         lock (this)
         {
             Functions = functions;
@@ -34,7 +38,7 @@ public class ReplicasService
             maximumTicks = Math.Max(maximumTicks, tickLastCall);
         }
 
-        var tasks = new List<Task>();
+        var tasks = new List<Task<ReplicaRequest>>();
         foreach (var deploymentInformation in Functions)
         {
             var tickLastCall = deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest
@@ -58,7 +62,7 @@ public class ReplicasService
                         Namespace = kubeNamespace
                     });
 
-                    tasks.Append(task);
+                    tasks.Add(task);
                 }
             }
             else if (currentScale is 0)
@@ -70,11 +74,23 @@ public class ReplicasService
                     Deployment = deploymentInformation.Deployment, Namespace = kubeNamespace
                 });
 
-                tasks.Append(task);
+                tasks.Add(task);
             }
         }
 
+        if (tasks.Count <= 0) return Task.CompletedTask;
+        
         Task.WaitAll(tasks.ToArray());
+        var updatedFunctions = new List<DeploymentInformation>();
+        lock (this)
+        {
+            foreach (var function in Functions)
+            {
+                var updatedFunction = tasks.FirstOrDefault(t => t.Result.Deployment == function.Deployment);
+                updatedFunctions.Add(function with { Replicas = updatedFunction != null ? updatedFunction.Result.Replicas : function.Replicas });
+            }
+            Functions = updatedFunctions;
+        }
 
         return Task.CompletedTask;
     }

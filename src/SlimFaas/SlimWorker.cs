@@ -35,7 +35,7 @@ public class SlimWorker : BackgroundService
         {
             try
             {
-                await Task.Delay(10);
+                await Task.Delay(10, stoppingToken);
                 foreach (var function in _replicasService.Functions)
                 {
                     var functionDeployment = function.Deployment;
@@ -71,6 +71,15 @@ public class SlimWorker : BackgroundService
 
                     if (_processingTasks[functionDeployment].Count >= function.NumberParallelRequest) continue;
 
+                    if (function.Replicas == 0)
+                    {
+                        var queueLenght = _queue.Count(functionDeployment);
+                        if (queueLenght > 0)
+                        {
+                            _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
+                            continue;;
+                        }
+                    }
                     var data = _queue.DequeueAsync(functionDeployment);
                     if (string.IsNullOrEmpty(data)) continue;
                     var customRequest = JsonSerializer.Deserialize<CustomRequest>(data);

@@ -21,7 +21,7 @@ public class ScaleReplicasWorker: BackgroundService
          {
              try
              {
-                 await Task.Delay(500);
+                 await Task.Delay(500, stoppingToken);
                  if(_masterService.IsMaster == false) continue;
                  await _replicasService.CheckScaleAsync(_namespace);
              }
