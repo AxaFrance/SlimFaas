@@ -22,9 +22,9 @@ public class MockKubernetesService : IKubernetesService
             _deploymentInformations.Add(deploymentInformation);
         }
     }
-    public Task ScaleAsync(ReplicaRequest request)
+    public Task<ReplicaRequest> ScaleAsync(ReplicaRequest request)
     {
-        return Task.CompletedTask;
+        return Task.FromResult(request);
     }
 
     public Task<IList<DeploymentInformation>> ListFunctionsAsync(string kubeNamespace)

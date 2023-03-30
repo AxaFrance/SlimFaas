@@ -37,7 +37,7 @@ public class UnitTest1
         IConfiguration configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(inMemorySettings)
             .Build();
-        var kubernetesService = new KubernetesService(configuration, new MemoryCache(Options.Create(new MemoryCacheOptions())));
+        var kubernetesService = new KubernetesService(configuration);
         var functions = await kubernetesService.ListFunctionsAsync("lightfaas-demo");
         
         // Load from the default kubeconfig on the machine.
