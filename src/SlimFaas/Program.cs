@@ -34,18 +34,25 @@ builder.Services.AddHttpClient<SendClient, SendClient>()
     .AddPolicyHandler(GetRetryPolicy());
 var app = builder.Build();
 
-app.UseMetricServer();
-app.UseHttpMetrics();
-app.UseMiddleware<SlimMiddleware>();
 
-app.Run(async context =>
+app.Use(async (context, next) =>
 {
     if (context.Request.Path == "/health")
     {
         await context.Response.WriteAsync("OK");
         return;
     }
+    await next.Invoke();
+});
+
+app.UseMetricServer();
+app.UseHttpMetrics();
+app.UseMiddleware<SlimMiddleware>();
+
+app.Run(context =>
+{
     context.Response.StatusCode = 404;
+    return Task.CompletedTask;
 });
 
 app.Run();
