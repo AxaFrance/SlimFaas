@@ -26,11 +26,13 @@ public record DeploymentInformation
 
 public class KubernetesService : IKubernetesService
 {
+    private readonly ILogger<KubernetesService> _logger;
     private readonly KubernetesClientConfiguration _k8SConfig;
     private readonly IList<string> _cacheKeys = new List<string>();
 
-    public KubernetesService(IConfiguration config)
+    public KubernetesService(IConfiguration config, ILogger<KubernetesService> logger)
     {
+        _logger = logger;
         var useKubeConfig = bool.Parse(config["UseKubeConfig"]);
         _k8SConfig = !useKubeConfig ? KubernetesClientConfiguration.InClusterConfig() :
             KubernetesClientConfiguration.BuildConfigFromConfigFile();
@@ -63,11 +65,11 @@ public class KubernetesService : IKubernetesService
     private const string TimeoutSecondBeforeSetReplicasMin = "SlimFaas/TimeoutSecondBeforeSetReplicasMin";
     private const string NumberParallelRequest = "SlimFaas/NumberParallelRequest";
 
-    public async Task<IList<DeploymentInformation>> ListFunctionsAsync(string kubeNamespace)
+    public async Task<IList<DeploymentInformation>?> ListFunctionsAsync(string kubeNamespace)
     {
         try
         {
-            IList<DeploymentInformation> deploymentInformationList = new List<DeploymentInformation>();
+            IList<DeploymentInformation>? deploymentInformationList = new List<DeploymentInformation>();
                 using var client = new Kubernetes(_k8SConfig);
                 var deploymentList = await client.ListNamespacedDeploymentAsync(kubeNamespace);
                 foreach (var deploymentListItem in deploymentList.Items)
@@ -103,9 +105,7 @@ public class KubernetesService : IKubernetesService
         }
         catch (HttpOperationException e)
         {
-            Console.WriteLine(e);
-            Console.WriteLine(e.Response.ReasonPhrase);
-            Console.WriteLine(e.Response.Content);
+            _logger.LogError(e, "Error while listing kubernetes functions");
             return null;
         }
     }

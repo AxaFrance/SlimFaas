@@ -1,4 +1,5 @@
-﻿namespace SlimFaas;
+﻿
+namespace SlimFaas;
 
 
 public class RedisQueue : IQueue
@@ -12,10 +13,10 @@ public class RedisQueue : IQueue
 
     public void EnqueueAsync(string key, string data)
     {
-       _redisService.ListLeftPush($"{KeyPrefix}{key}", data);
+        _redisService.ListLeftPush($"{KeyPrefix}{key}",  data);
     }
         
-    public string? DequeueAsync(string key)
+    public string? DequeueAsync(string key) 
     {
         var data = _redisService.ListRightPop($"{KeyPrefix}{key}");
         return data;

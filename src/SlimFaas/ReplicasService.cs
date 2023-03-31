@@ -2,10 +2,10 @@
 
 public class ReplicasService
 {
-    private readonly HistoryHttpService _historyHttpService;
+    private readonly HistoryHttpMemoryService _historyHttpService;
     private readonly IKubernetesService _kubernetesService;
 
-    public ReplicasService(IKubernetesService kubernetesService, HistoryHttpService historyHttpService)
+    public ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService)
     {
         _kubernetesService = kubernetesService;
         _historyHttpService = historyHttpService;
@@ -53,21 +53,18 @@ public class ReplicasService
 
             if (timeElapsedWhithoutRequest)
             {
-                if (currentScale.HasValue && currentScale > deploymentInformation.ReplicasMin)
+                if (!currentScale.HasValue || !(currentScale > deploymentInformation.ReplicasMin)) continue;
+                var task = _kubernetesService.ScaleAsync(new ReplicaRequest
                 {
-                    var task = _kubernetesService.ScaleAsync(new ReplicaRequest
-                    {
-                        Replicas = deploymentInformation.ReplicasMin,
-                        Deployment = deploymentInformation.Deployment,
-                        Namespace = kubeNamespace
-                    });
+                    Replicas = deploymentInformation.ReplicasMin,
+                    Deployment = deploymentInformation.Deployment,
+                    Namespace = kubeNamespace
+                });
 
-                    tasks.Add(task);
-                }
+                tasks.Add(task);
             }
             else if (currentScale is 0)
             {
-                // Fire and Forget
                 var task = _kubernetesService.ScaleAsync(new ReplicaRequest
                 {
                     Replicas = deploymentInformation.ReplicasAtStart,

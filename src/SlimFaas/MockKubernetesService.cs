@@ -3,7 +3,7 @@
 public class MockKubernetesService : IKubernetesService
 {
 
-    private readonly IList<DeploymentInformation> _deploymentInformations = new List<DeploymentInformation>();
+    private readonly IList<DeploymentInformation>? _deploymentInformations = new List<DeploymentInformation>();
     public MockKubernetesService()
     {
         var functions = Environment.GetEnvironmentVariable("MOCK_KUBERNETES_FUNCTIONS").Split(":") ?? new string[0];
@@ -27,7 +27,7 @@ public class MockKubernetesService : IKubernetesService
         return Task.FromResult(request);
     }
 
-    public Task<IList<DeploymentInformation>> ListFunctionsAsync(string kubeNamespace)
+    public Task<IList<DeploymentInformation>?> ListFunctionsAsync(string kubeNamespace)
     {
         return Task.FromResult(_deploymentInformations);
     }

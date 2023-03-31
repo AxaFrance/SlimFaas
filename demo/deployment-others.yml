@@ -12,12 +12,12 @@ spec:
       labels:
         app: kubernetes-bootcamp1
       annotations:
-        LightFaas/Function: "true"
-        LightFaas/ReplicasMin: "0"
-        LightFaas/ReplicasAtStart: "1"
-        LightFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
-        LightFaas/TimeoutSecondBeforeSetReplicasMin: "300"
-        LightFaas/NumberParallelRequest : "10"
+        SlimFaas/Function: "true"
+        SlimFaas/ReplicasMin: "0"
+        SlimFaas/ReplicasAtStart: "1"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+        SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:
@@ -46,12 +46,12 @@ spec:
       labels:
         app: kubernetes-bootcamp2
       annotations:
-        LightFaas/Function: "true"
-        LightFaas/ReplicasMin: "0"
-        LightFaas/ReplicasAtStart: "1"
-        LightFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
-        LightFaas/TimeoutSecondBeforeSetReplicasMin: "300"
-        LightFaas/NumberParallelRequest : "10"
+        SlimFaas/Function: "true"
+        SlimFaas/ReplicasMin: "0"
+        SlimFaas/ReplicasAtStart: "1"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+        SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:
@@ -80,12 +80,12 @@ spec:
       labels:
         app: kubernetes-bootcamp3
       annotations:
-        LightFaas/Function: "true"
-        LightFaas/ReplicasMin: "0"
-        LightFaas/ReplicasAtStart: "1"
-        LightFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
-        LightFaas/TimeoutSecondBeforeSetReplicasMin: "300"
-        LightFaas/NumberParallelRequest : "10"
+        SlimFaas/Function: "true"
+        SlimFaas/ReplicasMin: "0"
+        SlimFaas/ReplicasAtStart: "1"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+        SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:

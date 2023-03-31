@@ -1,5 +1,5 @@
-﻿using System.Text.Json;
-using SlimFaas;
+﻿
+using System.Text.Json;
 
 namespace SlimFaas;
 
@@ -12,7 +12,7 @@ record RequestToWait
 
 public class SlimWorker : BackgroundService
 {
-    private readonly HistoryHttpService _historyHttpService;
+    private readonly HistoryHttpMemoryService _historyHttpService;
     private readonly ILogger<SlimWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly IQueue _queue;
@@ -20,7 +20,7 @@ public class SlimWorker : BackgroundService
 
     private readonly IDictionary<string, IList<RequestToWait>> _processingTasks = new Dictionary<string, IList<RequestToWait>>();
 
-    public SlimWorker(IQueue queue, ReplicasService replicasService, HistoryHttpService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider)
+    public SlimWorker(IQueue queue, ReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider)
     {
         _historyHttpService = historyHttpService;
         _logger = logger;
@@ -77,7 +77,7 @@ public class SlimWorker : BackgroundService
                         if (queueLenght > 0)
                         {
                             _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
-                            continue;;
+                            continue;
                         }
                     }
                     var data = _queue.DequeueAsync(functionDeployment);
@@ -95,7 +95,7 @@ public class SlimWorker : BackgroundService
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Global Error in FaasWorker");
+                 _logger.LogError(e, "Global Error in FaasWorker");
             }
         }
     }

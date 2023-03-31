@@ -15,7 +15,7 @@ public class SlimMiddleware
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
-    public async Task InvokeAsync(HttpContext context, ILogger<SlimMiddleware> faasLogger, HistoryHttpService historyHttpService, SendClient sendClient)
+    public async Task InvokeAsync(HttpContext context, ILogger<SlimMiddleware> faasLogger, HistoryHttpMemoryService historyHttpService, SendClient sendClient)
     {
         IList<CustomHeader> customHeaders = new List<CustomHeader>();
         var contextRequest = context.Request;
