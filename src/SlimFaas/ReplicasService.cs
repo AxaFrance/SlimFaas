@@ -38,7 +38,7 @@ public class ReplicasService
             maximumTicks = Math.Max(maximumTicks, tickLastCall);
         }
 
-        var tasks = new List<Task<ReplicaRequest>>();
+        var tasks = new List<Task<ReplicaRequest?>>();
         foreach (var deploymentInformation in Functions)
         {
             var tickLastCall = deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest
@@ -76,8 +76,7 @@ public class ReplicasService
         }
 
         if (tasks.Count <= 0) return Task.CompletedTask;
-        
-        Task.WaitAll(tasks.ToArray());
+
         var updatedFunctions = new List<DeploymentInformation>();
         lock (this)
         {

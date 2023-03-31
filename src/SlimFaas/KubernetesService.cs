@@ -28,7 +28,6 @@ public class KubernetesService : IKubernetesService
 {
     private readonly ILogger<KubernetesService> _logger;
     private readonly KubernetesClientConfiguration _k8SConfig;
-    private readonly IList<string> _cacheKeys = new List<string>();
 
     public KubernetesService(IConfiguration config, ILogger<KubernetesService> logger)
     {
@@ -39,7 +38,7 @@ public class KubernetesService : IKubernetesService
         _k8SConfig.SkipTlsVerify = true;
     }
     
-    public async Task<ReplicaRequest> ScaleAsync(ReplicaRequest request)
+    public async Task<ReplicaRequest?> ScaleAsync(ReplicaRequest? request)
     {
         try
         {
@@ -50,9 +49,8 @@ public class KubernetesService : IKubernetesService
         }
         catch (HttpOperationException e)
         {
-            Console.WriteLine(e);
-            Console.WriteLine(e.Response.ReasonPhrase);
-            Console.WriteLine(e.Response.Content);
+            _logger.LogError(e, "Error while scaling kubernetes deployment" + request.Deployment);
+            return request;
         }
 
         return request;

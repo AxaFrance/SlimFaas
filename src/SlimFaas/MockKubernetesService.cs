@@ -22,7 +22,7 @@ public class MockKubernetesService : IKubernetesService
             _deploymentInformations.Add(deploymentInformation);
         }
     }
-    public Task<ReplicaRequest> ScaleAsync(ReplicaRequest request)
+    public Task<ReplicaRequest?> ScaleAsync(ReplicaRequest? request)
     {
         return Task.FromResult(request);
     }
