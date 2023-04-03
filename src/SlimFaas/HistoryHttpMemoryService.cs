@@ -8,10 +8,14 @@ public class HistoryHttpMemoryService
     public long GetTicksLastCall(string functionName)
     {
         var result = 0L;
-        if (_local.ContainsKey(functionName))
+        lock (this)
         {
-            result = _local[functionName];
+            if (_local.ContainsKey(functionName))
+            {
+                result = _local[functionName];
+            }
         }
+
         return result;
     }
     

@@ -4,15 +4,25 @@ public class ReplicasService
 {
     private readonly HistoryHttpMemoryService _historyHttpService;
     private readonly IKubernetesService _kubernetesService;
+    private IList<DeploymentInformation> _functions;
 
     public ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService)
     {
         _kubernetesService = kubernetesService;
         _historyHttpService = historyHttpService;
-        Functions = new List<DeploymentInformation>();
+        _functions = new List<DeploymentInformation>();
     }
 
-    public IList<DeploymentInformation> Functions { get; private set; }
+    public IList<DeploymentInformation> Functions
+    {
+        get
+        {
+            lock (this)
+            {
+                return new List<DeploymentInformation>(_functions.ToArray());
+            }
+        }
+    }
 
     public async Task SyncFunctionsAsync(string kubeNamespace)
     {
@@ -23,7 +33,7 @@ public class ReplicasService
         }
         lock (this)
         {
-            Functions = functions;
+            _functions = functions;
         }
     }
 
@@ -78,14 +88,15 @@ public class ReplicasService
         if (tasks.Count <= 0) return Task.CompletedTask;
 
         var updatedFunctions = new List<DeploymentInformation>();
+        
+        foreach (var function in Functions)
+        {
+            var updatedFunction = tasks.FirstOrDefault(t => t.Result.Deployment == function.Deployment);
+            updatedFunctions.Add(function with { Replicas = updatedFunction != null ? updatedFunction.Result.Replicas : function.Replicas });
+        }
         lock (this)
         {
-            foreach (var function in Functions)
-            {
-                var updatedFunction = tasks.FirstOrDefault(t => t.Result.Deployment == function.Deployment);
-                updatedFunctions.Add(function with { Replicas = updatedFunction != null ? updatedFunction.Result.Replicas : function.Replicas });
-            }
-            Functions = updatedFunctions;
+            _functions = updatedFunctions;
         }
 
         return Task.CompletedTask;

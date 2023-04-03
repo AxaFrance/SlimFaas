@@ -1,16 +1,16 @@
 ﻿namespace SlimFaas;
 
-public class SyncHistoryWorker: BackgroundService
+public class HistorySynchronizationWorker: BackgroundService
 {
     private readonly ReplicasService _replicasService;
     private readonly HistoryHttpMemoryService _historyHttpMemoryService;
     private readonly HistoryHttpRedisService _historyHttpRedisService;
-    private readonly ILogger<ReplicasSyncWorker> _logger;
+    private readonly ILogger<ReplicasSynchronizationWorker> _logger;
 
-    public SyncHistoryWorker(ReplicasService replicasService, 
+    public HistorySynchronizationWorker(ReplicasService replicasService, 
         HistoryHttpMemoryService historyHttpMemoryService, 
         HistoryHttpRedisService historyHttpRedisService, 
-        ILogger<ReplicasSyncWorker> logger)
+        ILogger<ReplicasSynchronizationWorker> logger)
     {
         _replicasService = replicasService;
         _historyHttpMemoryService = historyHttpMemoryService;

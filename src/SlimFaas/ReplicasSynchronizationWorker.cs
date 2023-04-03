@@ -1,12 +1,12 @@
 ﻿namespace SlimFaas;
 
-public class ReplicasSyncWorker: BackgroundService
+public class ReplicasSynchronizationWorker: BackgroundService
 {
     private readonly ReplicasService _replicasService;
-    private readonly ILogger<ReplicasSyncWorker> _logger;
+    private readonly ILogger<ReplicasSynchronizationWorker> _logger;
     private readonly string _namespace;
 
-    public ReplicasSyncWorker(ReplicasService replicasService, ILogger<ReplicasSyncWorker> logger)
+    public ReplicasSynchronizationWorker(ReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger)
     {
         _replicasService = replicasService;
         _logger = logger;
