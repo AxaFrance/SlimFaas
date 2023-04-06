@@ -1,4 +1,5 @@
 using System.Net;
+using OpenTelemetry.Trace;
 using SlimFaas;
 using Polly;
 using Polly.Extensions.Http;
@@ -32,6 +33,11 @@ builder.Services.AddScoped<SendClient, SendClient>();
 builder.Services.AddHttpClient<SendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
+builder.Services.AddOpenTelemetry()
+    .WithTracing(builder => builder
+    .AddHttpClientInstrumentation()
+        .AddAspNetCoreInstrumentation()
+        .AddConsoleExporter());
 var app = builder.Build();
 
 

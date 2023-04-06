@@ -3,11 +3,19 @@
 public class MockKubernetesService : IKubernetesService
 {
 
-    private readonly IList<DeploymentInformation>? _deploymentInformations = new List<DeploymentInformation>();
+    private readonly DeploymentsInformations? _deploymentInformations;
     public MockKubernetesService()
     {
         var functions = Environment.GetEnvironmentVariable("MOCK_KUBERNETES_FUNCTIONS").Split(":") ?? new string[0];
-        
+
+        _deploymentInformations = new DeploymentsInformations()
+        {
+            Functions = new List<DeploymentInformation>(),
+            SlimFaas = new SlimFaasDeploymentInformation()
+            {
+                Replicas = 1,
+            }
+        };
         foreach (var function in functions)
         {
             var deploymentInformation = new DeploymentInformation
@@ -19,7 +27,7 @@ public class MockKubernetesService : IKubernetesService
                 TimeoutSecondBeforeSetReplicasMin = 1000000,
                 ReplicasStartAsSoonAsOneFunctionRetrieveARequest = false
             };
-            _deploymentInformations.Add(deploymentInformation);
+            _deploymentInformations.Functions.Add(deploymentInformation);
         }
     }
     public Task<ReplicaRequest?> ScaleAsync(ReplicaRequest? request)
@@ -27,7 +35,7 @@ public class MockKubernetesService : IKubernetesService
         return Task.FromResult(request);
     }
 
-    public Task<IList<DeploymentInformation>?> ListFunctionsAsync(string kubeNamespace)
+    public Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace)
     {
         return Task.FromResult(_deploymentInformations);
     }

@@ -36,7 +36,10 @@ public class SlimWorker : BackgroundService
             try
             {
                 await Task.Delay(10, stoppingToken);
-                foreach (var function in _replicasService.Functions)
+                var deployments = _replicasService.Deployments;
+                var functions = deployments.Functions;
+                var slimFaas = deployments.SlimFaas;
+                foreach (var function in functions)
                 {
                     var functionDeployment = function.Deployment;
                     if (_processingTasks.ContainsKey(functionDeployment) == false)
@@ -69,7 +72,7 @@ public class SlimWorker : BackgroundService
                         _processingTasks[functionDeployment].Remove(httpResponseMessage);
                     }
 
-                    if (_processingTasks[functionDeployment].Count >= function.NumberParallelRequest) continue;
+                    if (_processingTasks[functionDeployment].Count >= function.NumberParallelRequest / slimFaas.Replicas) continue;
 
                     if (function.Replicas == 0)
                     {

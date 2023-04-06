@@ -4,36 +4,50 @@ public class ReplicasService
 {
     private readonly HistoryHttpMemoryService _historyHttpService;
     private readonly IKubernetesService _kubernetesService;
-    private IList<DeploymentInformation> _functions;
+    private DeploymentsInformations _deployments;
 
     public ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService)
     {
         _kubernetesService = kubernetesService;
         _historyHttpService = historyHttpService;
-        _functions = new List<DeploymentInformation>();
+        _deployments = new DeploymentsInformations()
+        {
+            Functions = new List<DeploymentInformation>(),
+            SlimFaas = new SlimFaasDeploymentInformation()
+            {
+                Replicas = 1
+            }
+        };
     }
 
-    public IList<DeploymentInformation> Functions
+    public DeploymentsInformations Deployments
     {
         get
         {
             lock (this)
             {
-                return new List<DeploymentInformation>(_functions.ToArray());
+                return new DeploymentsInformations()
+                {
+                    Functions = _deployments.Functions.ToArray(),
+                    SlimFaas = new SlimFaasDeploymentInformation()
+                    {
+                        Replicas = _deployments?.SlimFaas?.Replicas ?? 1
+                    }
+                };
             }
         }
     }
 
-    public async Task SyncFunctionsAsync(string kubeNamespace)
+    public async Task SyncDeploymentsAsync(string kubeNamespace)
     {
-        var functions = await _kubernetesService.ListFunctionsAsync(kubeNamespace);
-        if (functions == null)
+        var deployments = await _kubernetesService.ListFunctionsAsync(kubeNamespace);
+        if (deployments.Functions.Count <= 0)
         {
             return;
         }
         lock (this)
         {
-            _functions = functions;
+            _deployments = deployments;
         }
     }
 
@@ -41,7 +55,7 @@ public class ReplicasService
     {
         var maximumTicks = 0L;
         IDictionary<string, long> ticksLastCall = new Dictionary<string, long>();
-        foreach (var deploymentInformation in Functions)
+        foreach (var deploymentInformation in Deployments.Functions)
         {
             var tickLastCall = _historyHttpService.GetTicksLastCall(deploymentInformation.Deployment);
             ticksLastCall.Add(deploymentInformation.Deployment, tickLastCall);
@@ -49,7 +63,7 @@ public class ReplicasService
         }
 
         var tasks = new List<Task<ReplicaRequest?>>();
-        foreach (var deploymentInformation in Functions)
+        foreach (var deploymentInformation in Deployments.Functions)
         {
             var tickLastCall = deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest
                 ? maximumTicks
@@ -89,14 +103,14 @@ public class ReplicasService
 
         var updatedFunctions = new List<DeploymentInformation>();
         
-        foreach (var function in Functions)
+        foreach (var function in Deployments.Functions)
         {
             var updatedFunction = tasks.FirstOrDefault(t => t.Result.Deployment == function.Deployment);
             updatedFunctions.Add(function with { Replicas = updatedFunction != null ? updatedFunction.Result.Replicas : function.Replicas });
         }
         lock (this)
         {
-            _functions = updatedFunctions;
+            _deployments = Deployments with { Functions = updatedFunctions };
         }
 
         return Task.CompletedTask;

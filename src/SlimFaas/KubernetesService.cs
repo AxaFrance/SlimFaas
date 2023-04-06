@@ -12,6 +12,18 @@ public record ReplicaRequest
     public int Replicas { get; set; }
 }
 
+public record SlimFaasDeploymentInformation
+{
+    public int? Replicas { get; set; }
+}
+
+public record DeploymentsInformations
+{
+    public IList<DeploymentInformation> Functions { get; set; }
+    
+    public SlimFaasDeploymentInformation SlimFaas { get; set; } 
+}
+
 public record DeploymentInformation
 {
     public string Deployment { get; set; }
@@ -63,48 +75,69 @@ public class KubernetesService : IKubernetesService
     private const string TimeoutSecondBeforeSetReplicasMin = "SlimFaas/TimeoutSecondBeforeSetReplicasMin";
     private const string NumberParallelRequest = "SlimFaas/NumberParallelRequest";
 
-    public async Task<IList<DeploymentInformation>?> ListFunctionsAsync(string kubeNamespace)
+    public async Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace)
     {
         try
         {
             IList<DeploymentInformation>? deploymentInformationList = new List<DeploymentInformation>();
                 using var client = new Kubernetes(_k8SConfig);
                 var deploymentList = await client.ListNamespacedDeploymentAsync(kubeNamespace);
+                
+                var slimFaasDeploymentInformation = deploymentList.Items.Where(deploymentListItem => deploymentListItem.Metadata.Name == "slimfaas").Select(deploymentListItem => new SlimFaasDeploymentInformation
+                {
+                    Replicas = deploymentListItem.Spec.Replicas
+                }).FirstOrDefault();
+                
                 foreach (var deploymentListItem in deploymentList.Items)
                 {
                     var annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
                     if (annotations == null || !annotations.ContainsKey(Function) ||
                         annotations[Function].ToLower() != "true") continue;
-                    var deploymentInformation = new DeploymentInformation();
-                    deploymentInformation.Deployment = deploymentListItem.Metadata.Name;
-                    deploymentInformation.Namespace = kubeNamespace;
-                    deploymentInformation.Replicas = deploymentListItem.Spec.Replicas;
-                    deploymentInformation.ReplicasAtStart = annotations.ContainsKey(ReplicasAtStart)
-                        ? int.Parse(annotations[ReplicasAtStart])
-                        : 1;
-                    deploymentInformation.ReplicasMin = annotations.ContainsKey(ReplicasMin)
-                        ? int.Parse(annotations[ReplicasMin])
-                        : 1;
-                    deploymentInformation.TimeoutSecondBeforeSetReplicasMin =
-                        annotations.ContainsKey(TimeoutSecondBeforeSetReplicasMin)
+                    var deploymentInformation = new DeploymentInformation
+                    {
+                        Deployment = deploymentListItem.Metadata.Name,
+                        Namespace = kubeNamespace,
+                        Replicas = deploymentListItem.Spec.Replicas,
+                        ReplicasAtStart = annotations.ContainsKey(ReplicasAtStart)
+                            ? int.Parse(annotations[ReplicasAtStart])
+                            : 1,
+                        ReplicasMin = annotations.ContainsKey(ReplicasMin)
+                            ? int.Parse(annotations[ReplicasMin])
+                            : 1,
+                        TimeoutSecondBeforeSetReplicasMin = annotations.ContainsKey(TimeoutSecondBeforeSetReplicasMin)
                             ? int.Parse(annotations[TimeoutSecondBeforeSetReplicasMin])
-                            : 300;
-                    deploymentInformation.NumberParallelRequest = annotations.ContainsKey(NumberParallelRequest)
-                        ? int.Parse(annotations[NumberParallelRequest])
-                        : 10;
-                    deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest =
-                        annotations.ContainsKey(ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
-                        annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true";
+                            : 300,
+                        NumberParallelRequest = annotations.ContainsKey(NumberParallelRequest)
+                            ? int.Parse(annotations[NumberParallelRequest])
+                            : 10,
+                        ReplicasStartAsSoonAsOneFunctionRetrieveARequest = annotations.ContainsKey(ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
+                                                                           annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true"
+                    };
                     deploymentInformationList.Add(deploymentInformation);
                 }
 
-                return deploymentInformationList;
+                return new DeploymentsInformations()
+                {
+                    Functions = deploymentInformationList,
+                    SlimFaas = slimFaasDeploymentInformation ?? new SlimFaasDeploymentInformation()
+                    {
+                    Replicas = 1,
+                }
+                };
 
         }
         catch (HttpOperationException e)
         {
             _logger.LogError(e, "Error while listing kubernetes functions");
-            return null;
+            return new DeploymentsInformations()
+            {
+                Functions = new List<DeploymentInformation>(),
+                SlimFaas = new SlimFaasDeploymentInformation()
+                {
+                    Replicas = 1,
+                }
+            };
+
         }
     }
     

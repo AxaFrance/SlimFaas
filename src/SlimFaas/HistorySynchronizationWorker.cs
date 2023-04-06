@@ -25,7 +25,7 @@ public class HistorySynchronizationWorker: BackgroundService
             {
                 await Task.Delay(500, stoppingToken);
 
-                foreach (var function in _replicasService.Functions)
+                foreach (var function in _replicasService.Deployments.Functions)
                 {
                     var ticksRedis = _historyHttpRedisService.GetTicksLastCall(function.Deployment);
                     var ticksMemory = _historyHttpMemoryService.GetTicksLastCall(function.Deployment);
