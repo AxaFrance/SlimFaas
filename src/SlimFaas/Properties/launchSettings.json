@@ -15,7 +15,9 @@
       "applicationUrl": "http://localhost:5123",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "NAMESPACE" : "lightfaas-demo"
+        "NAMESPACE" : "slimfaas-demo",
+        "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"kubernetes-bootcamp3\",\"NumberParallelRequest\":1},{\"Name\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}]}",
+        "MOCK_REDIS": "True"
       }
     },
     "https": {
@@ -25,15 +27,7 @@
       "applicationUrl": "https://localhost:7295;http://localhost:5123",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "NAMESPACE" : "lightfaas-demo"
-      }
-    },
-    "IIS Express": {
-      "commandName": "IISExpress",
-      "launchBrowser": true,
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "NAMESPACE" : "lightfaas-demo"
+        "NAMESPACE": "slimfaas-demo"
       }
     }
   }

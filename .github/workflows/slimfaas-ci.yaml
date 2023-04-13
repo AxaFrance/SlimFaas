@@ -29,7 +29,7 @@ jobs:
             echo "new_version=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
           fi
 
-  build_lightfaas:
+  build_slimfaas:
     needs: tags
     uses: ./.github/workflows/Docker.yml
     with:

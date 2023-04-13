@@ -4,27 +4,27 @@ namespace SlimFaas;
 
 public class RedisQueue : IQueue
 {
-    private readonly RedisService _redisService;
+    private readonly IRedisService _redisService;
     private const string KeyPrefix = "Queue:";
-    public RedisQueue(RedisService redisService)
+    public RedisQueue(IRedisService redisService)
     {
         _redisService = redisService;
     }
 
-    public void EnqueueAsync(string key, string data)
+    public async Task EnqueueAsync(string key, string data)
     {
-        _redisService.ListLeftPush($"{KeyPrefix}{key}",  data);
+        await _redisService.ListLeftPushAsync($"{KeyPrefix}{key}",  data);
     }
         
-    public string? DequeueAsync(string key) 
+    public async Task<IList<string>> DequeueAsync(string key, long count = 1) 
     {
-        var data = _redisService.ListRightPop($"{KeyPrefix}{key}");
+        var data = await _redisService.ListRightPopAsync($"{KeyPrefix}{key}");
         return data;
     }
 
-    public long Count(string key)
+    public async Task<long> CountAsync(string key)
     {
-        return _redisService.ListLength($"{KeyPrefix}{key}");
+        return await _redisService.ListLengthAsync($"{KeyPrefix}{key}");
     }
 
 }
