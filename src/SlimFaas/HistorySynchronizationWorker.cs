@@ -27,14 +27,14 @@ public class HistorySynchronizationWorker: BackgroundService
 
                 foreach (var function in _replicasService.Deployments.Functions)
                 {
-                    var ticksRedis = _historyHttpRedisService.GetTicksLastCall(function.Deployment);
+                    var ticksRedis = await _historyHttpRedisService.GetTicksLastCallAsync(function.Deployment);
                     var ticksMemory = _historyHttpMemoryService.GetTicksLastCall(function.Deployment);
                     if(ticksRedis > ticksMemory)
                     {
                         _historyHttpMemoryService.SetTickLastCall(function.Deployment, ticksRedis);
                     } else if(ticksRedis < ticksMemory)
                     {
-                        _historyHttpRedisService.SetTickLastCall(function.Deployment, ticksMemory);
+                        await _historyHttpRedisService.SetTickLastCallAsync(function.Deployment, ticksMemory);
                     }
                 }
             }

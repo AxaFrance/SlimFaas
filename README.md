@@ -1,30 +1,26 @@
 # SlimFaas : The slimest and simplest Function As A Service
 
-Why we build SlimFaas ?
-
-We were using OpenFaas, but is was too intricate and heavy for our need. We did not have enough money to buy a support. Monitoring was not adapted to our need.
-It has many impact on classic Kubernetes scripts and it require to be maintained.
-
-So we decided to build our own FaaS, with the following requirements:
+Why use SlimFaas ?
+- Scale to 0 after a period of inactivity
+- Synchronous HTTP calls
+- Asynchronous HTTP calls
+  - Allows you to limit the number of parallel HTTP requests for each underlying function
+- Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
 - Simple to install: just add a classic pod
-- No big impact on kubernetes scripts: just add annotation to a pod you want to be auto-scaled
-- Scale to 0 after a period of inactivity and let classic HPA auto scale when needed
-- Asynchronous and synchronous calls
-- Retry: 3 times with graduation
-- No need to buy a support MIT licence
-- Very Slim and very Fast 
+  - No impact on kubernetes scripts: just add annotation to a pod you want to be auto-scale
+- Very Slim and very Fast
 
- ![image](https://user-images.githubusercontent.com/52236059/224073808-b4517320-3540-46c9-95c2-61928c0bc2e1.png)
+![slim-faas-ram-cpu.png](documentation%2Fslim-faas-ram-cpu.png)
 
 ## Getting Started
 
-To test dailyclean on your local machine by using kubernetes with Docker Desktop, please use these commands:
-
+To test slimfaas on your local machine by using kubernetes with Docker Desktop, please use these commands:
+ 
 ```
-git clone https://github.com/AxaGuilDEv/dailyclean.git
-cd dailyclean/demo
-kubectl create namespace lightfaas-demo
-kubectl config set-context --current --namespace=lightfaas-demo
+git clone https://github.com/AxaFrance/slimfaas.git
+cd slimfaas/demo
+kubectl create namespace slimfaas-demo
+kubectl config set-context --current --namespace=slimfaas-demo
 # Create a custom service account
 kubectl apply -f dailyclean-serviceaccount.yml
 # Install dailyclean for the dailyclean service account
@@ -35,15 +31,150 @@ kubectl apply -f deployment-others.yml
 
 Now, open your favorite browser and enter the url of dailyclean-api service : http://localhost:30001
 
-Enjoy dailyclean !!!!
+Enjoy slimfaas !!!!
+
+## How it works
+
+SlimFaas act as an HTTP proxy with 2 modes: 
+
+### Synchrounous HTTP call
+
+- Synchronous http://slimfaas/function/myfunction = > HTTP response function
+
+![sync_http_call.PNG](documentation%2Fsync_http_call.PNG)
+
+### Asynchrounous HTTP call
+
+- Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
+  - Tail in memory or via Redis
+
+![async_http_call.PNG](documentation%2Fasync_http_call.PNG)
+
+### Build with .NET
+
+Why .NET ?
+- .NET is always getting faster and faster : https://www.techempower.com/benchmarks/#section=data-r21
+- ASP.NET Core allow to resolve complexe use cases with few lines of codes
+- .NET is always getting smaller and smaller: https://twitter.com/MStrehovsky/status/1660806238979117056?t=WPrZwi7WrIWi4tjoDUXEgg&s=19
+
+## How to install
+
+1. Add SlimFaas annotations to your pods
+2. Add SlimFaas pod
+3. Have fun !
+
+sample-deployment.yaml
+````yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubernetes-bootcamp1
+spec:
+  selector:
+    matchLabels:
+      app: kubernetes-bootcamp1
+  template:
+    metadata:
+      labels:
+        app: kubernetes-bootcamp1
+      annotations:
+        # Just add SlimFaas annotation to your pods and that it !
+        SlimFaas/Function: "true" 
+        SlimFaas/ReplicasMin: "0"
+        SlimFaas/ReplicasAtStart: "1"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+        SlimFaas/NumberParallelRequest : "10"
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: kubernetes-bootcamp1
+          image: gcr.io/google-samples/kubernetes-bootcamp:v1
+          resources:
+            limits:
+              memory: "96Mi"
+              cpu: "50m"
+            requests:
+              memory: "96Mi"
+              cpu: "10m"
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slimfaas
+spec:
+  selector:
+    matchLabels:
+      app: slimfaas
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: '5000'
+        prometheus.io/scrape: 'true'
+      labels:
+        app: slimfaas
+    spec:
+      serviceAccountName: admin # Use a service account with admin role
+      containers:
+        - name: slimfaas
+          image: docker.io/axaguildev/slimfaas:0.6.1
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 1
+            periodSeconds: 10
+            timeoutSeconds: 8
+          env:
+            - name: BASE_FUNCTION_URL
+              value: "http://{function_name}.default.svc.cluster.local:8080"
+            - name: ASPNETCORE_URLS
+              value: http://+:5000
+            - name: NAMESPACE
+              value: "default"
+            # If you want to use Redis use this env variable and comment MOCK_REDIS
+            #- name: REDIS_CONNECTION_STRING 
+            #  value: "redis-ha-haproxy:6379"
+            - name: MOCK_REDIS
+              value: "true"
+            # If your are not on kubernetes for example docker-compose, you can use this env variable, you will loose auto-scale
+            #- name: MOCK_KUBERNETES_FUNCTIONS 
+            #  value: "{\"Functions\":[{\"Name\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}]}"
+          resources:
+            limits:
+              memory: "76Mi"
+              cpu: "400m"
+            requests:
+              memory: "76Mi"
+              cpu: "250m"
+          ports:
+            - containerPort: 5000
+
+````
 
 
-## Lightfaas feature:
+### SlimFaas Annotations with defaults values
+- SlimFaas/Function: "true" 
+  - Activate SlimFaas on this pod, so your pod will be auto-scale
+- SlimFaas/ReplicasMin: "0"
+  - Scale down to this value after a period of inactivity
+- SlimFaas/ReplicasAtStart: "1"
+  - Scale up to this value at start
+- SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+  - Scale up this pod as soon as one function retrieve a request
+- SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300" 
+  - Scale down to SlimFaas/ReplicasMin after this period of inactivity in seconds
+- SlimFaas/NumberParallelRequest : "10"
+  - Limit the number of parallel HTTP requests for each underlying function
 
-- Acting as a proxy as openfaas with 2 modes: 
-  - Synchronous http://lightfaas/function/myfunction = > HTTP response function  
-  - Asynchronous http://lightfaas/async-function/myfunction => HTTP 201
-    - Tail in memory or via Redis
-- Play the retry 3 times with graduation
-- Allows you to limit the number of parallel HTTP requests for each underlying function 
-- Expose prometheous metrics (including the volume of messages in each queue)
+## What Next ?
+
+1. Clean Code & Unit Tests
+2. Get full working Get Started Demo
+3. Public Open Source
+4. Scale up from volume message in queue and message rate
+5. Add a build version without any redis dependencies and allow SlimFaas to manage internal queue
+6. Upgrade to .NET8 using AOT => lighter and faster

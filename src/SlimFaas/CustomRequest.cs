@@ -1,34 +1,23 @@
-﻿public record CustomRequest
+﻿using System.Text.Json.Serialization;
+
+namespace SlimFaas;
+
+public record struct CustomRequest(IList<CustomHeader> Headers, IList<CustomForm> Form, IList<CustomFormFile> FormFiles, string FunctionName, string Path, string Method)
 {
-    public IList<CustomHeader> Headers { get; init; }
-    public IList<CustomForm> Form { get; init; }
-    public IList<CustomFormFile> FormFiles { get; init; }
-    public string FunctionName { get; init; }
-    public string Path { get; init; }
-    public string Method { get; init; }
     public string Query { get; set; }
     public string Body { get; set; }
     public string ContentType { get; set; }
 }
 
+public record struct CustomHeader(string Key, string?[] Values);
 
+public record struct CustomForm(string Key, string?[] Values);
 
-public record CustomHeader
+public record struct CustomFormFile(string Key, byte[] Value, string Filename);
+
+[JsonSerializable(typeof(CustomRequest))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+internal partial class CustomRequestSerializerContext : JsonSerializerContext
 {
-    public string Key { get; init; }
-    public string?[] Values { get; init; } 
+    
 }
-
-public record CustomForm
-{
-    public string Key { get; init; }
-    public string?[] Values { get; init; } 
-}
-
-
-public record CustomFormFile
-{
-    public string Key { get; init; }
-    public byte[] Value { get; init; }
-    public string Filename { get; set; }
-} 
