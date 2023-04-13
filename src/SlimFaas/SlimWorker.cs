@@ -85,7 +85,7 @@ public class SlimWorker : BackgroundService
                     }
                     var data = _queue.DequeueAsync(functionDeployment);
                     if (string.IsNullOrEmpty(data)) continue;
-                    var customRequest = JsonSerializer.Deserialize<CustomRequest>(data);
+                    var customRequest = JsonSerializer.Deserialize(data, CustomRequestSerializerContext.Default.CustomRequest);
                     _logger.LogInformation(
                         $"{customRequest.Method}: {customRequest.Path}{customRequest.Query} Sending");
                     _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);

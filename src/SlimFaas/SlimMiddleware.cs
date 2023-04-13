@@ -21,11 +21,7 @@ public class SlimMiddleware
         var contextRequest = context.Request;
         foreach (var headers in contextRequest.Headers)
         {
-            var customHeader = new CustomHeader()
-            {
-                Key = headers.Key,
-                Values = headers.Value.ToArray()
-            };
+            var customHeader = new CustomHeader(headers.Key, headers.Value.ToArray());
             customHeaders.Add(customHeader);
         }
     
@@ -53,11 +49,7 @@ public class SlimMiddleware
                 contentType = "multipart/form-data";
                 foreach (var formData in contextRequest.Form)
                 {
-                    var customForm = new CustomForm()
-                    {
-                        Key = formData.Key,
-                        Values = formData.Value.ToArray()
-                    };
+                    var customForm = new CustomForm(formData.Key, formData.Value.ToArray());
                     customForms.Add(customForm);
                 }
 
@@ -68,12 +60,8 @@ public class SlimMiddleware
                     {
                         using var memoryStream = new MemoryStream();
                         await formFile.CopyToAsync(memoryStream);
-                        var customFormFile = new CustomFormFile()
-                        {
-                            Key = formFile.Name,
-                            Value = memoryStream.ToArray(),
-                            Filename = formFile.FileName
-                        };
+                        var customFormFile =
+                            new CustomFormFile(formFile.Name, memoryStream.ToArray(), formFile.FileName);
                         customFormFiles.Add(customFormFile);
                     }
                 }
@@ -116,7 +104,7 @@ public class SlimMiddleware
                 var contextResponse = context.Response;
                 if (isAsync)
                 {
-                    _queue.EnqueueAsync(functionName, JsonSerializer.Serialize(customRequest));
+                    _queue.EnqueueAsync(functionName, JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest));
                     contextResponse.StatusCode = 202;
                     return;
                 }
