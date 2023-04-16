@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using SlimFaas;
 
 public class SendClient
 {
