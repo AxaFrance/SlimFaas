@@ -3,6 +3,6 @@
 public interface IQueue
 {
     void EnqueueAsync(string key, string message);
-    string DequeueAsync(string type);
+    IList<string> DequeueAsync(string key, long count = 1);
     public long Count(string key);
 }

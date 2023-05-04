@@ -1,7 +1,6 @@
 ﻿using k8s;
 using k8s.Autorest;
 using k8s.Models;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace SlimFaas;
 

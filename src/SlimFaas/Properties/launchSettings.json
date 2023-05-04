@@ -15,7 +15,8 @@
       "applicationUrl": "http://localhost:5123",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "NAMESPACE" : "lightfaas-demo"
+        "NAMESPACE" : "lightfaas-demo",
+        "MOCK_KUBERNETES_FUNCTIONS": "test:toto:titi"
       }
     },
     "https": {
@@ -25,7 +26,8 @@
       "applicationUrl": "https://localhost:7295;http://localhost:5123",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "NAMESPACE" : "lightfaas-demo"
+        "NAMESPACE" : "lightfaas-demo",
+        "MOCK_KUBERNETES_FUNCTIONS": "test:toto:titi"
       }
     },
     "IIS Express": {
@@ -33,7 +35,8 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "NAMESPACE" : "lightfaas-demo"
+        "NAMESPACE" : "lightfaas-demo",
+        "MOCK_KUBERNETES_FUNCTIONS": "test:toto:titi"
       }
     }
   }

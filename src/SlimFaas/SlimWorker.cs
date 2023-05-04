@@ -72,7 +72,9 @@ public class SlimWorker : BackgroundService
                         _processingTasks[functionDeployment].Remove(httpResponseMessage);
                     }
 
-                    if (_processingTasks[functionDeployment].Count >= function.NumberParallelRequest / slimFaas.Replicas) continue;
+                    var numberProcessingTasks = _processingTasks[functionDeployment].Count;
+                    var numberLimitProcessingTasks = function.NumberParallelRequest / slimFaas.Replicas;
+                    if (numberProcessingTasks >= numberLimitProcessingTasks) continue;
 
                     if (function.Replicas == 0)
                     {
@@ -83,17 +85,21 @@ public class SlimWorker : BackgroundService
                             continue;
                         }
                     }
-                    var data = _queue.DequeueAsync(functionDeployment);
-                    if (string.IsNullOrEmpty(data)) continue;
-                    var customRequest = JsonSerializer.Deserialize(data, CustomRequestSerializerContext.Default.CustomRequest);
-                    _logger.LogInformation(
-                        $"{customRequest.Method}: {customRequest.Path}{customRequest.Query} Sending");
-                    _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
-                    using var scope = _serviceProvider.CreateScope();
-                    var taskResponse = scope.ServiceProvider.GetRequiredService<SendClient>()
-                        .SendHttpRequestAsync(customRequest);
-                    _processingTasks[functionDeployment].Add(new RequestToWait()
-                        { Task = taskResponse, CustomRequest = customRequest });
+
+                    var numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
+                    var datas = _queue.DequeueAsync(functionDeployment, numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue: 1);
+                    foreach (var data in datas)
+                    {
+                        var customRequest = JsonSerializer.Deserialize(data, CustomRequestSerializerContext.Default.CustomRequest);
+                        _logger.LogInformation(
+                            $"{customRequest.Method}: {customRequest.Path}{customRequest.Query} Sending");
+                        _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
+                        using var scope = _serviceProvider.CreateScope();
+                        var taskResponse = scope.ServiceProvider.GetRequiredService<SendClient>()
+                            .SendHttpRequestAsync(customRequest);
+                        _processingTasks[functionDeployment].Add(new RequestToWait()
+                            { Task = taskResponse, CustomRequest = customRequest });
+                    }
                 }
             }
             catch (Exception e)

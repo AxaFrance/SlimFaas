@@ -16,7 +16,7 @@ public class RedisQueue : IQueue
         _redisService.ListLeftPush($"{KeyPrefix}{key}",  data);
     }
         
-    public string? DequeueAsync(string key) 
+    public IList<string> DequeueAsync(string key, long count=1) 
     {
         var data = _redisService.ListRightPop($"{KeyPrefix}{key}");
         return data;

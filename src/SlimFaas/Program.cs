@@ -35,9 +35,9 @@ builder.Services.AddHttpClient<SendClient, SendClient>()
     .AddPolicyHandler(GetRetryPolicy());
 builder.Services.AddOpenTelemetry()
     .WithTracing(builder => builder
-    .AddHttpClientInstrumentation()
-        .AddAspNetCoreInstrumentation()
-        .AddConsoleExporter());
+        .AddHttpClientInstrumentation()
+        .AddAspNetCoreInstrumentation());
+        //.AddConsoleExporter());
 var app = builder.Build();
 
 

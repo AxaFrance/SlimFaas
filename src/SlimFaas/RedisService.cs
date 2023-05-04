@@ -40,10 +40,18 @@ public class RedisService
         _database.ListLeftPush(KeyPrefix+key, field);
     }
 
-    public string ListRightPop(string key)
+    public IList<string> ListRightPop(string key, long count = 1)
     {
-        var result = _database.ListRightPop(KeyPrefix+key);
-        return result.HasValue ? result.ToString() : string.Empty;
+        IList<string> resultList = new List<string>();
+        var results = _database.ListRightPop(KeyPrefix+key, count);
+        foreach (var redisValue in results)
+        {
+            if (redisValue.HasValue)
+            {
+                resultList.Add(redisValue.ToString());
+            }
+        }
+        return resultList;
     }
     
     public long ListLength(string key)
