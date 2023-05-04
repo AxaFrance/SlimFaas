@@ -104,7 +104,7 @@ public class SlimMiddleware
                 var contextResponse = context.Response;
                 if (isAsync)
                 {
-                    _queue.EnqueueAsync(functionName, JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest));
+                    await _queue.EnqueueAsync(functionName, JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest));
                     contextResponse.StatusCode = 202;
                     return;
                 }

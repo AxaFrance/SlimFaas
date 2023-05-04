@@ -44,6 +44,10 @@ public class RedisService
     {
         IList<string> resultList = new List<string>();
         var results = await _redis.GetDatabase().ListRightPopAsync(KeyPrefix+key, count);
+        if (results == null)
+        {
+            return resultList;
+        }
         foreach (var redisValue in results)
         {
             if (redisValue.HasValue)

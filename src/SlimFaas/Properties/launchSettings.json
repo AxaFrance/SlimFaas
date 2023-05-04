@@ -15,8 +15,7 @@
       "applicationUrl": "http://localhost:5123",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "NAMESPACE" : "lightfaas-demo",
-        "MOCK_KUBERNETES_FUNCTIONS": "test:toto:titi"
+        "NAMESPACE" : "lightfaas-demo"
       }
     },
     "https": {
@@ -26,8 +25,7 @@
       "applicationUrl": "https://localhost:7295;http://localhost:5123",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "NAMESPACE" : "lightfaas-demo",
-        "MOCK_KUBERNETES_FUNCTIONS": "test:toto:titi"
+        "NAMESPACE" : "lightfaas-demo"
       }
     },
     "IIS Express": {
