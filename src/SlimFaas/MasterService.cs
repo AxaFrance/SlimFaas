@@ -14,12 +14,12 @@ public class MasterService
         _redisService = redisService; 
     }
 
-    public void Check()
+    public async Task CheckAsync()
     {
-        var dictionary= _redisService.HashGetAll(LightFaasMaster);
+        var dictionary= await _redisService.HashGetAllAsync(LightFaasMaster);
         if (dictionary.Count == 0)
         {
-            _redisService.HashSet(LightFaasMaster, new Dictionary<string, string>
+            await _redisService.HashSetAsync(LightFaasMaster, new Dictionary<string, string>
             {
                 { MasterId, _id },
                 { LastTicks, DateTime.Now.Ticks.ToString() },
@@ -43,7 +43,7 @@ public class MasterService
         {
             case false when isMasterTimeElapsed:
             case true when !isMasterTimeElapsed:
-                _redisService.HashSet(LightFaasMaster, new Dictionary<string, string>
+                await _redisService.HashSetAsync(LightFaasMaster, new Dictionary<string, string>
                 {
                     { MasterId, _id },
                     { LastTicks, DateTime.Now.Ticks.ToString() },

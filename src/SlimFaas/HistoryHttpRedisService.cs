@@ -9,15 +9,15 @@ public class HistoryHttpRedisService
         _redisService = redisService;
     }
     
-    public long GetTicksLastCall(string functionName)
+    public async Task<long> GetTicksLastCallAsync(string functionName)
     {
-        var result = _redisService.Get(functionName);
+        var result = await _redisService.GetAsync(functionName);
         return string.IsNullOrEmpty(result) ? 0 : long.Parse(result);
     }
     
-    public void SetTickLastCall(string functionName, long ticks)
+    public async Task SetTickLastCallAsync(string functionName, long ticks)
     {
-       _redisService.Set(functionName, ticks.ToString());
+       await _redisService.SetAsync(functionName, ticks.ToString());
     }
     
 }

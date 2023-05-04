@@ -13,7 +13,7 @@ public class UnitTest1
         
         
         RedisService _redisService = new RedisService();
-        var dictionary= _redisService.HashGetAll("lightfaas_master");
+        var dictionary= await _redisService.HashGetAllAsync("lightfaas_master");
 
         if (dictionary.Count > 0)
         {
@@ -22,7 +22,7 @@ public class UnitTest1
         }
         else
         {
-            _redisService.HashSet("lightfaas_master", new Dictionary<string, string>()
+            _redisService.HashSetAsync("lightfaas_master", new Dictionary<string, string>()
             {
                 { "master_id", "youhou" },
                 { "last_ticks",  DateTime.Now.Ticks.ToString() },

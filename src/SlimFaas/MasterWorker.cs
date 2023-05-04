@@ -18,7 +18,7 @@ public class MasterWorker : BackgroundService
             try
             {
                 await Task.Delay(1000, stoppingToken);
-                _masterService.Check();
+                await _masterService.CheckAsync();
             }
             catch (Exception e)
             {

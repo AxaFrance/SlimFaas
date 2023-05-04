@@ -78,7 +78,7 @@ public class SlimWorker : BackgroundService
 
                     if (function.Replicas == 0)
                     {
-                        var queueLenght = _queue.Count(functionDeployment);
+                        var queueLenght = await _queue.CountAsync(functionDeployment);
                         if (queueLenght > 0)
                         {
                             _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
@@ -87,7 +87,7 @@ public class SlimWorker : BackgroundService
                     }
 
                     var numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
-                    var datas = _queue.DequeueAsync(functionDeployment, numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue: 1);
+                    var datas = await _queue.DequeueAsync(functionDeployment, numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue: 1);
                     foreach (var data in datas)
                     {
                         var customRequest = JsonSerializer.Deserialize(data, CustomRequestSerializerContext.Default.CustomRequest);
