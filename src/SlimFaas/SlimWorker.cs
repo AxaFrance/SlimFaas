@@ -87,12 +87,13 @@ public class SlimWorker : BackgroundService
                     }
 
                     var numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
-                    var datas = await _queue.DequeueAsync(functionDeployment, numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue: 1);
-                    foreach (var data in datas)
+                    var jsons = await _queue.DequeueAsync(functionDeployment, numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue: 1);
+                    foreach (var requestJson in jsons)
                     {
-                        var customRequest = JsonSerializer.Deserialize(data, CustomRequestSerializerContext.Default.CustomRequest);
+                        var customRequest = JsonSerializer.Deserialize(requestJson, CustomRequestSerializerContext.Default.CustomRequest);
                         _logger.LogInformation(
                             $"{customRequest.Method}: {customRequest.Path}{customRequest.Query} Sending");
+                        _logger.LogInformation(requestJson);
                         _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
                         using var scope = _serviceProvider.CreateScope();
                         var taskResponse = scope.ServiceProvider.GetRequiredService<SendClient>()
