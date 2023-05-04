@@ -19,7 +19,7 @@ So we decided to build our own FaaS, with the following requirements:
 ## Getting Started
 
 To test dailyclean on your local machine by using kubernetes with Docker Desktop, please use these commands:
-
+ 
 ```
 git clone https://github.com/AxaGuilDEv/dailyclean.git
 cd dailyclean/demo
