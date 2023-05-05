@@ -7,37 +7,39 @@ using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHostedService<SlimWorker>();
-builder.Services.AddHostedService<ScaleReplicasWorker>();
-builder.Services.AddHostedService<MasterWorker>();
-builder.Services.AddHostedService<ReplicasSynchronizationWorker>();
-builder.Services.AddHostedService<HistorySynchronizationWorker>();
-builder.Services.AddHttpClient();
-builder.Services.AddSingleton<IQueue, RedisQueue>();
-builder.Services.AddSingleton<ReplicasService, ReplicasService>();
-builder.Services.AddSingleton<RedisService, RedisService>();
-builder.Services.AddSingleton<MasterService, MasterService>();
-builder.Services.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
-builder.Services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
+var serviceCollection = builder.Services;
+serviceCollection.AddHostedService<SlimWorker>();
+serviceCollection.AddHostedService<ScaleReplicasWorker>();
+serviceCollection.AddHostedService<MasterWorker>();
+serviceCollection.AddHostedService<ReplicasSynchronizationWorker>();
+serviceCollection.AddHostedService<HistorySynchronizationWorker>();
+serviceCollection.AddHttpClient();
+serviceCollection.AddSingleton<IQueue, RedisQueue>();
+serviceCollection.AddSingleton<ReplicasService, ReplicasService>();
+serviceCollection.AddSingleton<RedisService, RedisService>();
+serviceCollection.AddSingleton<MasterService, MasterService>();
+serviceCollection.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
+serviceCollection.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
 
 var mockKubernetesFunction = Environment.GetEnvironmentVariable("MOCK_KUBERNETES_FUNCTIONS");
 if (!string.IsNullOrEmpty(mockKubernetesFunction))
 {
-    builder.Services.AddSingleton<IKubernetesService, MockKubernetesService>();
+    serviceCollection.AddSingleton<IKubernetesService, MockKubernetesService>();
 }
 else
 {
-    builder.Services.AddSingleton<IKubernetesService, KubernetesService>();
+    serviceCollection.AddSingleton<IKubernetesService, KubernetesService>();
 }
-builder.Services.AddScoped<SendClient, SendClient>();
-builder.Services.AddHttpClient<SendClient, SendClient>()
+serviceCollection.AddScoped<SendClient, SendClient>();
+serviceCollection.AddHttpClient<SendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
-builder.Services.AddOpenTelemetry()
+serviceCollection.AddOpenTelemetry()
     .WithTracing(builder => builder
         .AddHttpClientInstrumentation()
         .AddAspNetCoreInstrumentation());
         //.AddConsoleExporter());
+
 var app = builder.Build();
 
 
