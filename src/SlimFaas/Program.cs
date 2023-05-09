@@ -80,6 +80,6 @@ static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
             };
             return httpStatusCodesWorthRetrying.Contains(msg.StatusCode);
         })
-        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(3,
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
             retryAttempt)));
 }
