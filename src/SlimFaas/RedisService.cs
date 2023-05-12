@@ -2,7 +2,7 @@
 
 namespace SlimFaas;
 
-public class RedisService
+public class RedisService : IRedisService
 {
     private ConnectionMultiplexer _redis;
     private const string KeyPrefix = "SlimFaas:";

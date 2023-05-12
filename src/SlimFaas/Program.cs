@@ -16,7 +16,16 @@ serviceCollection.AddHostedService<HistorySynchronizationWorker>();
 serviceCollection.AddHttpClient();
 serviceCollection.AddSingleton<IQueue, RedisQueue>();
 serviceCollection.AddSingleton<ReplicasService, ReplicasService>();
-serviceCollection.AddSingleton<RedisService, RedisService>();
+
+var mockRedis = Environment.GetEnvironmentVariable("MOCK_REDIS");
+if (!string.IsNullOrEmpty(mockRedis))
+{
+    serviceCollection.AddSingleton<IRedisService, RedisMockService>();
+}
+else
+{
+    serviceCollection.AddSingleton<IRedisService, RedisService>();
+}
 serviceCollection.AddSingleton<MasterService, MasterService>();
 serviceCollection.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
 serviceCollection.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
@@ -30,6 +39,8 @@ else
 {
     serviceCollection.AddSingleton<IKubernetesService, KubernetesService>();
 }
+
+
 serviceCollection.AddScoped<SendClient, SendClient>();
 serviceCollection.AddHttpClient<SendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))

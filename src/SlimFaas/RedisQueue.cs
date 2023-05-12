@@ -4,9 +4,9 @@ namespace SlimFaas;
 
 public class RedisQueue : IQueue
 {
-    private readonly RedisService _redisService;
+    private readonly IRedisService _redisService;
     private const string KeyPrefix = "Queue:";
-    public RedisQueue(RedisService redisService)
+    public RedisQueue(IRedisService redisService)
     {
         _redisService = redisService;
     }

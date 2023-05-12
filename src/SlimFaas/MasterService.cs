@@ -2,14 +2,14 @@
 
 public class MasterService
 {
-    private readonly RedisService _redisService;
+    private readonly IRedisService _redisService;
     private readonly string _id = Guid.NewGuid().ToString();
     public bool IsMaster { get; private set; }
     private const string SlimFaasMaster = "slimfaas_master";
     private const string MasterId = "master_id";
     private const string LastTicks = "last_ticks";
 
-    public MasterService(RedisService redisService)
+    public MasterService(IRedisService redisService)
     {
         _redisService = redisService; 
     }

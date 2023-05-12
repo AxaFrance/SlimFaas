@@ -2,9 +2,9 @@
 
 public class HistoryHttpRedisService
 {
-    private readonly RedisService _redisService;
+    private readonly IRedisService _redisService;
 
-    public HistoryHttpRedisService(RedisService redisService)
+    public HistoryHttpRedisService(IRedisService redisService)
     {
         _redisService = redisService;
     }
