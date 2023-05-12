@@ -15,7 +15,8 @@
       "applicationUrl": "http://localhost:5123",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "NAMESPACE" : "lightfaas-demo"
+        "NAMESPACE" : "lightfaas-demo",
+        "MOCK_KUBERNETES_FUNCTIONS": "{\"Deployment\":\"kubernetes-bootcamp3\",\"NumberParallelRequest\":1};{\"Deployment\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}"
       }
     },
     "https": {
@@ -34,7 +35,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "NAMESPACE" : "lightfaas-demo",
-        "MOCK_KUBERNETES_FUNCTIONS": "test:toto:titi"
+        "MOCK_KUBERNETES_FUNCTIONS": "test:toto:titi:kubernetes-bootcamp3"
       }
     }
   }

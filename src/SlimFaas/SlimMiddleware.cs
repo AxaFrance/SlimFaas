@@ -70,16 +70,21 @@ public class SlimMiddleware
 
         var functionBeginPath = String.Empty;
         var isAsync = false;
-        if (path.StartsWithSegments("/async-function"))
+        const string asyncFunction = "/async-function";
+        if (path.StartsWithSegments(asyncFunction))
         {
-            functionBeginPath = "/async-function/";
+            functionBeginPath = $"{asyncFunction}/";
             isAsync = true;
         }
-        else if (path.StartsWithSegments("/function"))
+        else
         {
-            functionBeginPath = "/function/";
+            const string pathString = "/function";
+            if (path.StartsWithSegments(pathString))
+            {
+                functionBeginPath = $"{pathString}/";
+            }
         }
-        
+
         if(!string.IsNullOrEmpty(functionBeginPath))
         {
             var pathString = path.ToUriComponent();
