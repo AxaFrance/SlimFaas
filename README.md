@@ -16,6 +16,7 @@ So we decided to build our own FaaS, with the following requirements:
 
  ![image](https://user-images.githubusercontent.com/52236059/224073808-b4517320-3540-46c9-95c2-61928c0bc2e1.png)
 
+
 ## Getting Started
 
 To test dailyclean on your local machine by using kubernetes with Docker Desktop, please use these commands:
@@ -37,10 +38,16 @@ Now, open your favorite browser and enter the url of dailyclean-api service : ht
 
 Enjoy dailyclean !!!!
 
+## How it works
 
-## Slimfaas feature:
+### Synchrounous HTTP call
+![sync_http_call.PNG](documentation%2Fsync_http_call.PNG)
 
-- Acting as a proxy as openfaas with 2 modes: 
+### Asynchrounous HTTP call
+![async_http_call.PNG](documentation%2Fasync_http_call.PNG)
+
+
+- Slimfaas act as a proxy as openfaas with 2 modes: 
   - Synchronous http://slimfaas/function/myfunction = > HTTP response function  
   - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
     - Tail in memory or via Redis
