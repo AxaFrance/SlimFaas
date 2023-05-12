@@ -16,7 +16,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "NAMESPACE" : "slimfaas-demo",
-        "MOCK_KUBERNETES_FUNCTIONS": "{\"Deployment\":\"kubernetes-bootcamp3\",\"NumberParallelRequest\":1};{\"Deployment\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}"
+        "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"kubernetes-bootcamp3\",\"NumberParallelRequest\":1},{\"Name\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}]}"
       }
     },
     "https": {

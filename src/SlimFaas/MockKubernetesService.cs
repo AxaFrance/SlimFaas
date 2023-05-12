@@ -4,16 +4,25 @@ using System.Text.Json.Serialization;
 namespace SlimFaas;
 
 
-public record struct DeploymentInformationMock
+public record struct FunctionsMock
+{
+    public List<FunctionMock> Functions { get; set; }
+}
+
+public record struct FunctionMock
 {
     public int NumberParallelRequest { get; set; }
     
-    public string Deployment { get; set; }
+    public string Name { get; set; }
 }
 
-[JsonSerializable(typeof(DeploymentInformationMock))]
+[JsonSerializable(typeof(int))]
+[JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(FunctionsMock))]
+[JsonSerializable(typeof(FunctionMock))]
+[JsonSerializable(typeof(List<FunctionMock>))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-internal partial class DeploymentInformationMockSerializerContext : JsonSerializerContext
+internal partial class FunctionsMockSerializerContext : JsonSerializerContext
 {
     
 }
@@ -24,9 +33,8 @@ public class MockKubernetesService : IKubernetesService
     private readonly DeploymentsInformations? _deploymentInformations;
     public MockKubernetesService()
     {
-        var functionsJson = Environment.GetEnvironmentVariable("MOCK_KUBERNETES_FUNCTIONS").Split(";") ?? new string[0];
-       
-
+        var functionsJson = Environment.GetEnvironmentVariable("MOCK_KUBERNETES_FUNCTIONS") ?? "";
+        
         _deploymentInformations = new DeploymentsInformations()
         {
             Functions = new List<DeploymentInformation>(),
@@ -35,12 +43,13 @@ public class MockKubernetesService : IKubernetesService
                 Replicas = 1,
             }
         };
-        foreach (var functionJson in functionsJson)
+        var functions = JsonSerializer.Deserialize<FunctionsMock>(functionsJson, FunctionsMockSerializerContext.Default.FunctionsMock);
+        foreach (var function in functions.Functions)
         {
-            var function = JsonSerializer.Deserialize(functionJson, DeploymentInformationMockSerializerContext.Default.DeploymentInformationMock);
+            
             var deploymentInformation = new DeploymentInformation
             {
-                Deployment = function.Deployment,
+                Deployment = function.Name,
                 Replicas = 1,
                 ReplicasMin = 1,
                 ReplicasAtStart = 1,
