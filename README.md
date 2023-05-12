@@ -7,10 +7,10 @@ It has many impact on classic Kubernetes scripts and it require to be maintained
 
 So we decided to build our own FaaS, with the following requirements:
 - Simple to install: just add a classic pod
-- No big impact on kubernetes scripts: just add annotation to a pod you want to be auto-scaled
+- No impact on kubernetes scripts: just add annotation to a pod you want to be auto-scaled
 - Scale to 0 after a period of inactivity and let classic HPA auto scale when needed
 - Asynchronous and synchronous calls
-- Retry: 3 times with graduation
+- Retry: 3 times with graduation: 2 seconds, 4seconds, 8 seconds
 - No need to buy a support MIT licence
 - Very Slim and very Fast 
 
@@ -38,11 +38,11 @@ Now, open your favorite browser and enter the url of dailyclean-api service : ht
 Enjoy dailyclean !!!!
 
 
-## Lightfaas feature:
+## Slimfaas feature:
 
 - Acting as a proxy as openfaas with 2 modes: 
-  - Synchronous http://lightfaas/function/myfunction = > HTTP response function  
-  - Asynchronous http://lightfaas/async-function/myfunction => HTTP 201
+  - Synchronous http://slimfaas/function/myfunction = > HTTP response function  
+  - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
     - Tail in memory or via Redis
 - Play the retry 3 times with graduation
 - Allows you to limit the number of parallel HTTP requests for each underlying function 

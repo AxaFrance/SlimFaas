@@ -7,7 +7,7 @@
 
         <IsPackable>false</IsPackable>
 
-        <RootNamespace>LightFaas.Tests</RootNamespace>
+        <RootNamespace>SlimFaas.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

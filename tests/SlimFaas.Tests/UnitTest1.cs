@@ -13,7 +13,7 @@ public class UnitTest1
         
         
         RedisService _redisService = new RedisService();
-        var dictionary= await _redisService.HashGetAllAsync("lightfaas_master");
+        var dictionary= await _redisService.HashGetAllAsync("slimfaas_master");
 
         if (dictionary.Count > 0)
         {
@@ -22,7 +22,7 @@ public class UnitTest1
         }
         else
         {
-            _redisService.HashSetAsync("lightfaas_master", new Dictionary<string, string>()
+            _redisService.HashSetAsync("slimfaas_master", new Dictionary<string, string>()
             {
                 { "master_id", "youhou" },
                 { "last_ticks",  DateTime.Now.Ticks.ToString() },
@@ -38,7 +38,7 @@ public class UnitTest1
             .AddInMemoryCollection(inMemorySettings)
             .Build();
         //var kubernetesService = new KubernetesService(configuration);
-        //var functions = await kubernetesService.ListFunctionsAsync("lightfaas-demo");
+        //var functions = await kubernetesService.ListFunctionsAsync("slimfaas-demo");
         
         // Load from the default kubeconfig on the machine.
         var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();

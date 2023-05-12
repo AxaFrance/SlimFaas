@@ -5,7 +5,7 @@ public class MasterService
     private readonly RedisService _redisService;
     private readonly string _id = Guid.NewGuid().ToString();
     public bool IsMaster { get; private set; }
-    private const string LightFaasMaster = "lightfaas_master";
+    private const string SlimFaasMaster = "slimfaas_master";
     private const string MasterId = "master_id";
     private const string LastTicks = "last_ticks";
 
@@ -16,10 +16,10 @@ public class MasterService
 
     public async Task CheckAsync()
     {
-        var dictionary= await _redisService.HashGetAllAsync(LightFaasMaster);
+        var dictionary= await _redisService.HashGetAllAsync(SlimFaasMaster);
         if (dictionary.Count == 0)
         {
-            await _redisService.HashSetAsync(LightFaasMaster, new Dictionary<string, string>
+            await _redisService.HashSetAsync(SlimFaasMaster, new Dictionary<string, string>
             {
                 { MasterId, _id },
                 { LastTicks, DateTime.Now.Ticks.ToString() },
@@ -43,7 +43,7 @@ public class MasterService
         {
             case false when isMasterTimeElapsed:
             case true when !isMasterTimeElapsed:
-                await _redisService.HashSetAsync(LightFaasMaster, new Dictionary<string, string>
+                await _redisService.HashSetAsync(SlimFaasMaster, new Dictionary<string, string>
                 {
                     { MasterId, _id },
                     { LastTicks, DateTime.Now.Ticks.ToString() },
