@@ -47,6 +47,119 @@ Enjoy slimfaas !!!!
   - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
     - Tail in memory or via Redis
 
+## How to install
+
+1. Add SlimFaas annotations to your pods
+2. Add SlimFaas pod
+3. Have fun !
+
+sample-deployment.yaml
+````yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubernetes-bootcamp1
+spec:
+  selector:
+    matchLabels:
+      app: kubernetes-bootcamp1
+  template:
+    metadata:
+      labels:
+        app: kubernetes-bootcamp1
+      annotations:
+        # Just add SlimFaas annotation to your pods and that it !
+        SlimFaas/Function: "true" 
+        SlimFaas/ReplicasMin: "0"
+        SlimFaas/ReplicasAtStart: "1"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+        SlimFaas/NumberParallelRequest : "10"
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: kubernetes-bootcamp1
+          image: gcr.io/google-samples/kubernetes-bootcamp:v1
+          resources:
+            limits:
+              memory: "96Mi"
+              cpu: "50m"
+            requests:
+              memory: "96Mi"
+              cpu: "10m"
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slimfaas
+spec:
+  selector:
+    matchLabels:
+      app: slimfaas
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: '5000'
+        prometheus.io/scrape: 'true'
+      labels:
+        app: slimfaas
+    spec:
+      serviceAccountName: admin # Use a service account with admin role
+      containers:
+        - name: slimfaas
+          image: docker.io/axaguildev/slimfaas:0.6.1
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 1
+            periodSeconds: 10
+            timeoutSeconds: 8
+          env:
+            - name: BASE_FUNCTION_URL
+              value: "http://{function_name}.default.svc.cluster.local:8080"
+            - name: ASPNETCORE_URLS
+              value: http://+:5000
+            - name: NAMESPACE
+              value: "default"
+            # If you want to use Redis use this env variable and comment MOCK_REDIS
+            #- name: REDIS_CONNECTION_STRING 
+            #  value: "redis-ha-haproxy:6379"
+            - name: MOCK_REDIS
+              value: "true"
+            # If your are not on kubernetes for example docker-compose, you can use this env variable, you will loose auto-scale
+            #- name: MOCK_KUBERNETES_FUNCTIONS 
+            #  value: "{\"Functions\":[{\"Name\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}]}"
+          resources:
+            limits:
+              memory: "76Mi"
+              cpu: "400m"
+            requests:
+              memory: "76Mi"
+              cpu: "250m"
+          ports:
+            - containerPort: 5000
+
+````
+
+
+### SlimFaas Annotations with defaults values
+- SlimFaas/Function: "true" 
+  - Activate SlimFaas on this pod, so your pod will be auto-scale
+- SlimFaas/ReplicasMin: "0"
+  - Scale down to this value after a period of inactivity
+- SlimFaas/ReplicasAtStart: "1"
+  - Scale up to this value at start
+- SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+  - Scale up this pod as soon as one function retrieve a request
+- SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300" 
+  - Scale down to SlimFaas/ReplicasMin after this period of inactivity in seconds
+- SlimFaas/NumberParallelRequest : "10"
+  - Limit the number of parallel HTTP requests for each underlying function
+
 ## What Next ?
 
 - Clean Code & Unit Tests
