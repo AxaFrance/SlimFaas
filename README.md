@@ -10,8 +10,7 @@ Why use SlimFaas ?
   - No impact on kubernetes scripts: just add annotation to a pod you want to be auto-scale
 - Very Slim and very Fast
 
-
- ![image](https://user-images.githubusercontent.com/52236059/224073808-b4517320-3540-46c9-95c2-61928c0bc2e1.png)
+![slim-faas-ram-cpu.png](documentation%2Fslim-faas-ram-cpu.png)
 
 ## Getting Started
 
