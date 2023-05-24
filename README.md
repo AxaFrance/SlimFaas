@@ -35,14 +35,14 @@ Enjoy slimfaas !!!!
 
 ## How it works
 
+SlimFaas act as a proxy as openfaas with 2 modes: 
+
 ### Synchrounous HTTP call
 ![sync_http_call.PNG](documentation%2Fsync_http_call.PNG)
 
 ### Asynchrounous HTTP call
 ![async_http_call.PNG](documentation%2Fasync_http_call.PNG)
 
-
-- SlimFaas act as a proxy as openfaas with 2 modes: 
   - Synchronous http://slimfaas/function/myfunction = > HTTP response function  
   - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
     - Tail in memory or via Redis
@@ -162,9 +162,9 @@ spec:
 
 ## What Next ?
 
-- Clean Code & Unit Tests
-- Get full working Get Started Demo
-- Public Open Source
-- Scale up from volume message in queue and message rate
-- Add a build version without any redis dependencies and allow SlimFaas to manage internal queue
-- Upgrade to .NET8 using AOT => lighter and faster
+1. Clean Code & Unit Tests
+2. Get full working Get Started Demo
+3. Public Open Source
+4. Scale up from volume message in queue and message rate
+5. Add a build version without any redis dependencies and allow SlimFaas to manage internal queue
+6. Upgrade to .NET8 using AOT => lighter and faster
