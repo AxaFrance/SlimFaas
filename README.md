@@ -38,14 +38,17 @@ Enjoy slimfaas !!!!
 SlimFaas act as a proxy as openfaas with 2 modes: 
 
 ### Synchrounous HTTP call
+
+- Synchronous http://slimfaas/function/myfunction = > HTTP response function
+
 ![sync_http_call.PNG](documentation%2Fsync_http_call.PNG)
 
 ### Asynchrounous HTTP call
-![async_http_call.PNG](documentation%2Fasync_http_call.PNG)
 
-  - Synchronous http://slimfaas/function/myfunction = > HTTP response function  
-  - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
-    - Tail in memory or via Redis
+- Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
+  - Tail in memory or via Redis
+
+![async_http_call.PNG](documentation%2Fasync_http_call.PNG)
 
 ## How to install
 
