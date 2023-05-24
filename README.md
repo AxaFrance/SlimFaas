@@ -50,6 +50,14 @@ SlimFaas act as an HTTP proxy with 2 modes:
 
 ![async_http_call.PNG](documentation%2Fasync_http_call.PNG)
 
+### Build with .NET
+
+Why .NET ?
+- .NET is getting faster and faster :
+- ASP.NET Core allow to resolve complexe use cases with few lines of codes
+- .NET is getting smaller and smaller: 
+https://twitter.com/MStrehovsky/status/1660806238979117056?t=WPrZwi7WrIWi4tjoDUXEgg&s=19
+
 ## How to install
 
 1. Add SlimFaas annotations to your pods
