@@ -53,10 +53,9 @@ SlimFaas act as an HTTP proxy with 2 modes:
 ### Build with .NET
 
 Why .NET ?
-- .NET is getting faster and faster :
+- .NET is always getting faster and faster : https://www.techempower.com/benchmarks/#section=data-r21
 - ASP.NET Core allow to resolve complexe use cases with few lines of codes
-- .NET is getting smaller and smaller: 
-https://twitter.com/MStrehovsky/status/1660806238979117056?t=WPrZwi7WrIWi4tjoDUXEgg&s=19
+- .NET is always getting smaller and smaller: https://twitter.com/MStrehovsky/status/1660806238979117056?t=WPrZwi7WrIWi4tjoDUXEgg&s=19
 
 ## How to install
 
