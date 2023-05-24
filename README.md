@@ -35,7 +35,7 @@ Enjoy slimfaas !!!!
 
 ## How it works
 
-SlimFaas act as a proxy as openfaas with 2 modes: 
+SlimFaas act as an HTTP proxy with 2 modes: 
 
 ### Synchrounous HTTP call
 
