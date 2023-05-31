@@ -53,6 +53,7 @@ public class SlimWorker : BackgroundService
                         {
                             if (!processing.Task.IsCompleted) continue;
                             var httpResponseMessage = processing.Task.Result;
+                            httpResponseMessage.Dispose();
                             _logger.LogInformation("{CustomRequestMethod}: /async-function/{CustomRequestPath}{CustomRequestQuery} {StatusCode}", processing.CustomRequest.Method, processing.CustomRequest.Path, processing.CustomRequest.Query, httpResponseMessage.StatusCode);
                             httpResponseMessagesToDelete.Add(processing);
                             _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);

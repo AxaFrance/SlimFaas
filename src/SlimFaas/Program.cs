@@ -66,7 +66,7 @@ app.Use(async (context, next) =>
 
 app.UseMetricServer();
 app.UseHttpMetrics();
-app.UseMiddleware<SlimMiddleware>();
+app.UseMiddleware<SlimProxyMiddleware>();
 
 app.Run(context =>
 {
