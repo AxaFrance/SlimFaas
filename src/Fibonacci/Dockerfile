@@ -5,10 +5,8 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
-COPY ["Fibonacci/Fibonacci.csproj", "Fibonacci/"]
-RUN dotnet restore "Fibonacci/Fibonacci.csproj"
 COPY . .
-WORKDIR "/src/Fibonacci"
+RUN dotnet restore "Fibonacci.csproj"
 RUN dotnet build "Fibonacci.csproj" -c Release -o /app/build
 
 FROM build AS publish
