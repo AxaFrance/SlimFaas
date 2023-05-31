@@ -12,7 +12,7 @@ spec:
       labels:
         app: slimfaas
     spec:
-      serviceAccountName: dailyclean
+      serviceAccountName: slimfaas
       containers:
         - name: slimfaas
           image: axaguildev/slimfaas:latest

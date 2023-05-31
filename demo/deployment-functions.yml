@@ -22,7 +22,10 @@ spec:
       serviceAccountName: default
       containers:
         - name: kubernetes-bootcamp1
-          image: gcr.io/google-samples/kubernetes-bootcamp:v1
+          image: axaguildev/fibonacci:latest
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://+:5000
           resources:
             limits:
               memory: "96Mi"
@@ -31,7 +34,7 @@ spec:
               memory: "96Mi"
               cpu: "10m"
           ports:
-            - containerPort: 8080
+            - containerPort: 5000
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -56,7 +59,10 @@ spec:
       serviceAccountName: default
       containers:
         - name: kubernetes-bootcamp2
-          image: gcr.io/google-samples/kubernetes-bootcamp:v1
+          image: axaguildev/fibonacci:latest
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://+:5000
           resources:
             limits:
               memory: "96Mi"
@@ -65,7 +71,7 @@ spec:
               memory: "96Mi"
               cpu: "10m"
           ports:
-            - containerPort: 8080
+            - containerPort: 5000
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -90,7 +96,10 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci3
-          image: gcr.io/google-samples/kubernetes-bootcamp:v1
+          image: axaguildev/fibonacci:latest
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://+:5000
           resources:
             limits:
               memory: "96Mi"
@@ -99,7 +108,7 @@ spec:
               memory: "96Mi"
               cpu: "10m"
           ports:
-            - containerPort: 8080
+            - containerPort: 5000
 ---
 apiVersion: v1
 kind: Service
@@ -110,8 +119,8 @@ spec:
     app: fibonacci1
   type: NodePort
   ports:
-    - port: 8080
-      targetPort: 8080
+    - port: 5000
+      targetPort: 5000
       nodePort: 30012
 ---
 apiVersion: v1
@@ -123,8 +132,8 @@ spec:
     app: fibonacci2
   type: NodePort
   ports:
-    - port: 8080
-      targetPort: 8080
+    - port: 5000
+      targetPort: 5000
       nodePort: 30013
 ---
 apiVersion: v1
@@ -136,6 +145,6 @@ spec:
     app: fibonacci3
   type: NodePort
   ports:
-    - port: 8080
-      targetPort: 8080
+    - port: 5000
+      targetPort: 5000
       nodePort: 30014

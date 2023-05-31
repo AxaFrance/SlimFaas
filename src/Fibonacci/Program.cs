@@ -1,19 +1,35 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
+var serviceCollection = builder.Services;
+serviceCollection.AddSingleton<Fibonacci, Fibonacci>();
 var app = builder.Build();
 
-app.MapPost("/fibonacci", (int input) => new Fibonacci().Run(input));
 
-app.MapGet("/download", () =>
+app.MapPost("/fibonacci", (
+    [FromServices]ILogger<Fibonacci> logger, 
+    [FromServices] Fibonacci fibonacci, 
+    int input) =>
 {
+    logger.LogDebug("Fibonacci Called");
+    return fibonacci.Run(input);
+});
+
+app.MapGet("/download", ([FromServices]ILogger<Fibonacci> logger) =>
+{
+    logger.LogDebug("Download Called");
     using var processModule = Process.GetCurrentProcess().MainModule;
     var basePath = Path.GetDirectoryName(processModule?.FileName);
     var path = Path.Combine(basePath!, "dog.png");
     return Results.File(path, contentType:  "image/png");
 });
 
-app.MapGet("/hello/{name}", (string name) => $"Hello {name}!");
+app.MapGet("/hello/{name}", ([FromServices]ILogger<Fibonacci> logger, string name) =>
+{
+    logger.LogDebug("Hello Called");
+    return $"Hello {name}!";
+});
 
 app.Run();
 

@@ -12,26 +12,45 @@ Why use SlimFaas ?
 
 ![slim-faas-ram-cpu.png](documentation%2Fslim-faas-ram-cpu.png)
 
-## Getting Started
+## Getting Started with Kubernetes
 
 To test slimfaas on your local machine by using kubernetes with Docker Desktop, please use these commands:
  
-```
+```bash
 git clone https://github.com/AxaFrance/slimfaas.git
 cd slimfaas/demo
 kubectl create namespace slimfaas-demo
 kubectl config set-context --current --namespace=slimfaas-demo
 # Create a custom service account
-kubectl apply -f dailyclean-serviceaccount.yml
-# Install dailyclean pod
-kubectl apply -f deployment-dailyclean.yml
+kubectl apply -f slimfaas-serviceaccount.yml
 # Install slimfaas pod
 kubectl apply -f deployment-slimfaas.yml
 # Install three instances of kubernetes-bootcamp
-kubectl apply -f deployment-others.yml
+kubectl apply -f deployment-functions.yml
 ```
 
-Now, open your favorite browser and enter the url of dailyclean-api service : http://localhost:30001
+Now, you can access your pod via SlimFaas proxy:
+
+- http://localhost:30020/function/fibonacci1/hello/guillaume
+- http://localhost:30020/function/fibonacci2/hello/elodie
+- http://localhost:30020/function/fibonacci3/hello/julie
+
+Enjoy slimfaas !!!!
+
+
+## Getting Started with docker-compose
+
+To test slimfaas on your local machine by using kubernetes with Docker Desktop, please use these commands:
+
+```bash
+git clone https://github.com/AxaFrance/slimfaas.git
+cd slimfaas
+docker-compose up
+```
+
+Now, you can access your pod via SlimFaas proxy:
+
+- http://localhost:5020/function/fibonacci/hello/guillaume
 
 Enjoy slimfaas !!!!
 
