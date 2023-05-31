@@ -23,8 +23,10 @@ kubectl create namespace slimfaas-demo
 kubectl config set-context --current --namespace=slimfaas-demo
 # Create a custom service account
 kubectl apply -f dailyclean-serviceaccount.yml
-# Install dailyclean for the dailyclean service account
+# Install dailyclean pod
 kubectl apply -f deployment-dailyclean.yml
+# Install slimfaas pod
+kubectl apply -f deployment-slimfaas.yml
 # Install three instances of kubernetes-bootcamp
 kubectl apply -f deployment-others.yml
 ```

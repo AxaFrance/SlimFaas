@@ -2,15 +2,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kubernetes-bootcamp1
+  name: fibonacci1
 spec:
   selector:
     matchLabels:
-      app: kubernetes-bootcamp1
+      app: fibonacci1
   template:
     metadata:
       labels:
-        app: kubernetes-bootcamp1
+        app: fibonacci1
       annotations:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
@@ -36,15 +36,15 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kubernetes-bootcamp2
+  name: fibonacci2
 spec:
   selector:
     matchLabels:
-      app: kubernetes-bootcamp2
+      app: fibonacci2
   template:
     metadata:
       labels:
-        app: kubernetes-bootcamp2
+        app: fibonacci2
       annotations:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
@@ -70,15 +70,15 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kubernetes-bootcamp3
+  name: fibonacci3
 spec:
   selector:
     matchLabels:
-      app: kubernetes-bootcamp3
+      app: fibonacci3
   template:
     metadata:
       labels:
-        app: kubernetes-bootcamp3
+        app: fibonacci3
       annotations:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
@@ -89,7 +89,7 @@ spec:
     spec:
       serviceAccountName: default
       containers:
-        - name: kubernetes-bootcamp3
+        - name: fibonacci3
           image: gcr.io/google-samples/kubernetes-bootcamp:v1
           resources:
             limits:
@@ -104,10 +104,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kubernetes-bootcamp1
+  name: fibonacci1
 spec:
   selector:
-    app: kubernetes-bootcamp1
+    app: fibonacci1
   type: NodePort
   ports:
     - port: 8080
@@ -117,10 +117,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kubernetes-bootcamp2
+  name: fibonacci2
 spec:
   selector:
-    app: kubernetes-bootcamp2
+    app: fibonacci2
   type: NodePort
   ports:
     - port: 8080
@@ -130,10 +130,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kubernetes-bootcamp3
+  name: fibonacci3
 spec:
   selector:
-    app: kubernetes-bootcamp3
+    app: fibonacci3
   type: NodePort
   ports:
     - port: 8080
