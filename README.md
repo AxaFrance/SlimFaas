@@ -21,11 +21,13 @@ git clone https://github.com/AxaFrance/slimfaas.git
 cd slimfaas/demo
 kubectl create namespace slimfaas-demo
 kubectl config set-context --current --namespace=slimfaas-demo
-# Create a custom service account
+# Create a custom service account for slimfaas
+# SlimFaas require to ba able to request Kubernetes API
 kubectl apply -f slimfaas-serviceaccount.yml
 # Install slimfaas pod
 kubectl apply -f deployment-slimfaas.yml
-# Install three instances of kubernetes-bootcamp
+# Install three instances of fibonacci functions
+# fibonacci1, fibonacci2 and fibonacci3
 kubectl apply -f deployment-functions.yml
 ```
 
