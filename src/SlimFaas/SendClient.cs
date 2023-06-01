@@ -13,71 +13,63 @@ public class SendClient
             Environment.GetEnvironmentVariable("BASE_FUNCTION_URL") ?? "http://localhost:5123/"; //""http://{function_name}:8080";
     }
     
-    public async Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest)
+    private void CopyFromOriginalRequestContentAndHeaders(CustomRequest context, HttpRequestMessage requestMessage)
+    {
+        var requestMethod = context.Method;
+
+        if (!HttpMethods.IsGet(requestMethod) &&
+            !HttpMethods.IsHead(requestMethod) &&
+            !HttpMethods.IsDelete(requestMethod) &&
+            !HttpMethods.IsTrace(requestMethod) && 
+            context.Body != null)
+        {
+            var streamContent = new StreamContent(new MemoryStream(context.Body));
+            requestMessage.Content = streamContent;
+        }
+
+        foreach (var header in context.Headers)
+        {
+            requestMessage.Content?.Headers.TryAddWithoutValidation(header.Key, header.Values);
+        }
+    }
+    
+    private HttpRequestMessage CreateTargetMessage(CustomRequest context, Uri targetUri)
+    {
+        var requestMessage = new HttpRequestMessage();
+        CopyFromOriginalRequestContentAndHeaders(context, requestMessage);
+
+        requestMessage.RequestUri = targetUri;
+        requestMessage.Headers.Host = targetUri.Host;
+        requestMessage.Method = GetMethod(context.Method);
+
+        return requestMessage;
+    }
+    
+    private static HttpMethod GetMethod(string method)
+    {
+        if (HttpMethods.IsDelete(method)) return HttpMethod.Delete;
+        if (HttpMethods.IsGet(method)) return HttpMethod.Get;
+        if (HttpMethods.IsHead(method)) return HttpMethod.Head;
+        if (HttpMethods.IsOptions(method)) return HttpMethod.Options;
+        if (HttpMethods.IsPost(method)) return HttpMethod.Post;
+        if (HttpMethods.IsPut(method)) return HttpMethod.Put;
+        if (HttpMethods.IsTrace(method)) return HttpMethod.Trace;
+        return new HttpMethod(method);
+    }
+    
+    public async Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null)
     {
         var functionUrl = _baseFunctionUrl;
         var url = functionUrl.Replace("{function_name}", customRequest.FunctionName) + customRequest.Path +
                   customRequest.Query;
-
-        switch (customRequest.Method)
+        var targetRequestMessage = CreateTargetMessage(customRequest, new Uri(url));
+        if (context != null)
         {
-            case "GET":
-            case "DELETE":
-            {
-                var response = await _httpClient.GetAsync(url);
-                return response;
-            }
-            case "POST":
-            case "PUT":
-            {
-                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, url);
-                foreach (var customRequestHeader in customRequest.Headers)
-                {
-                    foreach (var value in customRequestHeader.Values)
-                    {
-                        if (customRequestHeader.Key == "Content-Length" || customRequestHeader.Key == "Content-Type")
-                            continue;
-                        httpRequestMessage.Headers.Add(customRequestHeader.Key, value);
-                    }
-                }
-                if (customRequest.ContentType == "multipart/form-data")
-                {
-                    var requestContent = new MultipartFormDataContent();
-                    foreach (var formData in customRequest.Form)
-                    {
-                        foreach (var value in formData.Values)
-                        {
-                            if (value != null)
-                            {
-                                requestContent.Add(new StringContent(value), formData.Key);
-                            }
-                        }
-                    }
-
-                    foreach (var requestFormFile in customRequest.FormFiles)
-                    {
-                        var streamContent = new StreamContent(new MemoryStream(requestFormFile.Value));
-                        requestContent.Add(streamContent, requestFormFile.Key, requestFormFile.Filename);
-                    }
-
-                    httpRequestMessage.Content = requestContent;
-                }
-                else if(customRequest.ContentType == "application/json")
-                {
-                    httpRequestMessage.Content = new StringContent(customRequest.Body, Encoding.UTF8, "application/json");
-                    httpRequestMessage.Method = new HttpMethod(customRequest.Method);
-                }
-                else
-                {
-                    httpRequestMessage.Content = new StringContent(customRequest.Body);
-                    httpRequestMessage.Method = new HttpMethod(customRequest.Method);
-                }
+            return await _httpClient.SendAsync(targetRequestMessage,
+                HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
             
-                var response = await _httpClient.SendAsync(httpRequestMessage);
-                return response;
-            }
-            default:
-                throw new NotImplementedException("Method not implemented");
         }
+        return await _httpClient.SendAsync(targetRequestMessage,
+            HttpCompletionOption.ResponseHeadersRead);
     }
 }
