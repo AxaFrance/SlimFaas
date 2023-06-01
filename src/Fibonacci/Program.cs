@@ -18,7 +18,7 @@ app.MapPost("/fibonacci", (
 app.MapGet("/download", ([FromServices]ILogger<Fibonacci> logger) =>
 {
     logger.LogDebug("Download Called");
-    var path = Path.Combine(".", "dog.png");
+    var path = Path.Combine(Directory.GetCurrentDirectory(), "dog.png");
     return Results.File(path, contentType:  "image/png");
 });
 
