@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,9 +18,7 @@ app.MapPost("/fibonacci", (
 app.MapGet("/download", ([FromServices]ILogger<Fibonacci> logger) =>
 {
     logger.LogDebug("Download Called");
-    using var processModule = Process.GetCurrentProcess().MainModule;
-    var basePath = Path.GetDirectoryName(processModule?.FileName);
-    var path = Path.Combine(basePath!, "dog.png");
+    var path = Path.Combine(".", "dog.png");
     return Results.File(path, contentType:  "image/png");
 });
 
