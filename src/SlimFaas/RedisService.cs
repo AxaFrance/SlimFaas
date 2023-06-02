@@ -1,7 +1,9 @@
-﻿using StackExchange.Redis;
+﻿using System.Diagnostics.CodeAnalysis;
+using StackExchange.Redis;
 
 namespace SlimFaas;
 
+[ExcludeFromCodeCoverage]
 public class RedisService : IRedisService
 {
     private ConnectionMultiplexer _redis;

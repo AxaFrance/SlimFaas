@@ -1,14 +1,16 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace SlimFaas;
 
-
+[ExcludeFromCodeCoverage]
 public record struct FunctionsMock
 {
     public List<FunctionMock> Functions { get; set; }
 }
 
+[ExcludeFromCodeCoverage]
 public record struct FunctionMock
 {
     public int NumberParallelRequest { get; set; }
@@ -16,6 +18,7 @@ public record struct FunctionMock
     public string Name { get; set; }
 }
 
+[ExcludeFromCodeCoverage]
 [JsonSerializable(typeof(int))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(FunctionsMock))]
@@ -27,6 +30,7 @@ internal partial class FunctionsMockSerializerContext : JsonSerializerContext
     
 }
 
+[ExcludeFromCodeCoverage]
 public class MockKubernetesService : IKubernetesService
 {
 

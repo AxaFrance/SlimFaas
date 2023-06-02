@@ -2,13 +2,15 @@
 
 public class MasterWorker : BackgroundService
 {
-    private readonly MasterService _masterService;
+    private readonly IMasterService _masterService;
     private readonly ILogger<MasterWorker> _logger;
+    private readonly int _delay;
 
-    public MasterWorker(MasterService masterService, ILogger<MasterWorker> logger)
+    public MasterWorker(IMasterService masterService, ILogger<MasterWorker> logger, int delay = 1000)
     {
         _masterService = masterService;
         _logger = logger;
+        _delay = delay;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -17,7 +19,7 @@ public class MasterWorker : BackgroundService
         {
             try
             {
-                await Task.Delay(1000, stoppingToken);
+                await Task.Delay(_delay, stoppingToken);
                 await _masterService.CheckAsync();
             }
             catch (Exception e)

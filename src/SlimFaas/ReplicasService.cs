@@ -1,6 +1,13 @@
 ﻿namespace SlimFaas;
 
-public class ReplicasService
+public interface IReplicasService
+{
+    DeploymentsInformations Deployments { get; }
+    Task SyncDeploymentsAsync(string kubeNamespace);
+    Task CheckScaleAsync(string kubeNamespace);
+}
+
+public class ReplicasService : IReplicasService
 {
     private readonly HistoryHttpMemoryService _historyHttpService;
     private readonly IKubernetesService _kubernetesService;

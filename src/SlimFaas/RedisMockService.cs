@@ -70,29 +70,24 @@ public class RedisMockService : IRedisService
 
     public Task<IList<string>> ListRightPopAsync(string key, long count = 1)
     {
-        if (queue.ContainsKey(key))
-        {
-            var list = queue[key];
+        if (!queue.ContainsKey(key)) return Task.FromResult<IList<string>>(new List<string>());
+        var list = queue[key];
             
-            var listToReturn = list.TakeLast((int)count).ToList();
-            if (listToReturn.Count > 0)
-            {
-                list.RemoveRange(listToReturn.Count - 1, listToReturn.Count);
-                return Task.FromResult<IList<string>>(listToReturn);
-            }
+        var listToReturn = list.TakeLast((int)count).ToList();
+        if (listToReturn.Count > 0)
+        {
+            list.RemoveRange(listToReturn.Count - 1, listToReturn.Count);
+            return Task.FromResult<IList<string>>(listToReturn);
         }
         return Task.FromResult<IList<string>>(new List<string>());
     }
 
     public Task<long> ListLengthAsync(string key)
     {
-        if (queue.ContainsKey(key))
-        {
-            var list = queue[key];
+        if (!queue.ContainsKey(key)) return Task.FromResult<long>(0);
+        var list = queue[key];
             
-            return Task.FromResult<long>(list.Count);
-        }
+        return Task.FromResult<long>(list.Count);
 
-        return Task.FromResult<long>(0);
     }
 }

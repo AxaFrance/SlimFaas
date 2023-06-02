@@ -1,6 +1,13 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
-using SlimFaas;
+﻿using System.Text.Json;
+
+namespace SlimFaas;
+
+public enum FunctionType
+{
+    Sync,
+    Async,
+    NotAFunction
+}
 
 public class SlimProxyMiddleware 
 {
@@ -13,100 +20,128 @@ public class SlimProxyMiddleware
         _queue = queue;
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
-    public async Task InvokeAsync(HttpContext context, ILogger<SlimProxyMiddleware> faasLogger, HistoryHttpMemoryService historyHttpService, SendClient sendClient)
+    public async Task InvokeAsync(HttpContext context, ILogger<SlimProxyMiddleware> faasLogger, HistoryHttpMemoryService historyHttpService, ISendClient sendClient)
     {
-        IList<CustomHeader> customHeaders = new List<CustomHeader>();
         var contextRequest = context.Request;
-        foreach (var headers in contextRequest.Headers)
+        var (functionPath, functionName, functionType) = GetFunctionInfo(faasLogger, contextRequest);
+        if(functionType == FunctionType.NotAFunction)
         {
-            var customHeader = new CustomHeader(headers.Key, headers.Value.ToArray());
-            customHeaders.Add(customHeader);
+            await _next(context);
+            return;
         }
-    
+        var customRequest = await InitCustomRequest(context, contextRequest, functionName, functionPath);
+        if (functionType == FunctionType.Async)
+        {
+            var contextResponse = context.Response;
+            await BuildAsyncResponse(functionName, customRequest, contextResponse);
+            return;
+        }
+        await BuildSyncResponse(context, historyHttpService, sendClient, functionName, customRequest);
+    }
+
+    private async Task BuildAsyncResponse(string functionName, CustomRequest customRequest, HttpResponse contextResponse)
+    {
+        await _queue.EnqueueAsync(functionName,
+            JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest));
+        contextResponse.StatusCode = 202;
+    }
+
+    private async Task BuildSyncResponse(HttpContext context, HistoryHttpMemoryService historyHttpService,
+        ISendClient sendClient, string functionName, CustomRequest customRequest)
+    {
+        historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+        var responseMessagePromise = sendClient.SendHttpRequestAsync(customRequest);
+        var counterLimit = 100;
+        // TODO manage request Aborded
+        while (!responseMessagePromise.IsCompleted)
+        {
+            await Task.Delay(10);
+            counterLimit--;
+            if (counterLimit <= 0)
+            {
+                historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+            }
+
+            counterLimit = 100;
+        }
+        historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+        using var responseMessage = responseMessagePromise.Result;
+        context.Response.StatusCode = (int)responseMessage.StatusCode;
+        CopyFromTargetResponseHeaders(context, responseMessage);
+        await responseMessage.Content.CopyToAsync(context.Response.Body);
+    }
+
+    private static async Task<CustomRequest> InitCustomRequest(HttpContext context, HttpRequest contextRequest,
+        string functionName, string functionPath)
+    {
+        IList<CustomHeader> customHeaders = contextRequest.Headers.Select(headers => new CustomHeader(headers.Key, headers.Value.ToArray())).ToList();
+
+        var requestMethod = contextRequest.Method;
+        byte[]? requestBodyBytes = null;
+        if (!HttpMethods.IsGet(requestMethod) &&
+            !HttpMethods.IsHead(requestMethod) &&
+            !HttpMethods.IsDelete(requestMethod) &&
+            !HttpMethods.IsTrace(requestMethod))
+        {
+            using var streamContent = new StreamContent(context.Request.Body);
+            using var memoryStream = new MemoryStream();
+            await streamContent.CopyToAsync(memoryStream);
+            requestBodyBytes = memoryStream.ToArray();
+        }
+
+        var requestQueryString = contextRequest.QueryString;
+        var customRequest = new CustomRequest
+        {
+            Headers = customHeaders,
+            FunctionName = functionName,
+            Path = functionPath,
+            Body = requestBodyBytes,
+            Query = requestQueryString.ToUriComponent(),
+            Method = requestMethod,
+        };
+        return customRequest;
+    }
+
+    private record FunctionInfo(string FunctionPath, string FunctionName, FunctionType FunctionType = FunctionType.NotAFunction);
+
+    private const string AsyncFunction = "/async-function";
+    private const string Function = "/function";
+
+    private static FunctionInfo GetFunctionInfo(ILogger<SlimProxyMiddleware> faasLogger, HttpRequest contextRequest)
+    {
         var requestMethod = contextRequest.Method;
         var requestPath = contextRequest.Path;
         var requestQueryString = contextRequest.QueryString;
         var functionBeginPath = FunctionBeginPath(requestPath);
-
-        if(!string.IsNullOrEmpty(functionBeginPath))
+        if (string.IsNullOrEmpty(functionBeginPath))
         {
-            var pathString = requestPath.ToUriComponent();
-            var paths = pathString.Split("/");
-            if(paths.Length > 2) {
-                var functionName = paths[2];
-                var functionPath = pathString.Replace(functionBeginPath + functionName, "");
-                faasLogger.LogInformation("{Method}: {Function}{UriComponent}", requestMethod, pathString, requestQueryString.ToUriComponent());
-
-                byte[]? requestBodyBytes = null;
-                if (!HttpMethods.IsGet(requestMethod) &&
-                    !HttpMethods.IsHead(requestMethod) &&
-                    !HttpMethods.IsDelete(requestMethod) &&
-                    !HttpMethods.IsTrace(requestMethod))
-                {
-                    using var streamContent = new StreamContent(context.Request.Body);
-                    using var memoryStream = new MemoryStream();
-                    await streamContent.CopyToAsync(memoryStream);
-                    requestBodyBytes = memoryStream.ToArray();
-                }
-                
-                var customRequest = new CustomRequest()
-                {
-                    Headers = customHeaders,
-                    FunctionName = functionName,
-                    Path = functionPath,
-                    Body = requestBodyBytes,
-                    Query= requestQueryString.ToUriComponent(),
-                    Method = requestMethod,
-                };
-
-                var contextResponse = context.Response;
-                if (functionBeginPath == AsyncFunction)
-                {
-                    await _queue.EnqueueAsync(functionName, JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest));
-                    contextResponse.StatusCode = 202;
-                    return;
-                }
-                historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
-                var responseMessagePromise = sendClient.SendHttpRequestAsync(customRequest);
-                var counterLimit = 100;
-                while (responseMessagePromise.IsCompleted)
-                {
-                    await Task.Delay(10, context.RequestAborted);
-                    counterLimit--;
-                    if (counterLimit <= 0)
-                    {
-                        historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);        
-                    }
-
-                    counterLimit = 100;
-                }
-                historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
-                using var responseMessage = responseMessagePromise.Result;
-                context.Response.StatusCode = (int)responseMessage.StatusCode;
-                CopyFromTargetResponseHeaders(context, responseMessage);
-                await responseMessage.Content.CopyToAsync(context.Response.Body);
-                return;
-            }
+            return new FunctionInfo(String.Empty, String.Empty);
         }
-        
-        await _next(context);
+        var pathString = requestPath.ToUriComponent();
+        var paths = pathString.Split("/");
+        if (paths.Length <= 2)
+        {
+            return new FunctionInfo(String.Empty, String.Empty);
+        }
+        var functionName = paths[2];
+        var functionPath = pathString.Replace($"{functionBeginPath}/{functionName}", "");
+        faasLogger.LogInformation("{Method}: {Function}{UriComponent}", requestMethod, pathString,
+            requestQueryString.ToUriComponent());
+        return new FunctionInfo(functionPath, functionName, functionBeginPath == AsyncFunction ? FunctionType.Async : FunctionType.Sync);
     }
-    const string AsyncFunction = "/async-function";
-    const string Function = "/function";
+
     private static string FunctionBeginPath(PathString path)
     {
         var functionBeginPath = String.Empty;
         if (path.StartsWithSegments(AsyncFunction))
         {
-            functionBeginPath = $"{AsyncFunction}/";
+            functionBeginPath = $"{AsyncFunction}";
         }
         else
         {
-            
             if (path.StartsWithSegments(Function))
             {
-                functionBeginPath = $"{Function}/";
+                functionBeginPath = $"{Function}";
             }
         }
 
@@ -127,101 +162,3 @@ public class SlimProxyMiddleware
         context.Response.Headers.Remove("transfer-encoding");
     }
 }
-
-public class ReverseProxyMiddleware
-  {
-    private static readonly HttpClient _httpClient = new HttpClient();
-    private readonly RequestDelegate _nextMiddleware;
-
-    public ReverseProxyMiddleware(RequestDelegate nextMiddleware)
-    {
-      _nextMiddleware = nextMiddleware;
-    }
-
-    public async Task Invoke(HttpContext context)
-    {
-      var targetUri = BuildTargetUri(context.Request);
-
-      if (targetUri != null)
-      {
-        var targetRequestMessage = CreateTargetMessage(context, targetUri);
-
-        using (var responseMessage = await _httpClient.SendAsync(targetRequestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted))
-        {
-          context.Response.StatusCode = (int)responseMessage.StatusCode;
-          CopyFromTargetResponseHeaders(context, responseMessage);
-          await responseMessage.Content.CopyToAsync(context.Response.Body);
-        }
-        return;
-      }
-      await _nextMiddleware(context);
-    }
-
-    private HttpRequestMessage CreateTargetMessage(HttpContext context, Uri targetUri)
-    {
-      var requestMessage = new HttpRequestMessage();
-      CopyFromOriginalRequestContentAndHeaders(context, requestMessage);
-
-      requestMessage.RequestUri = targetUri;
-      requestMessage.Headers.Host = targetUri.Host;
-      requestMessage.Method = GetMethod(context.Request.Method);
-
-      return requestMessage;
-    }
-
-    private void CopyFromOriginalRequestContentAndHeaders(HttpContext context, HttpRequestMessage requestMessage)
-    {
-      var requestMethod = context.Request.Method;
-
-      if (!HttpMethods.IsGet(requestMethod) &&
-        !HttpMethods.IsHead(requestMethod) &&
-        !HttpMethods.IsDelete(requestMethod) &&
-        !HttpMethods.IsTrace(requestMethod))
-      {
-        var streamContent = new StreamContent(context.Request.Body);
-        requestMessage.Content = streamContent;
-      }
-
-      foreach (var header in context.Request.Headers)
-      {
-        requestMessage.Content?.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
-      }
-    }
-
-    private void CopyFromTargetResponseHeaders(HttpContext context, HttpResponseMessage responseMessage)
-    {
-      foreach (var header in responseMessage.Headers)
-      {
-        context.Response.Headers[header.Key] = header.Value.ToArray();
-      }
-
-      foreach (var header in responseMessage.Content.Headers)
-      {
-        context.Response.Headers[header.Key] = header.Value.ToArray();
-      }
-      context.Response.Headers.Remove("transfer-encoding");
-    }
-    private static HttpMethod GetMethod(string method)
-    {
-      if (HttpMethods.IsDelete(method)) return HttpMethod.Delete;
-      if (HttpMethods.IsGet(method)) return HttpMethod.Get;
-      if (HttpMethods.IsHead(method)) return HttpMethod.Head;
-      if (HttpMethods.IsOptions(method)) return HttpMethod.Options;
-      if (HttpMethods.IsPost(method)) return HttpMethod.Post;
-      if (HttpMethods.IsPut(method)) return HttpMethod.Put;
-      if (HttpMethods.IsTrace(method)) return HttpMethod.Trace;
-      return new HttpMethod(method);
-    }
-
-    private Uri BuildTargetUri(HttpRequest request)
-    {
-      Uri targetUri = null;
-
-      if (request.Path.StartsWithSegments("/googleforms", out var remainingPath))
-      {
-        targetUri = new Uri("https://docs.google.com/forms" + remainingPath);
-      }
-
-      return targetUri;
-    }
-  }
