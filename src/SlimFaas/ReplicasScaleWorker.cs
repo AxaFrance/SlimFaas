@@ -2,26 +2,29 @@
 
 public class ScaleReplicasWorker: BackgroundService
 {
-    private readonly ReplicasService _replicasService;
-    private readonly MasterService _masterService;
+    private readonly IReplicasService _replicasService;
+    private readonly IMasterService _masterService;
     private readonly ILogger<ScaleReplicasWorker> _logger;
+    private readonly int _delay;
     private readonly string _namespace;
 
-    public ScaleReplicasWorker(ReplicasService replicasService, MasterService masterService , ILogger<ScaleReplicasWorker> logger)
+    public ScaleReplicasWorker(IReplicasService replicasService, IMasterService masterService , ILogger<ScaleReplicasWorker> logger, int delay = 1000)
     {
         _replicasService = replicasService;
         _masterService = masterService;
         _logger = logger;
+        _delay = delay;
         _namespace =
             Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
     }
+    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
          while (stoppingToken.IsCancellationRequested == false)
          {
              try
              {
-                 await Task.Delay(1000, stoppingToken);
+                 await Task.Delay(_delay, stoppingToken);
                  if(_masterService.IsMaster == false) continue;
                  await _replicasService.CheckScaleAsync(_namespace);
              }

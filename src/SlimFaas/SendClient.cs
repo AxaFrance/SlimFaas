@@ -1,7 +1,11 @@
-﻿using System.Text;
-using SlimFaas;
+﻿namespace SlimFaas;
 
-public class SendClient
+public interface ISendClient
+{
+    Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null);
+}
+
+public class SendClient : ISendClient
 {
     private readonly HttpClient _httpClient;
     private readonly string _baseFunctionUrl;
@@ -10,7 +14,7 @@ public class SendClient
     {
         _httpClient = httpClient;
         _baseFunctionUrl =
-            Environment.GetEnvironmentVariable("BASE_FUNCTION_URL") ?? "http://localhost:5123/"; //""http://{function_name}:8080";
+            Environment.GetEnvironmentVariable("BASE_FUNCTION_URL") ?? "http://{function_name}:8080/";
     }
     
     private void CopyFromOriginalRequestContentAndHeaders(CustomRequest context, HttpRequestMessage requestMessage)

@@ -15,7 +15,7 @@ serviceCollection.AddHostedService<ReplicasSynchronizationWorker>();
 serviceCollection.AddHostedService<HistorySynchronizationWorker>();
 serviceCollection.AddHttpClient();
 serviceCollection.AddSingleton<IQueue, RedisQueue>();
-serviceCollection.AddSingleton<ReplicasService, ReplicasService>();
+serviceCollection.AddSingleton<IReplicasService, ReplicasService>();
 
 var mockRedis = Environment.GetEnvironmentVariable("MOCK_REDIS");
 if (!string.IsNullOrEmpty(mockRedis))
@@ -26,7 +26,7 @@ else
 {
     serviceCollection.AddSingleton<IRedisService, RedisService>();
 }
-serviceCollection.AddSingleton<MasterService, MasterService>();
+serviceCollection.AddSingleton<IMasterService, MasterService>();
 serviceCollection.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
 serviceCollection.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
 
@@ -41,8 +41,8 @@ else
 }
 
 
-serviceCollection.AddScoped<SendClient, SendClient>();
-serviceCollection.AddHttpClient<SendClient, SendClient>()
+serviceCollection.AddScoped<ISendClient, SendClient>();
+serviceCollection.AddHttpClient<ISendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
 serviceCollection.AddOpenTelemetry()

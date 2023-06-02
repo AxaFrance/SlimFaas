@@ -1,6 +1,12 @@
 ﻿namespace SlimFaas;
 
-public class MasterService
+public interface IMasterService
+{
+    bool IsMaster { get; }
+    Task CheckAsync();
+}
+
+public class MasterService : IMasterService
 {
     private readonly IRedisService _redisService;
     private readonly string _id = Guid.NewGuid().ToString();

@@ -10,9 +10,9 @@ public class HistoryHttpMemoryService
         var result = 0L;
         lock (this)
         {
-            if (_local.ContainsKey(functionName))
+            if (_local.TryGetValue(functionName, out var value))
             {
-                result = _local[functionName];
+                result = value;
             }
         }
 

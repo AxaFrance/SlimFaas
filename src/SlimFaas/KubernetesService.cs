@@ -1,4 +1,5 @@
-﻿using k8s;
+﻿using System.Diagnostics.CodeAnalysis;
+using k8s;
 using k8s.Autorest;
 using k8s.Models;
 
@@ -35,6 +36,7 @@ public record DeploymentInformation
     public int NumberParallelRequest { get; set; }
 }
 
+[ExcludeFromCodeCoverage]
 public class KubernetesService : IKubernetesService
 {
     private readonly ILogger<KubernetesService> _logger;

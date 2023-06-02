@@ -2,14 +2,16 @@
 
 public class ReplicasSynchronizationWorker: BackgroundService
 {
-    private readonly ReplicasService _replicasService;
+    private readonly IReplicasService _replicasService;
     private readonly ILogger<ReplicasSynchronizationWorker> _logger;
+    private readonly int _delay;
     private readonly string _namespace;
 
-    public ReplicasSynchronizationWorker(ReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger)
+    public ReplicasSynchronizationWorker(IReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger, int delay = 10000)
     {
         _replicasService = replicasService;
         _logger = logger;
+        _delay = delay;
         _namespace =
             Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
     }
@@ -19,8 +21,8 @@ public class ReplicasSynchronizationWorker: BackgroundService
         {
             try
             {
+                await Task.Delay(_delay, stoppingToken);
                 await _replicasService.SyncDeploymentsAsync(_namespace);
-                await Task.Delay(10000, stoppingToken);
             }
             catch (Exception e)
             {
