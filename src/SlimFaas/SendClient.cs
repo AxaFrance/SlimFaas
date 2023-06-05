@@ -1,6 +1,11 @@
 ﻿namespace SlimFaas;
 
-public class SendClient
+public interface ISendClient
+{
+    Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null);
+}
+
+public class SendClient : ISendClient
 {
     private readonly HttpClient _httpClient;
     private readonly string _baseFunctionUrl;

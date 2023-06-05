@@ -41,8 +41,8 @@ else
 }
 
 
-serviceCollection.AddScoped<SendClient, SendClient>();
-serviceCollection.AddHttpClient<SendClient, SendClient>()
+serviceCollection.AddScoped<ISendClient, SendClient>();
+serviceCollection.AddHttpClient<ISendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
 serviceCollection.AddOpenTelemetry()

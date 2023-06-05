@@ -2,6 +2,13 @@
 
 namespace SlimFaas;
 
+public enum FunctionType
+{
+    Sync,
+    Async,
+    NotAFunction
+}
+
 public class SlimProxyMiddleware 
 {
     private readonly RequestDelegate _next;
@@ -13,17 +20,17 @@ public class SlimProxyMiddleware
         _queue = queue;
     }
 
-    public async Task InvokeAsync(HttpContext context, ILogger<SlimProxyMiddleware> faasLogger, HistoryHttpMemoryService historyHttpService, SendClient sendClient)
+    public async Task InvokeAsync(HttpContext context, ILogger<SlimProxyMiddleware> faasLogger, HistoryHttpMemoryService historyHttpService, ISendClient sendClient)
     {
         var contextRequest = context.Request;
-        var (functionPath, functionName, isAsync) = GetFunctionInfo(faasLogger, contextRequest);
-        if(!isAsync.HasValue)
+        var (functionPath, functionName, functionType) = GetFunctionInfo(faasLogger, contextRequest);
+        if(functionType == FunctionType.NotAFunction)
         {
             await _next(context);
             return;
         }
         var customRequest = await InitCustomRequest(context, contextRequest, functionName, functionPath);
-        if (isAsync.Value)
+        if (functionType == FunctionType.Async)
         {
             var contextResponse = context.Response;
             await BuildAsyncResponse(functionName, customRequest, contextResponse);
@@ -40,13 +47,13 @@ public class SlimProxyMiddleware
     }
 
     private async Task BuildSyncResponse(HttpContext context, HistoryHttpMemoryService historyHttpService,
-        SendClient sendClient, string functionName, CustomRequest customRequest)
+        ISendClient sendClient, string functionName, CustomRequest customRequest)
     {
         historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
         var responseMessagePromise = sendClient.SendHttpRequestAsync(customRequest);
         var counterLimit = 100;
         // TODO manage request Aborded
-        while (responseMessagePromise.IsCompleted)
+        while (!responseMessagePromise.IsCompleted)
         {
             await Task.Delay(10);
             counterLimit--;
@@ -95,7 +102,7 @@ public class SlimProxyMiddleware
         return customRequest;
     }
 
-    private record FunctionInfo(string FunctionPath, string FunctionName, bool? IsAsync = null);
+    private record FunctionInfo(string FunctionPath, string FunctionName, FunctionType FunctionType = FunctionType.NotAFunction);
 
     private const string AsyncFunction = "/async-function";
     private const string Function = "/function";
@@ -120,7 +127,7 @@ public class SlimProxyMiddleware
         var functionPath = pathString.Replace($"{functionBeginPath}/{functionName}", "");
         faasLogger.LogInformation("{Method}: {Function}{UriComponent}", requestMethod, pathString,
             requestQueryString.ToUriComponent());
-        return new FunctionInfo(functionPath, functionName, functionBeginPath == AsyncFunction);
+        return new FunctionInfo(functionPath, functionName, functionBeginPath == AsyncFunction ? FunctionType.Async : FunctionType.Sync);
     }
 
     private static string FunctionBeginPath(PathString path)
