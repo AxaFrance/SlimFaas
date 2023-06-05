@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-
-  tags:
+  
+  unit_tests:
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.tag.outputs.new_version }}
@@ -16,6 +16,14 @@ jobs:
       - uses: actions/checkout@master
       - uses: actions/setup-dotnet@v1
       - run: dotnet test /p:CollectCoverage=true
+
+  tags:
+    needs: unit_tests
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.tag.outputs.new_version }}
+    steps:
+      - uses: actions/checkout@master
       - name: Bump version and push tag
         id: tag_version
         if: github.ref == 'refs/heads/main'
