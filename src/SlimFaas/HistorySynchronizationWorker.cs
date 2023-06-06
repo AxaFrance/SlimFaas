@@ -2,12 +2,12 @@
 
 public class HistorySynchronizationWorker: BackgroundService
 {
-    private readonly ReplicasService _replicasService;
+    private readonly IReplicasService _replicasService;
     private readonly HistoryHttpMemoryService _historyHttpMemoryService;
     private readonly HistoryHttpRedisService _historyHttpRedisService;
     private readonly ILogger<ReplicasSynchronizationWorker> _logger;
 
-    public HistorySynchronizationWorker(ReplicasService replicasService, 
+    public HistorySynchronizationWorker(IReplicasService replicasService, 
         HistoryHttpMemoryService historyHttpMemoryService, 
         HistoryHttpRedisService historyHttpRedisService, 
         ILogger<ReplicasSynchronizationWorker> logger)

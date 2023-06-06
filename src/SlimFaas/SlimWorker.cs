@@ -12,11 +12,9 @@ public class SlimWorker : BackgroundService
     private readonly ILogger<SlimWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly IQueue _queue;
-    private readonly ReplicasService _replicasService;
-
-    private readonly IDictionary<string, IList<RequestToWait>> _processingTasks = new Dictionary<string, IList<RequestToWait>>();
-
-    public SlimWorker(IQueue queue, ReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider)
+    private readonly IReplicasService _replicasService;
+    
+    public SlimWorker(IQueue queue, IReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider)
     {
         _historyHttpService = historyHttpService;
         _logger = logger;
@@ -27,60 +25,63 @@ public class SlimWorker : BackgroundService
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        async Task SendHttpRequestToFunction(int? numberLimitProcessingTasks, int numberProcessingTasks,
-            string functionDeployment)
-        {
-            var numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
-            var jsons = await _queue.DequeueAsync(functionDeployment,
-                numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue : 1);
-            foreach (var requestJson in jsons)
-            {
-                var customRequest =
-                    JsonSerializer.Deserialize(requestJson, CustomRequestSerializerContext.Default.CustomRequest);
-                _logger.LogInformation("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
-                    customRequest.Method, customRequest.Path, customRequest.Query);
-                _logger.LogInformation("{RequestJson}", requestJson);
-                _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
-                using var scope = _serviceProvider.CreateScope();
-                var taskResponse = scope.ServiceProvider.GetRequiredService<ISendClient>()
-                    .SendHttpRequestAsync(customRequest);
-                _processingTasks[functionDeployment].Add(new RequestToWait(taskResponse, customRequest));
-            }
-        }
-
-        var setTickLastCallCounterDictionnary = new Dictionary<string, int>();
+        var processingTasks = new Dictionary<string, IList<RequestToWait>>();
+        var setTickLastCallCounterDictionary = new Dictionary<string, int>();
         while (stoppingToken.IsCancellationRequested == false)
         {
-            try
+            await DoOneExecuteCycle(stoppingToken, setTickLastCallCounterDictionary, processingTasks);
+        }
+    }
+
+    private async Task DoOneExecuteCycle(CancellationToken stoppingToken, Dictionary<string, int> setTickLastCallCounterDictionary,
+        Dictionary<string, IList<RequestToWait>> processingTasks)
+    {
+        try
+        {
+            await Task.Delay(10, stoppingToken);
+            var deployments = _replicasService.Deployments;
+            var functions = deployments.Functions;
+            var slimFaas = deployments.SlimFaas;
+            foreach (var function in functions)
             {
-                await Task.Delay(10, stoppingToken);
-                var deployments = _replicasService.Deployments;
-                var functions = deployments.Functions;
-                var slimFaas = deployments.SlimFaas;
-                foreach (var function in functions)
-                {
-                    var functionDeployment = function.Deployment;
-                    setTickLastCallCounterDictionnary.TryAdd(functionDeployment, 0);
-                    
-                    var numberProcessingTasks = ManageProcessingTasks(functionDeployment);
-                    var numberLimitProcessingTasks = ComputeNumberLimitProcessingTasks(slimFaas, function);
-                    
-                    setTickLastCallCounterDictionnary[functionDeployment]++;
-                    var functionReplicas = function.Replicas;
-                    
-                    await UpdateTickLastCallIfRequestStillInProgress(functionReplicas, setTickLastCallCounterDictionnary, functionDeployment, numberProcessingTasks);
-                    
-                    if (functionReplicas == 0) continue;
-                    
-                    if (numberProcessingTasks >= numberLimitProcessingTasks) continue;
-                    
-                    await SendHttpRequestToFunction(numberLimitProcessingTasks, numberProcessingTasks, functionDeployment);
-                }
+                var functionDeployment = function.Deployment;
+                setTickLastCallCounterDictionary.TryAdd(functionDeployment, 0);
+                var numberProcessingTasks = ManageProcessingTasks(processingTasks, functionDeployment);
+                var numberLimitProcessingTasks = ComputeNumberLimitProcessingTasks(slimFaas, function);
+                setTickLastCallCounterDictionary[functionDeployment]++;
+                var functionReplicas = function.Replicas;
+                await UpdateTickLastCallIfRequestStillInProgress(functionReplicas, setTickLastCallCounterDictionary,
+                    functionDeployment, numberProcessingTasks);
+                if (functionReplicas == 0) continue;
+                if (numberProcessingTasks >= numberLimitProcessingTasks) continue;
+                await SendHttpRequestToFunction(processingTasks, numberLimitProcessingTasks, numberProcessingTasks,
+                    functionDeployment);
             }
-            catch (Exception e)
-            {
-                 _logger.LogError(e, "Global Error in SlimFaas Worker");
-            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Global Error in SlimFaas Worker");
+        }
+    }
+
+    private async Task SendHttpRequestToFunction(Dictionary<string, IList<RequestToWait>> processingTasks, int? numberLimitProcessingTasks, int numberProcessingTasks,
+        string functionDeployment)
+    {
+        var numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
+        var jsons = await _queue.DequeueAsync(functionDeployment,
+            numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue : 1);
+        foreach (var requestJson in jsons)
+        {
+            var customRequest =
+                JsonSerializer.Deserialize(requestJson, CustomRequestSerializerContext.Default.CustomRequest);
+            _logger.LogInformation("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
+                customRequest.Method, customRequest.Path, customRequest.Query);
+            _logger.LogInformation("{RequestJson}", requestJson);
+            _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
+            using var scope = _serviceProvider.CreateScope();
+            var taskResponse = scope.ServiceProvider.GetRequiredService<ISendClient>()
+                .SendHttpRequestAsync(customRequest);
+            processingTasks[functionDeployment].Add(new RequestToWait(taskResponse, customRequest));
         }
     }
 
@@ -108,7 +109,7 @@ public class SlimWorker : BackgroundService
 
         if (function.NumberParallelRequest < numberReplicas || numberReplicas == 0)
         {
-            numberLimitProcessingTasks = numberReplicas;
+            numberLimitProcessingTasks = 1;
         }
         else
         {
@@ -118,15 +119,15 @@ public class SlimWorker : BackgroundService
         return numberLimitProcessingTasks;
     }
 
-    private int ManageProcessingTasks(string functionDeployment)
+    private int ManageProcessingTasks(Dictionary<string, IList<RequestToWait>> processingTasks, string functionDeployment)
     {
-        if (_processingTasks.ContainsKey(functionDeployment) == false)
+        if (processingTasks.ContainsKey(functionDeployment) == false)
         {
-            _processingTasks.Add(functionDeployment, new List<RequestToWait>());
+            processingTasks.Add(functionDeployment, new List<RequestToWait>());
         }
 
         var httpResponseMessagesToDelete = new List<RequestToWait>();
-        foreach (var processing in _processingTasks[functionDeployment])
+        foreach (var processing in processingTasks[functionDeployment])
         {
             try
             {
@@ -150,9 +151,9 @@ public class SlimWorker : BackgroundService
 
         foreach (var httpResponseMessage in httpResponseMessagesToDelete)
         {
-            _processingTasks[functionDeployment].Remove(httpResponseMessage);
+            processingTasks[functionDeployment].Remove(httpResponseMessage);
         }
-        var numberProcessingTasks = _processingTasks[functionDeployment].Count;
+        var numberProcessingTasks = processingTasks[functionDeployment].Count;
         return numberProcessingTasks;
     }
 }

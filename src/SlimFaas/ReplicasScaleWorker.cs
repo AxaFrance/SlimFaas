@@ -2,12 +2,12 @@
 
 public class ScaleReplicasWorker: BackgroundService
 {
-    private readonly ReplicasService _replicasService;
+    private readonly IReplicasService _replicasService;
     private readonly MasterService _masterService;
     private readonly ILogger<ScaleReplicasWorker> _logger;
     private readonly string _namespace;
 
-    public ScaleReplicasWorker(ReplicasService replicasService, MasterService masterService , ILogger<ScaleReplicasWorker> logger)
+    public ScaleReplicasWorker(IReplicasService replicasService, MasterService masterService , ILogger<ScaleReplicasWorker> logger)
     {
         _replicasService = replicasService;
         _masterService = masterService;

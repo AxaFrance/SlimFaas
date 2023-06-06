@@ -2,11 +2,11 @@
 
 public class ReplicasSynchronizationWorker: BackgroundService
 {
-    private readonly ReplicasService _replicasService;
+    private readonly IReplicasService _replicasService;
     private readonly ILogger<ReplicasSynchronizationWorker> _logger;
     private readonly string _namespace;
 
-    public ReplicasSynchronizationWorker(ReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger)
+    public ReplicasSynchronizationWorker(IReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger)
     {
         _replicasService = replicasService;
         _logger = logger;

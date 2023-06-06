@@ -15,7 +15,7 @@ serviceCollection.AddHostedService<ReplicasSynchronizationWorker>();
 serviceCollection.AddHostedService<HistorySynchronizationWorker>();
 serviceCollection.AddHttpClient();
 serviceCollection.AddSingleton<IQueue, RedisQueue>();
-serviceCollection.AddSingleton<ReplicasService, ReplicasService>();
+serviceCollection.AddSingleton<IReplicasService, ReplicasService>();
 
 var mockRedis = Environment.GetEnvironmentVariable("MOCK_REDIS");
 if (!string.IsNullOrEmpty(mockRedis))

@@ -8,11 +8,11 @@ using Microsoft.Extensions.Hosting;
 
 namespace SlimFaas.Tests;
 
-class IMemoryQueue: IQueue
+class MemoryQueue: IQueue
 {
-    public Task EnqueueAsync(string key, string message)
+    public async Task EnqueueAsync(string key, string message)
     {
-        throw new NotImplementedException();
+        await Task.Delay(1);
     }
 
     public Task<IList<string>> DequeueAsync(string key, long count = 1)
@@ -39,7 +39,7 @@ class SendClientMock : ISendClient
 public class ProxyMiddlewareTests
 {
     [Fact]
-    public async Task MiddlewareTest_ReturnsNotFoundForRequest()
+    public async Task SlimMiddlewareShouldCallFunctionInSyncModeAndReturnOk()
     {
         using var host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
@@ -50,7 +50,7 @@ public class ProxyMiddlewareTests
                     {
                         services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
                         services.AddSingleton<ISendClient, SendClientMock>();
-                        services.AddSingleton<IQueue, IMemoryQueue>();
+                        services.AddSingleton<IQueue, MemoryQueue>();
                     })
                     .Configure(app =>
                     {
@@ -60,6 +60,35 @@ public class ProxyMiddlewareTests
             .StartAsync();
 
         var response = await host.GetTestClient().GetAsync("/function/fibonacci/download");
+        
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        
+    }
+    
+    [Fact]
+    public async Task SlimMiddlewareShouldCallFunctionInAsyncSyncModeAndReturnOk()
+    {
+        using var host = await new HostBuilder()
+            .ConfigureWebHost(webBuilder =>
+            {
+                webBuilder
+                    .UseTestServer()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
+                        services.AddSingleton<ISendClient, SendClientMock>();
+                        services.AddSingleton<IQueue, MemoryQueue>();
+                    })
+                    .Configure(app =>
+                    {
+                        app.UseMiddleware<SlimProxyMiddleware>();
+                    });
+            })
+            .StartAsync();
+
+        var response = await host.GetTestClient().GetAsync("/async-function/fibonacci/download");
+        
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         
     }
 }
