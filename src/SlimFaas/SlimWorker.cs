@@ -29,11 +29,11 @@ public class SlimWorker : BackgroundService
         var setTickLastCallCounterDictionary = new Dictionary<string, int>();
         while (stoppingToken.IsCancellationRequested == false)
         {
-            await DoOneExecuteCycle(stoppingToken, setTickLastCallCounterDictionary, processingTasks);
+            await DoOneCycle(stoppingToken, setTickLastCallCounterDictionary, processingTasks);
         }
     }
 
-    private async Task DoOneExecuteCycle(CancellationToken stoppingToken, Dictionary<string, int> setTickLastCallCounterDictionary,
+    private async Task DoOneCycle(CancellationToken stoppingToken, Dictionary<string, int> setTickLastCallCounterDictionary,
         Dictionary<string, IList<RequestToWait>> processingTasks)
     {
         try

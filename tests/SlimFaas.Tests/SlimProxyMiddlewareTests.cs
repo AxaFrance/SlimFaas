@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Moq;
 
 namespace SlimFaas.Tests;
 
@@ -38,9 +39,16 @@ class SendClientMock : ISendClient
 
 public class ProxyMiddlewareTests
 {
+    
     [Fact]
     public async Task SlimMiddlewareShouldCallFunctionInSyncModeAndReturnOk()
     {
+        var responseMessage = new HttpResponseMessage();
+        responseMessage.StatusCode = HttpStatusCode.OK;
+        var sendClientMock = new Mock<ISendClient>();
+        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>()))
+            .ReturnsAsync(responseMessage);
+        
         using var host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
             {
@@ -58,11 +66,10 @@ public class ProxyMiddlewareTests
                     });
             })
             .StartAsync();
-
+        
         var response = await host.GetTestClient().GetAsync("/function/fibonacci/download");
         
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        
     }
     
     [Fact]
