@@ -1,6 +1,6 @@
-# SlimFaas : The slimest and simplest Function As A Service [![Continuous Integration]
+# SlimFaas : The slimest and simplest Function As A Service
 
-[![Continuous Integration](https://github.com/AxaFrance/slimfaas/actions/workflows/slimfaas-ci.yml/badge.svg)](https://github.com/AxaFrance/slimfaas/actions/workflows/slimfaas-ci.yml)
+[![Continuous Integration](https://github.com/AxaFrance/SlimFaas/actions/workflows/slimfaas-ci.yaml/badge.svg)](https://github.com/AxaFrance/SlimFaas/actions/workflows/slimfaas-ci.yaml)
 
 Why use SlimFaas ?
 - Scale to 0 after a period of inactivity
