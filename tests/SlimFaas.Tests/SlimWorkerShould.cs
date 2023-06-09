@@ -7,10 +7,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace SlimFaas.Tests;
 
-public class SlimWorkerTests
+public class SlimWorkerShould
 {
     [Fact]
-    public async Task WorkerShouldCallOneFunctionAsync()
+    public async Task OnlyCallOneFunctionAsync()
     {
         var responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
