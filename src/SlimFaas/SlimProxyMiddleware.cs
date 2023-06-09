@@ -33,6 +33,7 @@ public class SlimProxyMiddleware
         var contextResponse = context.Response;
         if(functionType == FunctionType.Wake)
         {
+            historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
             contextResponse.StatusCode = 200;
             return;
         }

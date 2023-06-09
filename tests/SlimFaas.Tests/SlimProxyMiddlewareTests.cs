@@ -96,7 +96,6 @@ public class ProxyMiddlewareTests
         var response = await host.GetTestClient().GetAsync("/async-function/fibonacci/download");
         
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
-        
     }
     
     [Fact]
@@ -119,9 +118,13 @@ public class ProxyMiddlewareTests
                     });
             })
             .StartAsync();
-
-        var response = await host.GetTestClient().GetAsync("/wake-function/fibonacci");
         
+        var response = await host.GetTestClient().GetAsync("/wake-function/fibonacci");
+        var historyHttpMemoryService = host.Services.GetService<HistoryHttpMemoryService>();
+        var ticksLastCall = historyHttpMemoryService.GetTicksLastCall("fibonacci");
+        
+        Assert.True(ticksLastCall > 0);
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        
     }
 }
