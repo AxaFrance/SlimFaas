@@ -36,6 +36,7 @@ public record DeploymentInformation
     public int NumberParallelRequest { get; set; }
 }
 
+[ExcludeFromCodeCoverage]
 public class KubernetesService : IKubernetesService
 {
     private readonly ILogger<KubernetesService> _logger;

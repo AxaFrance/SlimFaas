@@ -5,17 +5,20 @@ public class HistorySynchronizationWorker: BackgroundService
     private readonly IReplicasService _replicasService;
     private readonly HistoryHttpMemoryService _historyHttpMemoryService;
     private readonly HistoryHttpRedisService _historyHttpRedisService;
-    private readonly ILogger<ReplicasSynchronizationWorker> _logger;
+    private readonly ILogger<HistorySynchronizationWorker> _logger;
+    private readonly int _delay;
 
     public HistorySynchronizationWorker(IReplicasService replicasService, 
         HistoryHttpMemoryService historyHttpMemoryService, 
         HistoryHttpRedisService historyHttpRedisService, 
-        ILogger<ReplicasSynchronizationWorker> logger)
+        ILogger<HistorySynchronizationWorker> logger, 
+        int delay = 500)
     {
         _replicasService = replicasService;
         _historyHttpMemoryService = historyHttpMemoryService;
         _historyHttpRedisService = historyHttpRedisService;
         _logger = logger;
+        _delay = delay;
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -23,7 +26,7 @@ public class HistorySynchronizationWorker: BackgroundService
         {
             try
             {
-                await Task.Delay(500, stoppingToken);
+                await Task.Delay(_delay, stoppingToken);
 
                 foreach (var function in _replicasService.Deployments.Functions)
                 {
