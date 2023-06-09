@@ -62,7 +62,7 @@ public class SlimWorkerShould
         var logger = new Mock<ILogger<SlimWorker>>();
         
         var redisQueue = new RedisQueue(new RedisMockService());
-        var customRequest = new CustomRequest(new List<CustomHeader>(){}, new byte[1], "fibonacci", "/download", "GET", "");
+        var customRequest = new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new []{"value1"}}}, new byte[1], "fibonacci", "/download", "GET", "");
         var jsonCustomRequest =
             JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest);
         await redisQueue.EnqueueAsync("fibonacci", jsonCustomRequest);
