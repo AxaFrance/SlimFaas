@@ -14,7 +14,7 @@ public class SendClient : ISendClient
     {
         _httpClient = httpClient;
         _baseFunctionUrl =
-            Environment.GetEnvironmentVariable("BASE_FUNCTION_URL") ?? "http://localhost:5123/"; //""http://{function_name}:8080";
+            Environment.GetEnvironmentVariable("BASE_FUNCTION_URL") ?? "http://{function_name}:8080/";
     }
     
     private void CopyFromOriginalRequestContentAndHeaders(CustomRequest context, HttpRequestMessage requestMessage)

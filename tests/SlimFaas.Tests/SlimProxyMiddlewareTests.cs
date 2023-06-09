@@ -48,7 +48,7 @@ public class ProxyMiddlewareTests
         var sendClientMock = new Mock<ISendClient>();
         sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>()))
             .ReturnsAsync(responseMessage);
-        
+
         using var host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
             {
