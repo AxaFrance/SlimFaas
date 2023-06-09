@@ -17,6 +17,7 @@ public class ScaleReplicasWorker: BackgroundService
         _namespace =
             Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
     }
+    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
          while (stoppingToken.IsCancellationRequested == false)

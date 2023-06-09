@@ -13,7 +13,8 @@ public class DeploymentsTestData:IEnumerable<object[]>
         {
             Functions = new List<DeploymentInformation>()
             {
-                new() { Deployment = "fibonacci", Namespace = "default", Replicas = 1}
+                new() { Deployment = "fibonacci1", Namespace = "default", Replicas = 1},
+                new() { Deployment = "fibonacci2", Namespace = "default", Replicas = 0}
             }
         } };
     }
