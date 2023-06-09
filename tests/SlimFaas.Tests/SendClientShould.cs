@@ -13,6 +13,9 @@ public class SendClientShould
     [InlineData("DELETE")]
     [InlineData("PATCH")]
     [InlineData("HEAD")]
+    [InlineData("PUT")]
+    [InlineData("OPTIONS")]
+    [InlineData("TRACE")]
     public async Task CallFunction(string httpMethid)
     {
         var mockHttp = new MockHttpMessageHandler();
