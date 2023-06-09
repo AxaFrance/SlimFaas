@@ -124,7 +124,7 @@ public class ProxyMiddlewareTests
         var ticksLastCall = historyHttpMemoryService.GetTicksLastCall("fibonacci");
         
         Assert.True(ticksLastCall > 0);
-        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         
     }
 }
