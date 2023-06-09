@@ -26,7 +26,7 @@ else
 {
     serviceCollection.AddSingleton<IRedisService, RedisService>();
 }
-serviceCollection.AddSingleton<MasterService, MasterService>();
+serviceCollection.AddSingleton<IMasterService, MasterService>();
 serviceCollection.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
 serviceCollection.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
 

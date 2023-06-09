@@ -3,20 +3,21 @@ using Moq;
 
 namespace SlimFaas.Tests;
 
-public class ReplicasScaleWorkerTests
+public class ReplicasSynchronizationWorkerTests
 {
-     [Fact]
+    [Fact]  
     public async Task WorkerShouldCallOneFunctionAsync()
     {
-        var logger = new Mock<ILogger<ScaleReplicasWorker>>();
+        var logger = new Mock<ILogger<ReplicasSynchronizationWorker>>();
         var kubernetesService = new Mock<IKubernetesService>();
+        kubernetesService.Setup(k=>k.ListFunctionsAsync(It.IsAny<string>())).ReturnsAsync(new DeploymentsInformations());
         var masterService = new Mock<IMasterService>();
         var historyHttpService = new HistoryHttpMemoryService();
         var replicasService = new ReplicasService(kubernetesService.Object, historyHttpService);
         
         masterService.Setup(ms => ms.IsMaster).Returns(true);
         
-        var service = new ScaleReplicasWorker(replicasService, masterService.Object, logger.Object);
+        var service = new ReplicasSynchronizationWorker(replicasService, logger.Object);
 
         var task = service.StartAsync(CancellationToken.None);
 

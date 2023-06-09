@@ -2,10 +2,10 @@
 
 public class MasterWorker : BackgroundService
 {
-    private readonly MasterService _masterService;
+    private readonly IMasterService _masterService;
     private readonly ILogger<MasterWorker> _logger;
 
-    public MasterWorker(MasterService masterService, ILogger<MasterWorker> logger)
+    public MasterWorker(IMasterService masterService, ILogger<MasterWorker> logger)
     {
         _masterService = masterService;
         _logger = logger;
