@@ -96,6 +96,35 @@ public class ProxyMiddlewareTests
         var response = await host.GetTestClient().GetAsync("/async-function/fibonacci/download");
         
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+    }
+    
+    [Fact]
+    public async Task JustWakeFunctionAndReturnOk()
+    {
+        using var host = await new HostBuilder()
+            .ConfigureWebHost(webBuilder =>
+            {
+                webBuilder
+                    .UseTestServer()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
+                        services.AddSingleton<ISendClient, SendClientMock>();
+                        services.AddSingleton<IQueue, MemoryQueue>();
+                    })
+                    .Configure(app =>
+                    {
+                        app.UseMiddleware<SlimProxyMiddleware>();
+                    });
+            })
+            .StartAsync();
+        
+        var response = await host.GetTestClient().GetAsync("/wake-function/fibonacci");
+        var historyHttpMemoryService = host.Services.GetService<HistoryHttpMemoryService>();
+        var ticksLastCall = historyHttpMemoryService.GetTicksLastCall("fibonacci");
+        
+        Assert.True(ticksLastCall > 0);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         
     }
 }
