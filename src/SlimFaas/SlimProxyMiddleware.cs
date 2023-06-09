@@ -6,6 +6,7 @@ public enum FunctionType
 {
     Sync,
     Async,
+    Wake,
     NotAFunction
 }
 
@@ -29,10 +30,15 @@ public class SlimProxyMiddleware
             await _next(context);
             return;
         }
+        var contextResponse = context.Response;
+        if(functionType == FunctionType.Wake)
+        {
+            contextResponse.StatusCode = 200;
+            return;
+        }
         var customRequest = await InitCustomRequest(context, contextRequest, functionName, functionPath);
         if (functionType == FunctionType.Async)
         {
-            var contextResponse = context.Response;
             await BuildAsyncResponse(functionName, customRequest, contextResponse);
             return;
         }
@@ -105,6 +111,7 @@ public class SlimProxyMiddleware
     private record FunctionInfo(string FunctionPath, string FunctionName, FunctionType FunctionType = FunctionType.NotAFunction);
 
     private const string AsyncFunction = "/async-function";
+    private const string WakeFunction = "/wake-function";
     private const string Function = "/function";
 
     private static FunctionInfo GetFunctionInfo(ILogger<SlimProxyMiddleware> faasLogger, HttpRequest contextRequest)
@@ -127,22 +134,26 @@ public class SlimProxyMiddleware
         var functionPath = pathString.Replace($"{functionBeginPath}/{functionName}", "");
         faasLogger.LogInformation("{Method}: {Function}{UriComponent}", requestMethod, pathString,
             requestQueryString.ToUriComponent());
-        return new FunctionInfo(functionPath, functionName, functionBeginPath == AsyncFunction ? FunctionType.Async : FunctionType.Sync);
+
+        var functionType = functionBeginPath switch
+        {
+            AsyncFunction => FunctionType.Async,
+            Function => FunctionType.Sync,
+            WakeFunction => FunctionType.Wake,
+            _ => FunctionType.NotAFunction
+        };
+        return new FunctionInfo(functionPath, functionName, functionType);
     }
 
     private static string FunctionBeginPath(PathString path)
     {
         var functionBeginPath = String.Empty;
-        if (path.StartsWithSegments(AsyncFunction))
-        {
+        if (path.StartsWithSegments(AsyncFunction)) {
             functionBeginPath = $"{AsyncFunction}";
-        }
-        else
-        {
-            if (path.StartsWithSegments(Function))
-            {
-                functionBeginPath = $"{Function}";
-            }
+        } else if (path.StartsWithSegments(Function)) {
+            functionBeginPath = $"{Function}";
+        } else if (path.StartsWithSegments(WakeFunction)) {
+            functionBeginPath = $"{WakeFunction}";
         }
 
         return functionBeginPath;

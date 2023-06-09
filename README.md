@@ -33,9 +33,21 @@ kubectl apply -f deployment-functions.yml
 
 Now, you can access your pod via SlimFaas proxy:
 
+Synchronous way:
 - http://localhost:30020/function/fibonacci1/hello/guillaume
 - http://localhost:30020/function/fibonacci2/hello/elodie
 - http://localhost:30020/function/fibonacci3/hello/julie
+
+Asynchronous way:
+- http://localhost:30020/async-function/fibonacci1/hello/guillaume
+- http://localhost:30020/async-function/fibonacci2/hello/elodie
+- http://localhost:30020/async-function/fibonacci3/hello/julie
+
+Just wake up function:
+- http://localhost:30020/wake-function/fibonacci1
+- http://localhost:30020/wake-function/fibonacci2
+- http://localhost:30020/wake-function/fibonacci3
+
 
 Enjoy slimfaas !!!!
 
@@ -73,6 +85,12 @@ SlimFaas act as an HTTP proxy with 2 modes:
 
 ![async_http_call.PNG](documentation%2Fasync_http_call.PNG)
 
+### Wake HTTP call
+
+- Wake http://slimfaas/wake-function/myfunction => HTTP 200
+  - Wake up a function
+
+
 ### Build with .NET
 
 Why .NET ?
@@ -91,15 +109,15 @@ sample-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kubernetes-bootcamp1
+  name: fibonacci1
 spec:
   selector:
     matchLabels:
-      app: kubernetes-bootcamp1
+      app: fibonacci1
   template:
     metadata:
       labels:
-        app: kubernetes-bootcamp1
+        app: fibonacci1
       annotations:
         # Just add SlimFaas annotation to your pods and that it !
         SlimFaas/Function: "true" 
@@ -111,8 +129,8 @@ spec:
     spec:
       serviceAccountName: default
       containers:
-        - name: kubernetes-bootcamp1
-          image: gcr.io/google-samples/kubernetes-bootcamp:v1
+        - name: fibonacci1
+          image: docker.io/axaguildev/fibonacci:latest
           resources:
             limits:
               memory: "96Mi"
@@ -143,7 +161,7 @@ spec:
       serviceAccountName: admin # Use a service account with admin role
       containers:
         - name: slimfaas
-          image: docker.io/axaguildev/slimfaas:0.6.1
+          image: docker.io/axaguildev/slimfaas:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -195,9 +213,6 @@ spec:
 
 ## What Next ?
 
-1. Clean Code & Unit Tests
-2. Get full working Get Started Demo
-3. Public Open Source
-4. Scale up from volume message in queue and message rate
-5. Add a build version without any redis dependencies and allow SlimFaas to manage internal queue
-6. Upgrade to .NET8 using AOT => lighter and faster
+1. Public Open Source
+2. Add a build version without any redis dependencies and allow SlimFaas to manage internal queue
+3. Upgrade to .NET8 using AOT => lighter and faster

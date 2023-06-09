@@ -98,4 +98,30 @@ public class ProxyMiddlewareTests
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         
     }
+    
+    [Fact]
+    public async Task JustWakeFunctionAndReturnOk()
+    {
+        using var host = await new HostBuilder()
+            .ConfigureWebHost(webBuilder =>
+            {
+                webBuilder
+                    .UseTestServer()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
+                        services.AddSingleton<ISendClient, SendClientMock>();
+                        services.AddSingleton<IQueue, MemoryQueue>();
+                    })
+                    .Configure(app =>
+                    {
+                        app.UseMiddleware<SlimProxyMiddleware>();
+                    });
+            })
+            .StartAsync();
+
+        var response = await host.GetTestClient().GetAsync("/wake-function/fibonacci");
+        
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+    }
 }
