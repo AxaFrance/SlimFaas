@@ -225,7 +225,7 @@ So we could use it with **Keda** to scale to 0 and scale to N (Keda is call and 
 
 But, we tried in few minutes to scale from SlimFaas and it was a great success.
 
-So, now we have a solution not coupled to anything, simple and fast: very cool plug and play !
+So, now we have a solution not **coupled** to anything. **SlimFaas** is **simple**, **light** and **fast** with a very cool plug and play !
 
 ## How it works ?
 
