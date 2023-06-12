@@ -93,7 +93,7 @@ public class SendClient : ISendClient
     {
         var targetUri = ComputeTargetUrl(_baseFunctionUrl, functionName, functionPath, functionQuery);
         var targetRequestMessage = CreateTargetMessage(context, new Uri(targetUri));
-        using var responseMessage = await _httpClient.SendAsync(targetRequestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
+        var responseMessage = await _httpClient.SendAsync(targetRequestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
         return responseMessage;
 
     }
