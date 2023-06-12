@@ -13,7 +13,7 @@ class MemoryQueue: IQueue
 {
     public async Task EnqueueAsync(string key, string message)
     {
-        await Task.Delay(1);
+        await Task.Delay(100);
     }
 
     public Task<IList<string>> DequeueAsync(string key, long count = 1)
@@ -35,13 +35,20 @@ class SendClientMock : ISendClient
         responseMessage.StatusCode = HttpStatusCode.OK;
         return Task.FromResult(responseMessage);
     }
+
+    public Task<HttpResponseMessage> SendHttpRequestSync(HttpContext httpContext, string functionName, string functionPath, string functionQuery)
+    {
+        var responseMessage = new HttpResponseMessage();
+        responseMessage.StatusCode = HttpStatusCode.OK;
+        return Task.FromResult(responseMessage);
+    }
 }
 
 public class ProxyMiddlewareTests
 {
     
     [Fact]
-    public async Task SlimMiddlewareShouldCallFunctionInSyncModeAndReturnOk()
+    public async Task CallFunctionInSyncModeAndReturnOk()
     {
         var responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
@@ -73,7 +80,7 @@ public class ProxyMiddlewareTests
     }
     
     [Fact]
-    public async Task SlimMiddlewareShouldCallFunctionInAsyncSyncModeAndReturnOk()
+    public async Task CallFunctionInAsyncSyncModeAndReturnOk()
     {
         using var host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
