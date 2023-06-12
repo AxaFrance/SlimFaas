@@ -73,7 +73,7 @@ public class SlimProxyMiddleware
             counterLimit = 100;
         }
         historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
-        var responseMessage = responseMessagePromise.Result;
+        using var responseMessage = responseMessagePromise.Result;
         context.Response.StatusCode = (int)responseMessage.StatusCode;
         CopyFromTargetResponseHeaders(context, responseMessage);
         await responseMessage.Content.CopyToAsync(context.Response.Body);
