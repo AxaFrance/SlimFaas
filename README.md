@@ -249,4 +249,5 @@ Why .NET ?
 
 1. Public Open Source
 2. Add a build version without any redis dependencies and allow SlimFaas to manage internal queue
-3. Upgrade to .NET8 using AOT => lighter and faster
+3. Scale up dynamically from SlimFaas
+4. Upgrade to .NET8 using AOT => lighter and faster
