@@ -38,6 +38,7 @@ public class SlimProxyMiddleware
             case FunctionType.Sync:
                 await BuildSyncResponse(context, historyHttpService, sendClient, functionName, functionPath);
                 return;
+            case FunctionType.Async:
             default:
             {
                 var customRequest = await InitCustomRequest(context, contextRequest, functionName, functionPath);

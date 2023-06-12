@@ -92,14 +92,6 @@ SlimFaas act as an HTTP proxy with 2 modes:
 - Wake http://slimfaas/wake-function/myfunction => HTTP 200
   - Wake up a function
 
-
-### Build with .NET
-
-Why .NET ?
-- .NET is always getting faster and faster : https://www.techempower.com/benchmarks/#section=data-r21
-- ASP.NET Core allow to resolve complex use cases with few lines of codes
-- .NET is always getting smaller and smaller: https://twitter.com/MStrehovsky/status/1660806238979117056?t=WPrZwi7WrIWi4tjoDUXEgg&s=19
-
 ## How to install
 
 1. Add SlimFaas annotations to your pods
@@ -212,6 +204,46 @@ spec:
   - Scale down to SlimFaas/ReplicasMin after this period of inactivity in seconds
 - SlimFaas/NumberParallelRequest : "10"
   - Limit the number of parallel HTTP requests for each underlying function
+
+## Why SlimFaas ?
+
+We used **OpenFaas** for a long time and we love it.
+But we encounter many OpenFaas issues :
+- Kubernetes scripts are tightly coupled to OpenFaas syntax
+- OpenFaas pro is to expensive for our projects
+- OpenFaas need to be installed on a dedicated namespace and configuration was intricate
+- OpenFaas Monitoring was not compatible with our Monitoring solution
+- It require to configure well NATS for managing fail-over
+- Queue configuration is not easy
+- The aggressive removes of OpenFaas teams in April 20023 of old images from docker.io create us some production issues
+
+We would like to use **Knative** but:
+- We cannot have it because of some internal constraints and security issues. We know now it will be impossible to have it.
+
+So we decide to create **SlimFaas** to have a quick and simple replacement proxy solution that can expose prometeus metrics.
+So we could use it with **Keda** to scale to 0 and scale to N (Keda is call and can scale from any prometheus Metrics).
+
+But, we tried in few minutes to scale from SlimFaas and it was a great success.
+
+So, now we have a solution not coupled to anything, simple and fast: very cool plug and play !
+
+## How it works ?
+
+Instead of creating many pods, SlimFaas use internally many workers in the same pod:
+
+- **SlimWorker**: Manage asynchronous HTTP requests calls to underlying functions
+- **HistorySynchronisationWorker**: Manage history of HTTP requests between the pod and kubernetes
+- **ReplicasSynchronizationWorker**: Manage replicas synchronization between the pod and kubernetes
+- **MasterWorker**: Elect a master pod to manage kubernetes scale up and down
+- **ReplicasScaleWorker**: If master, then scale up and down kubernetes pods
+
+### Build with .NET
+
+Why .NET ?
+- .NET is always getting faster and faster : https://www.techempower.com/benchmarks/#section=data-r21
+- ASP.NET Core allow to resolve complex use cases with few lines of codes
+- .NET is always getting smaller and smaller: https://twitter.com/MStrehovsky/status/1660806238979117056?t=WPrZwi7WrIWi4tjoDUXEgg&s=19
+
 
 ## What Next ?
 
