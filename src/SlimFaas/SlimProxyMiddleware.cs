@@ -25,25 +25,26 @@ public class SlimProxyMiddleware
     {
         var contextRequest = context.Request;
         var (functionPath, functionName, functionType) = GetFunctionInfo(faasLogger, contextRequest);
-        if(functionType == FunctionType.NotAFunction)
-        {
-            await _next(context);
-            return;
-        }
         var contextResponse = context.Response;
-        if(functionType == FunctionType.Wake)
+        switch (functionType)
         {
-            historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
-            contextResponse.StatusCode = 200;
-            return;
+            case FunctionType.NotAFunction:
+                await _next(context);
+                return;
+            case FunctionType.Wake:
+                historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+                contextResponse.StatusCode = 200;
+                return;
+            case FunctionType.Sync:
+                await BuildSyncResponse(context, historyHttpService, sendClient, functionName, functionPath);
+                return;
+            default:
+            {
+                var customRequest = await InitCustomRequest(context, contextRequest, functionName, functionPath);
+                await BuildAsyncResponse(functionName, customRequest, contextResponse);
+                break;
+            }
         }
-        var customRequest = await InitCustomRequest(context, contextRequest, functionName, functionPath);
-        if (functionType == FunctionType.Async)
-        {
-            await BuildAsyncResponse(functionName, customRequest, contextResponse);
-            return;
-        }
-        await BuildSyncResponse(context, historyHttpService, sendClient, functionName, customRequest);
     }
 
     private async Task BuildAsyncResponse(string functionName, CustomRequest customRequest, HttpResponse contextResponse)
@@ -54,10 +55,10 @@ public class SlimProxyMiddleware
     }
 
     private async Task BuildSyncResponse(HttpContext context, HistoryHttpMemoryService historyHttpService,
-        ISendClient sendClient, string functionName, CustomRequest customRequest)
+        ISendClient sendClient, string functionName, string functionPath)
     {
         historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
-        var responseMessagePromise = sendClient.SendHttpRequestAsync(customRequest);
+        var responseMessagePromise = sendClient.SendHttpRequestSync(context, functionName, functionPath, context.Request.QueryString.ToUriComponent());
         var counterLimit = 100;
         // TODO manage request Aborded
         while (!responseMessagePromise.IsCompleted)
@@ -76,6 +77,21 @@ public class SlimProxyMiddleware
         context.Response.StatusCode = (int)responseMessage.StatusCode;
         CopyFromTargetResponseHeaders(context, responseMessage);
         await responseMessage.Content.CopyToAsync(context.Response.Body);
+    }
+    
+    
+    private void CopyFromTargetResponseHeaders(HttpContext context, HttpResponseMessage responseMessage)
+    {
+        foreach (var header in responseMessage.Headers)
+        {
+            context.Response.Headers[header.Key] = header.Value.ToArray();
+        }
+
+        foreach (var header in responseMessage.Content.Headers)
+        {
+            context.Response.Headers[header.Key] = header.Value.ToArray();
+        }
+        context.Response.Headers.Remove("transfer-encoding");
     }
 
     private static async Task<CustomRequest> InitCustomRequest(HttpContext context, HttpRequest contextRequest,
@@ -160,17 +176,5 @@ public class SlimProxyMiddleware
         return functionBeginPath;
     }
     
-    private void CopyFromTargetResponseHeaders(HttpContext context, HttpResponseMessage responseMessage)
-    {
-        foreach (var header in responseMessage.Headers)
-        {
-            context.Response.Headers[header.Key] = header.Value.ToArray();
-        }
-
-        foreach (var header in responseMessage.Content.Headers)
-        {
-            context.Response.Headers[header.Key] = header.Value.ToArray();
-        }
-        context.Response.Headers.Remove("transfer-encoding");
-    }
+   
 }
