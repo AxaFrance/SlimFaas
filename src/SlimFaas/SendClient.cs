@@ -1,4 +1,7 @@
-﻿namespace SlimFaas;
+﻿using System.Net.Http.Headers;
+using Microsoft.Extensions.Primitives;
+
+namespace SlimFaas;
 
 public interface ISendClient
 {
@@ -105,6 +108,13 @@ public class SendClient : ISendClient
 
         requestMessage.RequestUri = targetUri;
         requestMessage.Headers.Host = targetUri.Host;
+
+        context.Request.Headers.TryGetValue("Authorization", out var authorization);
+        if (authorization != StringValues.Empty && authorization.Count >0)
+        {
+            requestMessage.Headers.Add("Authorization", new List<string> {authorization.ToString()});
+        }
+        
         requestMessage.Method = GetMethod(context.Request.Method);
 
         return requestMessage;
