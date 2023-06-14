@@ -115,6 +115,11 @@ public class SendClient : ISendClient
             requestMessage.Headers.Add("Authorization", new List<string> {authorization.ToString()});
         }
         
+        foreach (var header in context.Request.Headers)
+        {
+            requestMessage.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
+        }
+        
         requestMessage.Method = GetMethod(context.Request.Method);
 
         return requestMessage;
