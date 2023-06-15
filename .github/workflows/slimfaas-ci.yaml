@@ -36,7 +36,7 @@ jobs:
           if [ '${{ github.ref }}' = 'refs/heads/main' ]; then
             echo "new_version=${{ steps.tag_version.outputs.new_version }}" >> $GITHUB_OUTPUT
           else
-            echo "new_version=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+            echo "new_version=pr-${{ github.event.number }}-${{ github.run_number }}" >> $GITHUB_OUTPUT
           fi
 
   build_slimfaas:
