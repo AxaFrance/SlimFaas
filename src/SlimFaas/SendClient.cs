@@ -107,19 +107,11 @@ public class SendClient : ISendClient
         CopyFromOriginalRequestContentAndHeaders(context, requestMessage);
 
         requestMessage.RequestUri = targetUri;
-        requestMessage.Headers.Host = targetUri.Host;
-
-        context.Request.Headers.TryGetValue("Authorization", out var authorization);
-        if (authorization != StringValues.Empty && authorization.Count >0)
-        {
-            requestMessage.Headers.Add("Authorization", new List<string> {authorization.ToString()});
-        }
-        
-        foreach (var header in context.Request.Headers)
+        foreach (var header in context.Request.Headers.Where(h => h.Key.ToLower() != "host"))
         {
             requestMessage.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
         }
-        
+        requestMessage.Headers.Host = targetUri.Host;
         requestMessage.Method = GetMethod(context.Request.Method);
 
         return requestMessage;
