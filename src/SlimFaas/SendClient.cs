@@ -1,4 +1,7 @@
-﻿namespace SlimFaas;
+﻿using System.Net.Http.Headers;
+using Microsoft.Extensions.Primitives;
+
+namespace SlimFaas;
 
 public interface ISendClient
 {
@@ -104,6 +107,10 @@ public class SendClient : ISendClient
         CopyFromOriginalRequestContentAndHeaders(context, requestMessage);
 
         requestMessage.RequestUri = targetUri;
+        foreach (var header in context.Request.Headers.Where(h => h.Key.ToLower() != "host"))
+        {
+            requestMessage.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
+        }
         requestMessage.Headers.Host = targetUri.Host;
         requestMessage.Method = GetMethod(context.Request.Method);
 
