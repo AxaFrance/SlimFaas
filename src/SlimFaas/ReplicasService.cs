@@ -12,6 +12,7 @@ public class ReplicasService : IReplicasService
     private readonly HistoryHttpMemoryService _historyHttpService;
     private readonly IKubernetesService _kubernetesService;
     private DeploymentsInformations _deployments;
+    private readonly object Lock = new();
 
     public ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService)
     {
@@ -31,7 +32,7 @@ public class ReplicasService : IReplicasService
     {
         get
         {
-            lock (this)
+            lock (Lock)
             {
                 return new DeploymentsInformations()
                 {
@@ -52,7 +53,7 @@ public class ReplicasService : IReplicasService
         {
             return;
         }
-        lock (this)
+        lock (Lock)
         {
             _deployments = deployments;
         }
@@ -115,7 +116,7 @@ public class ReplicasService : IReplicasService
             var updatedFunction = tasks.FirstOrDefault(t => t.Result.Deployment == function.Deployment);
             updatedFunctions.Add(function with { Replicas = updatedFunction != null ? updatedFunction.Result.Replicas : function.Replicas });
         }
-        lock (this)
+        lock (Lock)
         {
             _deployments = Deployments with { Functions = updatedFunctions };
         }

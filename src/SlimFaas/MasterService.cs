@@ -14,6 +14,7 @@ public class MasterService : IMasterService
     private const string SlimFaasMaster = "slimfaas_master";
     private const string MasterId = "master_id";
     private const string LastTicks = "last_ticks";
+    private readonly object Lock = new();
 
     public MasterService(IRedisService redisService)
     {
@@ -38,7 +39,7 @@ public class MasterService : IMasterService
         var isMaster = currentMasterId == _id;
         if (isMaster != IsMaster)
         {
-            lock (this)
+            lock (Lock)
             {
                 IsMaster = isMaster;
             }
