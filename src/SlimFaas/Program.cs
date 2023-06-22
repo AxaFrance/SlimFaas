@@ -94,3 +94,5 @@ static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
         .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
             retryAttempt)));
 }
+
+public partial class Program { }
