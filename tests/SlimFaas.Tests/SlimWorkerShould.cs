@@ -80,4 +80,33 @@ public class SlimWorkerShould
         Assert.True(task.IsCompleted);
         sendClientMock.Verify(v => v.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>()), Times.Once());
     }
+    
+        [Fact]
+    public async Task LogErrorWhenExceptionIsThrown()
+    {
+        var serviceProvider = new Mock<IServiceProvider>();
+        var replicasService = new Mock<IReplicasService>();
+        replicasService.Setup(rs => rs.Deployments).Throws(new Exception());
+        var historyHttpService = new HistoryHttpMemoryService();
+        var logger = new Mock<ILogger<SlimWorker>>();
+        var redisQueue = new RedisQueue(new RedisMockService());
+
+        var service = new SlimWorker(redisQueue, 
+            replicasService.Object, 
+            historyHttpService, 
+            logger.Object, 
+            serviceProvider.Object);
+
+        var task = service.StartAsync(CancellationToken.None);
+
+        await Task.Delay(100);
+        logger.Verify(l => l.Log(
+            LogLevel.Error,
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>) It.IsAny<object>()), Times.AtLeastOnce);
+
+        Assert.True(task.IsCompleted);
+    }
 }

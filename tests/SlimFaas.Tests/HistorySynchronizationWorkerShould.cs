@@ -6,7 +6,7 @@ namespace SlimFaas.Tests;
 public class HistorySynchronizationWorkerShould
 {
     [Fact]
-    public async Task SynLastTicksBetweenDatabaseAndMemory()
+    public async Task SyncLastTicksBetweenDatabaseAndMemory()
     {
         var logger = new Mock<ILogger<HistorySynchronizationWorker>>();
         var redisMockService = new RedisMockService();
@@ -40,6 +40,29 @@ public class HistorySynchronizationWorkerShould
         var ticksSecondCallAsync = await historyHttpRedisService.GetTicksLastCallAsync("fibonacci1");
         Assert.Equal(secondTicks, ticksSecondCallAsync);
         
+        Assert.True(task.IsCompleted);
+    }
+    
+    [Fact]
+    public async Task LogErrorWhenExceptionIsThrown()
+    {
+        var logger = new Mock<ILogger<HistorySynchronizationWorker>>();
+        var redisMockService = new RedisMockService();
+        var historyHttpRedisService = new HistoryHttpRedisService(redisMockService);
+        var historyHttpMemoryService = new HistoryHttpMemoryService();
+        var replicasService = new Mock<IReplicasService>();
+        replicasService.Setup(r => r.Deployments).Throws(new Exception());
+        var service = new HistorySynchronizationWorker(replicasService.Object, historyHttpMemoryService, historyHttpRedisService, logger.Object, 10);
+
+        var task = service.StartAsync(CancellationToken.None);
+        await Task.Delay(100);
+ 
+        logger.Verify(l => l.Log(
+            LogLevel.Error,
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>) It.IsAny<object>()), Times.AtLeastOnce);
         Assert.True(task.IsCompleted);
     }
 }

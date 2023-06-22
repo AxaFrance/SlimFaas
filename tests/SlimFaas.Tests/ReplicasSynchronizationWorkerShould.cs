@@ -47,4 +47,29 @@ public class ReplicasSynchronizationWorkerShould
         kubernetesService.Verify(v => v.ListFunctionsAsync(It.IsAny<string>()));
     }
     
+    [Fact]
+    public async Task LogErrorWhenExceptionIsThrown()
+    {
+        var logger = new Mock<ILogger<ReplicasSynchronizationWorker>>();
+        var kubernetesService = new Mock<IKubernetesService>();
+        kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).Throws(new Exception());
+        var masterService = new Mock<IMasterService>();
+        var historyHttpService = new HistoryHttpMemoryService();
+        var replicasService = new ReplicasService(kubernetesService.Object, historyHttpService);
+        masterService.Setup(ms => ms.IsMaster).Returns(true); 
+        
+        var service = new ReplicasSynchronizationWorker(replicasService, logger.Object, 10);
+        var task = service.StartAsync(CancellationToken.None);
+        await Task.Delay(100);
+        
+        logger.Verify(l => l.Log(
+            LogLevel.Error,
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>) It.IsAny<object>()), Times.AtLeastOnce);
+        
+        Assert.True(task.IsCompleted);
+    }
+    
 }
