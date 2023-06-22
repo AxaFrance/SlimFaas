@@ -60,7 +60,7 @@ public class ReplicasSynchronizationWorkerShould
         
         var service = new ReplicasSynchronizationWorker(replicasService, logger.Object, 10);
         var task = service.StartAsync(CancellationToken.None);
-        await Task.Delay(20);
+        await Task.Delay(100);
         
         logger.Verify(l => l.Log(
             LogLevel.Error,

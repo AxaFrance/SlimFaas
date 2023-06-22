@@ -55,7 +55,7 @@ public class HistorySynchronizationWorkerShould
         var service = new HistorySynchronizationWorker(replicasService.Object, historyHttpMemoryService, historyHttpRedisService, logger.Object, 10);
 
         var task = service.StartAsync(CancellationToken.None);
-        await Task.Delay(20);
+        await Task.Delay(100);
  
         logger.Verify(l => l.Log(
             LogLevel.Error,

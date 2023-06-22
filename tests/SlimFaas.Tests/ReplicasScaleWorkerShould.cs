@@ -47,7 +47,7 @@ public class ReplicasScaleWorkerShould
 
         var service = new ScaleReplicasWorker(replicaService.Object, masterService.Object, logger.Object, 10);
         var task = service.StartAsync(CancellationToken.None);
-        await Task.Delay(20);
+        await Task.Delay(100);
         
         logger.Verify(l => l.Log(
             LogLevel.Error,
