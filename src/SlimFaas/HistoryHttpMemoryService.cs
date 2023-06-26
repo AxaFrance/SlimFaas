@@ -3,28 +3,36 @@
 public class HistoryHttpMemoryService
 {
     private readonly IDictionary<string, long> _local = new Dictionary<string, long>();
-    private readonly object Lock = new();
+    private readonly ReaderWriterLockSlim _readerWriterLockSlim = new();
     
     public long GetTicksLastCall(string functionName)
     {
-        var result = 0L;
-        lock (Lock)
+        _readerWriterLockSlim.EnterReadLock();
+        try
         {
-            if (_local.TryGetValue(functionName, out var value))
-            {
-                result = value;
-            }
+            return _local.TryGetValue(functionName, out var value) ? value : 0L;
         }
-
-        return result;
+        finally
+        {
+            _readerWriterLockSlim.ExitReadLock();
+        }
     }
-    
+
     public void SetTickLastCall(string functionName, long ticks)
     {
-       lock (Lock)
-       {
-           _local[functionName] = ticks;    
-       }
+        _readerWriterLockSlim.EnterWriteLock();
+        try
+        {
+            _local[functionName] = ticks;
+        }
+        finally
+        {
+            _readerWriterLockSlim.ExitWriteLock();
+        }
     }
-    
+
+    ~HistoryHttpMemoryService()
+    {
+        _readerWriterLockSlim?.Dispose();
+    }
 }
