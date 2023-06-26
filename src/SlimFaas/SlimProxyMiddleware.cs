@@ -37,20 +37,7 @@ public class SlimProxyMiddleware
                 contextResponse.StatusCode = 200;
                 return;
             case FunctionType.Sync:
-
-                var numerLoop = 100;
-                while (numerLoop > 0)
-                {
-                    if(replicasService.Deployments.Functions.Count(f => f.Replicas.HasValue && f.Replicas.Value > 0 && f.Pods.Count(p => p.Ready.HasValue && p.Ready.Value ) <= 0) <= 0 )
-                    {
-                        numerLoop--;
-                        await Task.Delay(200);
-                        continue;
-                    }
-                    numerLoop=0;
-                }
-                
-                await BuildSyncResponse(context, historyHttpService, sendClient, functionName, functionPath);
+                await BuildSyncResponse(context, historyHttpService, sendClient, replicasService, functionName, functionPath);
                 return;
             case FunctionType.Async:
             default:
@@ -70,9 +57,20 @@ public class SlimProxyMiddleware
     }
 
     private async Task BuildSyncResponse(HttpContext context, HistoryHttpMemoryService historyHttpService,
-        ISendClient sendClient, string functionName, string functionPath)
+        ISendClient sendClient, IReplicasService replicasService, string functionName, string functionPath)
     {
         historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+        var numerLoop = 100;
+        while (numerLoop > 0)
+        {
+            if(replicasService.Deployments.Functions.Count(f => f.Replicas.HasValue && f.Replicas.Value > 0 && f.Pods.Count(p => p.Ready.HasValue && p.Ready.Value ) > 0) <= 0 )
+            {
+                numerLoop--;
+                await Task.Delay(200);
+                continue;
+            }
+            numerLoop=0;
+        }
         
         var responseMessagePromise = sendClient.SendHttpRequestSync(context, functionName, functionPath, context.Request.QueryString.ToUriComponent());
         var counterLimit = 100;
