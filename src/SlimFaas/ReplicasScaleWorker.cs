@@ -8,7 +8,7 @@ public class ScaleReplicasWorker: BackgroundService
     private readonly int _delay;
     private readonly string _namespace;
 
-    public ScaleReplicasWorker(IReplicasService replicasService, IMasterService masterService , ILogger<ScaleReplicasWorker> logger, int delay = 1000)
+    public ScaleReplicasWorker(IReplicasService replicasService, IMasterService masterService , ILogger<ScaleReplicasWorker> logger, int delay = 250)
     {
         _replicasService = replicasService;
         _masterService = masterService;
