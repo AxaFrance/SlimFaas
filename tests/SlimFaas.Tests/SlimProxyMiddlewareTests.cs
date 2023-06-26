@@ -9,6 +9,39 @@ using Moq;
 
 namespace SlimFaas.Tests;
 
+
+class MemoryReplicasService : IReplicasService
+{
+    public DeploymentsInformations Deployments =>
+        new()
+        {
+            Functions = new List<DeploymentInformation>()
+            {
+                new()
+                {
+                    Replicas = 0, 
+                    Deployment = "fibonacci", 
+                    Namespace = "default",
+                    Pods = new List<PodInformation> { new() { Ready = true } }
+                }
+            },
+            SlimFaas = new SlimFaasDeploymentInformation
+            {
+                Replicas = 1
+            }
+        };
+
+    public Task SyncDeploymentsAsync(string kubeNamespace)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task CheckScaleAsync(string kubeNamespace)
+    {
+        throw new NotImplementedException();
+    }
+}
+
 class MemoryQueue: IQueue
 {
     public async Task EnqueueAsync(string key, string message)
@@ -66,6 +99,7 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
                         services.AddSingleton<ISendClient, SendClientMock>();
                         services.AddSingleton<IQueue, MemoryQueue>();
+                        services.AddSingleton<IReplicasService, MemoryReplicasService>();
                     })
                     .Configure(app =>
                     {
@@ -92,6 +126,7 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
                         services.AddSingleton<ISendClient, SendClientMock>();
                         services.AddSingleton<IQueue, MemoryQueue>();
+                        services.AddSingleton<IReplicasService, MemoryReplicasService>();
                     })
                     .Configure(app =>
                     {
@@ -118,6 +153,7 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
                         services.AddSingleton<ISendClient, SendClientMock>();
                         services.AddSingleton<IQueue, MemoryQueue>();
+                        services.AddSingleton<IReplicasService, MemoryReplicasService>();
                     })
                     .Configure(app =>
                     {

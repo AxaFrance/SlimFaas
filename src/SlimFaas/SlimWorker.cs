@@ -53,6 +53,9 @@ public class SlimWorker : BackgroundService
                 await UpdateTickLastCallIfRequestStillInProgress(functionReplicas, setTickLastCallCounterDictionary,
                     functionDeployment, numberProcessingTasks);
                 if (functionReplicas == 0) continue;
+                
+                if(function.Pods.Count(p => p.Ready.HasValue && p.Ready.Value ) <= 0) continue;
+                
                 if (numberProcessingTasks >= numberLimitProcessingTasks) continue;
                 await SendHttpRequestToFunction(processingTasks, numberLimitProcessingTasks, numberProcessingTasks,
                     functionDeployment);

@@ -54,7 +54,18 @@ public class SlimWorkerShould
                     ReplicasMin = 0,
                     ReplicasAtStart = 1,
                     TimeoutSecondBeforeSetReplicasMin = 300,
-                    ReplicasStartAsSoonAsOneFunctionRetrieveARequest = true
+                    ReplicasStartAsSoonAsOneFunctionRetrieveARequest = true,
+                    Pods = new List<PodInformation>()
+                    {
+                        new()
+                        {
+                            Name = "fibonacci",
+                            DeploymentName = "fibonacci",
+                            Ready = true,
+                            Started = true,
+                            Ip = ""
+                        }
+                    }
                 }
             }
         });

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
@@ -27,6 +28,7 @@ public record DeploymentsInformations
 public record DeploymentInformation
 {
     public string Deployment { get; set; }
+    public IList<PodInformation> Pods { get; set; }
     public string Namespace { get; set; }
     public int? Replicas { get; set; }
     public int ReplicasMin { get; set; }
@@ -34,6 +36,15 @@ public record DeploymentInformation
     public bool ReplicasStartAsSoonAsOneFunctionRetrieveARequest { get; set; }
     public int TimeoutSecondBeforeSetReplicasMin { get; set; }
     public int NumberParallelRequest { get; set; }
+}
+
+public record PodInformation
+{
+    public string Name { get; set; }
+    public bool? Started { get; set; }
+    public bool? Ready { get; set; }
+    public string Ip { get; set; }
+    public string DeploymentName { get; set; }
 }
 
 [ExcludeFromCodeCoverage]
@@ -82,7 +93,12 @@ public class KubernetesService : IKubernetesService
         {
             IList<DeploymentInformation>? deploymentInformationList = new List<DeploymentInformation>();
                 using var client = new Kubernetes(_k8SConfig);
-                var deploymentList = await client.ListNamespacedDeploymentAsync(kubeNamespace);
+                var deploymentListTask = client.ListNamespacedDeploymentAsync(kubeNamespace);
+                var podListTask = client.ListNamespacedPodAsync(kubeNamespace);
+
+                await Task.WhenAll(deploymentListTask, podListTask);
+                var deploymentList = deploymentListTask.Result;
+                var podList = MapPodInformations(podListTask.Result);
                 
                 var slimFaasDeploymentInformation = deploymentList.Items.Where(deploymentListItem => deploymentListItem.Metadata.Name == "slimfaas").Select(deploymentListItem => new SlimFaasDeploymentInformation
                 {
@@ -97,6 +113,7 @@ public class KubernetesService : IKubernetesService
                     var deploymentInformation = new DeploymentInformation
                     {
                         Deployment = deploymentListItem.Metadata.Name,
+                        Pods = podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
                         Namespace = kubeNamespace,
                         Replicas = deploymentListItem.Spec.Replicas,
                         ReplicasAtStart = annotations.ContainsKey(ReplicasAtStart)
@@ -140,6 +157,42 @@ public class KubernetesService : IKubernetesService
             };
 
         }
+    }
+    
+    private static IList<PodInformation> MapPodInformations(V1PodList list)
+    {
+        IList<PodInformation> podInformations = new List<PodInformation>();
+        foreach (var item in list.Items)
+        {
+            var containerStatus = item.Status.ContainerStatuses.FirstOrDefault();
+            if (containerStatus == null)
+            {
+                continue;
+            }
+
+            var ready = containerStatus.Ready;
+            var started = containerStatus.Started;
+            var podIP = item.Status.PodIP;
+            var podName = item.Metadata.Name;
+            var deploymentName = string.Empty;
+            if (item.Metadata.Labels.TryGetValue("app", out var label))
+            {
+                deploymentName = label;
+            }
+
+            var podInformation = new PodInformation()
+            {
+                Started = started,
+                Ready = ready,
+                Ip = podIP,
+                Name = podName,
+                DeploymentName = deploymentName
+            };
+
+            podInformations.Add(podInformation);
+        }
+
+        return podInformations;
     }
     
 }

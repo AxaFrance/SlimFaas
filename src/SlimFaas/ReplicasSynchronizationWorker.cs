@@ -7,7 +7,7 @@ public class ReplicasSynchronizationWorker: BackgroundService
     private readonly int _delay;
     private readonly string _namespace;
 
-    public ReplicasSynchronizationWorker(IReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger, int delay = 10000)
+    public ReplicasSynchronizationWorker(IReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger, int delay = 1000)
     {
         _replicasService = replicasService;
         _logger = logger;
