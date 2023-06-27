@@ -33,41 +33,59 @@ public class SlimProxyMiddleware
                 await _next(context);
                 return;
             case FunctionType.Wake:
-                var function = replicasService.Deployments.Functions.FirstOrDefault(f => f.Deployment == functionName);
-                if (function != null)
-                {
-                    historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
-                    contextResponse.StatusCode = 204;
-                }
-                else
-                {
-                    contextResponse.StatusCode = 404;
-                }
+                BuildWakeResponse(historyHttpService, replicasService, functionName, contextResponse);
                 return;
             case FunctionType.Sync:
-                await BuildSyncResponse(context, historyHttpService, sendClient, replicasService, functionName, functionPath);
+                await BuildSyncResponseAsync(context, historyHttpService, sendClient, replicasService, functionName, functionPath);
                 return;
             case FunctionType.Async:
             default:
             {
                 var customRequest = await InitCustomRequest(context, contextRequest, functionName, functionPath);
-                await BuildAsyncResponse(functionName, customRequest, contextResponse);
+                await BuildAsyncResponseAsync(replicasService ,functionName, customRequest, contextResponse);
                 break;
             }
         }
     }
 
-    private async Task BuildAsyncResponse(string functionName, CustomRequest customRequest, HttpResponse contextResponse)
+    private static void BuildWakeResponse(HistoryHttpMemoryService historyHttpService, IReplicasService replicasService,
+        string functionName, HttpResponse contextResponse)
     {
+        var function = SearchFunction(replicasService, functionName);
+        if (function != null)
+        {
+            historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+            contextResponse.StatusCode = 204;
+        }
+        else
+        {
+            contextResponse.StatusCode = 404;
+        }
+    }
+
+    private static DeploymentInformation? SearchFunction(IReplicasService replicasService, string functionName)
+    {
+        var function = replicasService.Deployments.Functions.FirstOrDefault(f => f.Deployment == functionName);
+        return function;
+    }
+
+    private async Task BuildAsyncResponseAsync(IReplicasService replicasService, string functionName, CustomRequest customRequest, HttpResponse contextResponse)
+    {
+        var function = SearchFunction(replicasService, functionName);
+        if (function == null)
+        {
+            contextResponse.StatusCode = 404;
+            return;
+        }
         await _queue.EnqueueAsync(functionName,
             JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest));
         contextResponse.StatusCode = 202;
     }
 
-    private async Task BuildSyncResponse(HttpContext context, HistoryHttpMemoryService historyHttpService,
+    private async Task BuildSyncResponseAsync(HttpContext context, HistoryHttpMemoryService historyHttpService,
         ISendClient sendClient, IReplicasService replicasService, string functionName, string functionPath)
     {
-        var function = replicasService.Deployments.Functions.FirstOrDefault(f => f.Deployment == functionName);
+        var function = SearchFunction(replicasService, functionName);
         if (function == null)
         {
             context.Response.StatusCode = 404;

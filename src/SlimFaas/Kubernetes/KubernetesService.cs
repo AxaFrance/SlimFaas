@@ -172,19 +172,14 @@ public class KubernetesService : IKubernetesService
 
             var ready = containerStatus.Ready;
             var started = containerStatus.Started;
-            var podIP = item.Status.PodIP;
+            var podIp = item.Status.PodIP;
             var podName = item.Metadata.Name;
-            var deploymentName = string.Empty;
-            if (item.Metadata.Labels.TryGetValue("app", out var label))
-            {
-                deploymentName = label;
-            }
-
+            var deploymentName = ExtractPodNameFrom(item.Metadata.GenerateName);
             var podInformation = new PodInformation()
             {
                 Started = started,
                 Ready = ready,
-                Ip = podIP,
+                Ip = podIp,
                 Name = podName,
                 DeploymentName = deploymentName
             };
@@ -193,6 +188,21 @@ public class KubernetesService : IKubernetesService
         }
 
         return podInformations;
+    }
+
+    private static string ExtractPodNameFrom(string generalName)
+    {
+        var names = generalName.Split("-");
+        if (names.Length <= 0)
+        {
+            return string.Empty;
+        }
+        var realName = names[0];
+        for (int i = 1; i < names.Length-3; i++)
+        {
+            realName += $"-{names[i]}";
+        }
+        return realName;
     }
     
 }

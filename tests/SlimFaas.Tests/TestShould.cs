@@ -8,9 +8,30 @@ namespace SlimFaas.Tests;
 
 public class TestShould
 {
+
+    string ExtractName(string generalName)
+    {
+        var names = generalName.Split("-");
+        if (names.Length <= 0)
+        {
+            return string.Empty;
+        }
+        var realName = names[0];
+        for (int i = 1; i < names.Length-3; i++)
+        {
+            realName += $"-{names[i]}";
+        }
+        return realName;
+    }
+    
     [Fact]
     public async Task SyncLastTicksBetweenDatabaseAndMemory()
     {
+
+        var generalName = "fibonacci1-youhou-85dfbdd89c-qqxjq";
+        var name = ExtractName(generalName);
+
+
         var inMemorySettings = new Dictionary<string, string> {
             {"UseKubeConfig", "true"},
         };

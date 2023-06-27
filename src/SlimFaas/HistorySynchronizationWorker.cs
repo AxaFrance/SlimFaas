@@ -12,12 +12,15 @@ public class HistorySynchronizationWorker: BackgroundService
         HistoryHttpMemoryService historyHttpMemoryService, 
         HistoryHttpRedisService historyHttpRedisService, 
         ILogger<HistorySynchronizationWorker> logger, 
-        int delay = 200)
+        int delay = 250)
     {
         _replicasService = replicasService;
         _historyHttpMemoryService = historyHttpMemoryService;
         _historyHttpRedisService = historyHttpRedisService;
         _logger = logger;
+        
+        
+        
         _delay = delay;
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
