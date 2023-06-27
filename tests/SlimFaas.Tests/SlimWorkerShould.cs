@@ -57,10 +57,7 @@ public class SlimWorkerShould
                     ReplicasStartAsSoonAsOneFunctionRetrieveARequest = true,
                     Pods = new List<PodInformation>()
                     {
-                        new()
-                        {
-                            Ready = true,
-                        }
+                        new("", true, true, "", "")
                     }
                 },
                 new()
@@ -75,10 +72,7 @@ public class SlimWorkerShould
                     ReplicasStartAsSoonAsOneFunctionRetrieveARequest = true,
                     Pods = new List<PodInformation>()
                     {
-                        new()
-                        {
-                            Ready = false,
-                        }
+                        new("", false, false, "", "")
                     }
                 },
                 new()

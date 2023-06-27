@@ -22,7 +22,7 @@ class MemoryReplicasService : IReplicasService
                     Replicas = 0, 
                     Deployment = "fibonacci", 
                     Namespace = "default",
-                    Pods = new List<PodInformation> { new() { Ready = true } }
+                    Pods = new List<PodInformation> {  new("", true, true, "", "") }
                 }
             },
             SlimFaas = new SlimFaasDeploymentInformation
