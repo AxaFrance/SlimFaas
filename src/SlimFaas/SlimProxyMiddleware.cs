@@ -34,7 +34,7 @@ public class SlimProxyMiddleware
                 return;
             case FunctionType.Wake:
                 historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
-                contextResponse.StatusCode = 200;
+                contextResponse.StatusCode = 204;
                 return;
             case FunctionType.Sync:
                 await BuildSyncResponse(context, historyHttpService, sendClient, replicasService, functionName, functionPath);

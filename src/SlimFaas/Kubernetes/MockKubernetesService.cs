@@ -60,6 +60,14 @@ public class MockKubernetesService : IKubernetesService
                 TimeoutSecondBeforeSetReplicasMin = 1000000,
                 ReplicasStartAsSoonAsOneFunctionRetrieveARequest = false,
                 NumberParallelRequest = function.NumberParallelRequest,
+                Pods = new List<PodInformation>()
+                {
+                    new(){
+                        Started = true,
+                        Ready= true
+                        
+                    }
+                }
             };
             _deploymentInformations.Functions.Add(deploymentInformation);
         }
