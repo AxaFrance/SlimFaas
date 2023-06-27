@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
@@ -174,7 +175,7 @@ public class KubernetesService : IKubernetesService
             var started = containerStatus.Started;
             var podIp = item.Status.PodIP;
             var podName = item.Metadata.Name;
-            var deploymentName = ExtractPodNameFrom(item.Metadata.GenerateName);
+            var deploymentName = ExtractPodDeploymentNameFrom(item.Metadata.GenerateName);
             var podInformation = new PodInformation()
             {
                 Started = started,
@@ -190,19 +191,19 @@ public class KubernetesService : IKubernetesService
         return podInformations;
     }
 
-    private static string ExtractPodNameFrom(string generalName)
+    public static string ExtractPodDeploymentNameFrom(string generalName)
     {
         var names = generalName.Split("-");
         if (names.Length <= 0)
         {
             return string.Empty;
         }
-        var realName = names[0];
-        for (int i = 1; i < names.Length-3; i++)
+        var realName = new StringBuilder(names[0]);
+        for (int i = 1; i < names.Length-2; i++)
         {
-            realName += $"-{names[i]}";
+            realName.Append($"-{names[i]}");
         }
-        return realName;
+        return realName.ToString();
     }
     
 }
