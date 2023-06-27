@@ -7,11 +7,11 @@ public class ReplicasSynchronizationWorker: BackgroundService
     private readonly int _delay;
     private readonly string _namespace;
 
-    public ReplicasSynchronizationWorker(IReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger, int delay = 1000)
+    public ReplicasSynchronizationWorker(IReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger, int delay = 2000)
     {
         _replicasService = replicasService;
         _logger = logger;
-        _delay = delay;
+        _delay = int.Parse(Environment.GetEnvironmentVariable("REPLICAS_SYNCRONISATION_WORKER_DELAY")  ?? delay.ToString());;
         _namespace =
             Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
     }

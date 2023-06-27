@@ -12,16 +12,13 @@ public class HistorySynchronizationWorker: BackgroundService
         HistoryHttpMemoryService historyHttpMemoryService, 
         HistoryHttpRedisService historyHttpRedisService, 
         ILogger<HistorySynchronizationWorker> logger, 
-        int delay = 250)
+        int delay = 1000)
     {
         _replicasService = replicasService;
         _historyHttpMemoryService = historyHttpMemoryService;
         _historyHttpRedisService = historyHttpRedisService;
         _logger = logger;
-        
-        
-        
-        _delay = delay;
+        _delay = int.Parse(Environment.GetEnvironmentVariable("HISTORY_SYNCHRONISATION_WORKER_DELAY")  ?? delay.ToString());
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

@@ -8,12 +8,12 @@ public class ScaleReplicasWorker: BackgroundService
     private readonly int _delay;
     private readonly string _namespace;
 
-    public ScaleReplicasWorker(IReplicasService replicasService, IMasterService masterService , ILogger<ScaleReplicasWorker> logger, int delay = 250)
+    public ScaleReplicasWorker(IReplicasService replicasService, IMasterService masterService , ILogger<ScaleReplicasWorker> logger, int delay = 1000)
     {
         _replicasService = replicasService;
         _masterService = masterService;
         _logger = logger;
-        _delay = delay;
+        _delay = int.Parse(Environment.GetEnvironmentVariable("SCALE_REPLICAS_WORKER_DELAY")  ?? delay.ToString());;
         _namespace =
             Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
     }

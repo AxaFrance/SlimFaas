@@ -11,14 +11,16 @@ public class SlimWorker : BackgroundService
     private readonly HistoryHttpMemoryService _historyHttpService;
     private readonly ILogger<SlimWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly int _delay;
     private readonly IQueue _queue;
     private readonly IReplicasService _replicasService;
     
-    public SlimWorker(IQueue queue, IReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider)
+    public SlimWorker(IQueue queue, IReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider, int delay = 10)
     {
         _historyHttpService = historyHttpService;
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _delay = int.Parse(Environment.GetEnvironmentVariable("SLIM_WORKER_DELAY")  ?? delay.ToString());
         _queue = queue;
         _replicasService = replicasService;
     }
@@ -38,7 +40,7 @@ public class SlimWorker : BackgroundService
     {
         try
         {
-            await Task.Delay(10, stoppingToken);
+            await Task.Delay(_delay, stoppingToken);
             var deployments = _replicasService.Deployments;
             var functions = deployments.Functions;
             var slimFaas = deployments.SlimFaas;
