@@ -18,7 +18,7 @@ public class HistorySynchronizationWorker: BackgroundService
         _historyHttpMemoryService = historyHttpMemoryService;
         _historyHttpRedisService = historyHttpRedisService;
         _logger = logger;
-        _delay = int.Parse(Environment.GetEnvironmentVariable("HISTORY_SYNCHRONISATION_WORKER_DELAY")  ?? delay.ToString());
+        _delay = int.Parse(Environment.GetEnvironmentVariable("HISTORY_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS")  ?? delay.ToString());
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

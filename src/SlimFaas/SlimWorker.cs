@@ -20,7 +20,7 @@ public class SlimWorker : BackgroundService
         _historyHttpService = historyHttpService;
         _logger = logger;
         _serviceProvider = serviceProvider;
-        _delay = int.Parse(Environment.GetEnvironmentVariable("SLIM_WORKER_DELAY")  ?? delay.ToString());
+        _delay = int.Parse(Environment.GetEnvironmentVariable("SLIM_WORKER_DELAY_MILLISECONDS")  ?? delay.ToString());
         _queue = queue;
         _replicasService = replicasService;
     }

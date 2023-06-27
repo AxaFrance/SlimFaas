@@ -178,6 +178,19 @@ spec:
             # If your are not on kubernetes for example docker-compose, you can use this env variable, you will loose auto-scale
             #- name: MOCK_KUBERNETES_FUNCTIONS 
             #  value: "{\"Functions\":[{\"Name\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}]}"
+
+            # Optional, longer is the delay, less CPU and RAM is used 
+            #- name : HISTORY_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS
+            #  value : "1000"
+            # Optional, longer is the delay, less CPU and RAM is used 
+            #- name : REPLICAS_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS
+            #  value : "2000"
+            # Optional, longer is the delay, less CPU and RAM is used 
+            #- name : SLIM_WORKER_DELAY_MILLISECONDS
+            #  value : "10"
+            # Optional, longer is the delay, less CPU and RAM is used 
+            #- name : SCALE_REPLICAS_WORKER_DELAY_MILLISECONDS
+            #  value : "1000"
           resources:
             limits:
               memory: "76Mi"
