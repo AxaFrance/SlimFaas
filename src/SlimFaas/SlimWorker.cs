@@ -54,7 +54,9 @@ public class SlimWorker : BackgroundService
                     functionDeployment, numberProcessingTasks);
                 if (functionReplicas == 0) continue;
                 
-                if(function.Pods.Count(p => p.Ready.HasValue && p.Ready.Value ) <= 0) continue;
+                var podCount = function.Pods.Count(p => p.Ready.HasValue && p.Ready.Value);
+                
+                if(podCount <= 0) continue;
                 
                 if (numberProcessingTasks >= numberLimitProcessingTasks) continue;
                 await SendHttpRequestToFunction(processingTasks, numberLimitProcessingTasks, numberProcessingTasks,
@@ -77,9 +79,9 @@ public class SlimWorker : BackgroundService
         {
             var customRequest =
                 JsonSerializer.Deserialize(requestJson, CustomRequestSerializerContext.Default.CustomRequest);
-            _logger.LogInformation("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
+            _logger.LogDebug("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
                 customRequest.Method, customRequest.Path, customRequest.Query);
-            _logger.LogInformation("{RequestJson}", requestJson);
+            _logger.LogDebug("{RequestJson}", requestJson);
             _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
             using var scope = _serviceProvider.CreateScope();
             var taskResponse = scope.ServiceProvider.GetRequiredService<ISendClient>()
@@ -137,7 +139,7 @@ public class SlimWorker : BackgroundService
                 if (!processing.Task.IsCompleted) continue;
                 var httpResponseMessage = processing.Task.Result;
                 httpResponseMessage.Dispose();
-                _logger.LogInformation(
+                _logger.LogDebug(
                     "{CustomRequestMethod}: /async-function/{CustomRequestPath}{CustomRequestQuery} {StatusCode}",
                     processing.CustomRequest.Method, processing.CustomRequest.Path, processing.CustomRequest.Query,
                     httpResponseMessage.StatusCode);

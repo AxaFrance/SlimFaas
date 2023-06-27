@@ -33,8 +33,16 @@ public class SlimProxyMiddleware
                 await _next(context);
                 return;
             case FunctionType.Wake:
-                historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
-                contextResponse.StatusCode = 204;
+                var function = replicasService.Deployments.Functions.FirstOrDefault(f => f.Deployment == functionName);
+                if (function != null)
+                {
+                    historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+                    contextResponse.StatusCode = 204;
+                }
+                else
+                {
+                    contextResponse.StatusCode = 404;
+                }
                 return;
             case FunctionType.Sync:
                 await BuildSyncResponse(context, historyHttpService, sendClient, replicasService, functionName, functionPath);
@@ -59,6 +67,13 @@ public class SlimProxyMiddleware
     private async Task BuildSyncResponse(HttpContext context, HistoryHttpMemoryService historyHttpService,
         ISendClient sendClient, IReplicasService replicasService, string functionName, string functionPath)
     {
+        var function = replicasService.Deployments.Functions.FirstOrDefault(f => f.Deployment == functionName);
+        if (function == null)
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+
         historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
         var numerLoop = 100;
         while (numerLoop > 0)
@@ -163,7 +178,7 @@ public class SlimProxyMiddleware
         }
         var functionName = paths[2];
         var functionPath = pathString.Replace($"{functionBeginPath}/{functionName}", "");
-        faasLogger.LogInformation("{Method}: {Function}{UriComponent}", requestMethod, pathString,
+        faasLogger.LogDebug("{Method}: {Function}{UriComponent}", requestMethod, pathString,
             requestQueryString.ToUriComponent());
 
         var functionType = functionBeginPath switch

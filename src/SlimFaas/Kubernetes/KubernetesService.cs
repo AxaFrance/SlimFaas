@@ -102,7 +102,7 @@ public class KubernetesService : IKubernetesService
                 
                 var slimFaasDeploymentInformation = deploymentList.Items.Where(deploymentListItem => deploymentListItem.Metadata.Name == "slimfaas").Select(deploymentListItem => new SlimFaasDeploymentInformation
                 {
-                    Replicas = deploymentListItem.Spec.Replicas
+                    Replicas = deploymentListItem.Spec.Replicas,
                 }).FirstOrDefault();
                 
                 foreach (var deploymentListItem in deploymentList.Items)
@@ -140,7 +140,7 @@ public class KubernetesService : IKubernetesService
                     SlimFaas = slimFaasDeploymentInformation ?? new SlimFaasDeploymentInformation()
                     {
                     Replicas = 1,
-                }
+                } 
                 };
 
         }
