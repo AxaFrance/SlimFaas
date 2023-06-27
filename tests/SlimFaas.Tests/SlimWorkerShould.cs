@@ -59,13 +59,39 @@ public class SlimWorkerShould
                     {
                         new()
                         {
-                            Name = "fibonacci",
-                            DeploymentName = "fibonacci",
                             Ready = true,
-                            Started = true,
-                            Ip = ""
                         }
                     }
+                },
+                new()
+                {
+                    Replicas = 1,
+                    Deployment = "no-pod-started",
+                    Namespace = "default",
+                    NumberParallelRequest = 1,
+                    ReplicasMin = 0,
+                    ReplicasAtStart = 1,
+                    TimeoutSecondBeforeSetReplicasMin = 300,
+                    ReplicasStartAsSoonAsOneFunctionRetrieveARequest = true,
+                    Pods = new List<PodInformation>()
+                    {
+                        new()
+                        {
+                            Ready = false,
+                        }
+                    }
+                },
+                new()
+                {
+                    Replicas = 0,
+                    Deployment = "no-replicas",
+                    Namespace = "default",
+                    NumberParallelRequest = 1,
+                    ReplicasMin = 0,
+                    ReplicasAtStart = 1,
+                    TimeoutSecondBeforeSetReplicasMin = 300,
+                    ReplicasStartAsSoonAsOneFunctionRetrieveARequest = true,
+                    Pods = new List<PodInformation>()
                 }
             }
         });
@@ -77,6 +103,16 @@ public class SlimWorkerShould
         var jsonCustomRequest =
             JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest);
         await redisQueue.EnqueueAsync("fibonacci", jsonCustomRequest);
+        
+        var customRequestNoPodStarted = new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new []{"value1"}}}, new byte[1], "no-pod-started", "/download", "GET", "");
+        var jsonCustomNoPodStarted =
+            JsonSerializer.Serialize(customRequestNoPodStarted, CustomRequestSerializerContext.Default.CustomRequest);
+        await redisQueue.EnqueueAsync("no-pod-started", jsonCustomNoPodStarted);
+        
+        var customRequestReplicas = new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new []{"value1"}}}, new byte[1], "no-replicas", "/download", "GET", "");
+        var jsonCustomNoReplicas =
+            JsonSerializer.Serialize(customRequestReplicas, CustomRequestSerializerContext.Default.CustomRequest);
+        await redisQueue.EnqueueAsync("no-replicas", jsonCustomNoReplicas);
         
         var service = new SlimWorker(redisQueue, 
             replicasService.Object, 
