@@ -96,7 +96,8 @@ public class SlimProxyMiddleware
         var numerLoop = 100;
         while (numerLoop > 0)
         {
-            if(replicasService.Deployments.Functions.Count(f => f.Replicas.HasValue && f.Replicas.Value > 0 && f.Pods.Count(p => p.Ready.HasValue && p.Ready.Value ) > 0) <= 0 )
+            var isAnyContainerStarted = replicasService.Deployments.Functions.Any(f => f.Replicas is > 0 && f.Pods.Any(p => p.Ready.HasValue && p.Ready.Value));
+            if(isAnyContainerStarted)
             {
                 numerLoop--;
                 await Task.Delay(200);

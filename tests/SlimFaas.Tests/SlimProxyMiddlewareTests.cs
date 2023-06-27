@@ -73,6 +73,7 @@ class SendClientMock : ISendClient
     {
         var responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
+        Task.Delay(100).Wait();
         return Task.FromResult(responseMessage);
     }
 }
@@ -80,8 +81,10 @@ class SendClientMock : ISendClient
 public class ProxyMiddlewareTests
 {
     
-    [Fact]
-    public async Task CallFunctionInSyncModeAndReturnOk()
+    [Theory]
+    [InlineData("/function/fibonacci/download", HttpStatusCode.OK)]
+    [InlineData("/function/wrong/download", HttpStatusCode.NotFound)]
+    public async Task CallFunctionInSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
         var responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
@@ -108,13 +111,15 @@ public class ProxyMiddlewareTests
             })
             .StartAsync();
         
-        var response = await host.GetTestClient().GetAsync("/function/fibonacci/download");
+        var response = await host.GetTestClient().GetAsync(path);
         
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(expected, response.StatusCode);
     }
     
-    [Fact]
-    public async Task CallFunctionInAsyncSyncModeAndReturnOk()
+    [Theory]
+    [InlineData("/async-function/fibonacci/download", HttpStatusCode.Accepted)]
+    [InlineData("/async-function/wrong/download", HttpStatusCode.NotFound)]
+    public async Task CallFunctionInAsyncSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
         using var host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
@@ -135,13 +140,15 @@ public class ProxyMiddlewareTests
             })
             .StartAsync();
 
-        var response = await host.GetTestClient().GetAsync("/async-function/fibonacci/download");
+        var response = await host.GetTestClient().GetAsync(path);
         
-        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        Assert.Equal(expected, response.StatusCode);
     }
     
-    [Fact]
-    public async Task JustWakeFunctionAndReturnOk()
+    [Theory]
+    [InlineData("/wake-function/fibonacci", HttpStatusCode.NoContent, true)]
+    [InlineData("/wake-function/wrong", HttpStatusCode.NotFound, false)]
+    public async Task JustWakeFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode, bool expectedTickFound)
     {
         using var host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
@@ -162,12 +169,12 @@ public class ProxyMiddlewareTests
             })
             .StartAsync();
         
-        var response = await host.GetTestClient().GetAsync("/wake-function/fibonacci");
+        var response = await host.GetTestClient().GetAsync(path);
         var historyHttpMemoryService = host.Services.GetService<HistoryHttpMemoryService>();
         var ticksLastCall = historyHttpMemoryService.GetTicksLastCall("fibonacci");
         
-        Assert.True(ticksLastCall > 0);
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        
+        Assert.Equal(ticksLastCall > 0, expectedTickFound);
+        Assert.Equal(expectedHttpStatusCode, response.StatusCode);
     }
+    
 }
