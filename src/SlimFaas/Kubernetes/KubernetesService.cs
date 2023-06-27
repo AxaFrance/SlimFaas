@@ -41,11 +41,20 @@ public record DeploymentInformation
 
 public record PodInformation
 {
+    public PodInformation(string name, bool? started, bool? ready, string ip, string deploymentName)
+    {
+        Name = name;
+        Started = started;
+        Ready = ready;
+        Ip = ip;
+        DeploymentName = deploymentName;
+    }
+
     public string Name { get; set; }
     public bool? Started { get; set; }
     public bool? Ready { get; set; }
-    public string Ip { get; set; }
-    public string DeploymentName { get; set; }
+    public string Ip { get; init; }
+    public string DeploymentName { get; init; }
 }
 
 [ExcludeFromCodeCoverage]
@@ -74,7 +83,8 @@ public class KubernetesService : IKubernetesService
         }
         catch (HttpOperationException e)
         {
-            _logger.LogError(e, "Error while scaling kubernetes deployment" + request.Deployment);
+            var empty = "";
+            _logger.LogError(e, $"{empty}Error while scaling kubernetes deployment" + request.Deployment);
             return request;
         }
 
@@ -176,14 +186,7 @@ public class KubernetesService : IKubernetesService
             var podIp = item.Status.PodIP;
             var podName = item.Metadata.Name;
             var deploymentName = ExtractPodDeploymentNameFrom(item.Metadata.GenerateName);
-            var podInformation = new PodInformation()
-            {
-                Started = started,
-                Ready = ready,
-                Ip = podIp,
-                Name = podName,
-                DeploymentName = deploymentName
-            };
+            var podInformation = new PodInformation(podName, started, ready, podIp, deploymentName);
 
             podInformations.Add(podInformation);
         }
