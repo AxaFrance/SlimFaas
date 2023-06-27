@@ -97,7 +97,7 @@ public class SlimProxyMiddleware
         while (numerLoop > 0)
         {
             var isAnyContainerStarted = replicasService.Deployments.Functions.Any(f => f.Replicas is > 0 && f.Pods.Any(p => p.Ready.HasValue && p.Ready.Value));
-            if(isAnyContainerStarted)
+            if(!isAnyContainerStarted)
             {
                 numerLoop--;
                 await Task.Delay(200);
