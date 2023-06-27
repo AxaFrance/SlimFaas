@@ -16,7 +16,7 @@ public class SendClientShould
     [InlineData("TRACE")]
     public async Task CallFunctionAsync(string httpMethod)
     {
-        HttpRequestMessage sendedRequest = null;
+        HttpRequestMessage? sendedRequest = null;
         
         var httpClient = new HttpClient(new HttpMessageHandlerStub(async (request, cancellationToken) =>
         {
@@ -50,7 +50,7 @@ public class SendClientShould
     [InlineData("TRACE")]
     public async Task CallFunctionSync(string httpMethod)
     {
-        HttpRequestMessage sendedRequest = null;
+        HttpRequestMessage? sendedRequest = null;
         var httpClient = new HttpClient(new HttpMessageHandlerStub(async (request, cancellationToken) =>
         {
             var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)

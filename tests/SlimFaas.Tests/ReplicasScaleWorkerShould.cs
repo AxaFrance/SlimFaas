@@ -54,7 +54,7 @@ public class ReplicasScaleWorkerShould
             It.IsAny<EventId>(),
             It.IsAny<It.IsAnyType>(),
             It.IsAny<Exception>(),
-            (Func<It.IsAnyType, Exception, string>) It.IsAny<object>()), Times.AtLeastOnce);
+            (Func<It.IsAnyType, Exception?, string>) It.IsAny<object>()), Times.AtLeastOnce);
 
         Assert.True(task.IsCompleted);
     }
