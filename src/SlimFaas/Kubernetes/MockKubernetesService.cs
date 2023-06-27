@@ -62,11 +62,7 @@ public class MockKubernetesService : IKubernetesService
                 NumberParallelRequest = function.NumberParallelRequest,
                 Pods = new List<PodInformation>()
                 {
-                    new(){
-                        Started = true,
-                        Ready= true
-                        
-                    }
+                    new("", true, true, "", "")
                 }
             };
             _deploymentInformations.Functions.Add(deploymentInformation);
