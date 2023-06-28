@@ -127,7 +127,7 @@ public class ProxyMiddlewareTests
             .StartAsync();
         
         var response = await host.GetTestClient().GetAsync("/wake-function/fibonacci");
-        var historyHttpMemoryService = host.Services.GetService<HistoryHttpMemoryService>();
+        var historyHttpMemoryService = host.Services.GetRequiredService<HistoryHttpMemoryService>();
         var ticksLastCall = historyHttpMemoryService.GetTicksLastCall("fibonacci");
         
         Assert.True(ticksLastCall > 0);

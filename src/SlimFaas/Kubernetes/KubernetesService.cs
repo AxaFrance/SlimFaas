@@ -20,8 +20,8 @@ public record SlimFaasDeploymentInformation
 public record DeploymentsInformations
 {
     public IList<DeploymentInformation> Functions { get; set; }
-    
-    public SlimFaasDeploymentInformation SlimFaas { get; set; } 
+
+    public SlimFaasDeploymentInformation SlimFaas { get; set; }
 }
 
 public record DeploymentInformation
@@ -50,8 +50,8 @@ public class KubernetesService : IKubernetesService
             KubernetesClientConfiguration.BuildConfigFromConfigFile();
         _k8SConfig.SkipTlsVerify = true;
     }
-    
-    public async Task<ReplicaRequest?> ScaleAsync(ReplicaRequest? request)
+
+    public async Task<ReplicaRequest?> ScaleAsync(ReplicaRequest request)
     {
         try
         {
@@ -83,12 +83,12 @@ public class KubernetesService : IKubernetesService
             IList<DeploymentInformation>? deploymentInformationList = new List<DeploymentInformation>();
                 using var client = new Kubernetes(_k8SConfig);
                 var deploymentList = await client.ListNamespacedDeploymentAsync(kubeNamespace);
-                
+
                 var slimFaasDeploymentInformation = deploymentList.Items.Where(deploymentListItem => deploymentListItem.Metadata.Name == "slimfaas").Select(deploymentListItem => new SlimFaasDeploymentInformation
                 {
                     Replicas = deploymentListItem.Spec.Replicas
                 }).FirstOrDefault();
-                
+
                 foreach (var deploymentListItem in deploymentList.Items)
                 {
                     var annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
@@ -141,5 +141,5 @@ public class KubernetesService : IKubernetesService
 
         }
     }
-    
+
 }
