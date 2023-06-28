@@ -181,7 +181,7 @@ spec:
 
             # Optional, longer is the delay, less CPU and RAM is used 
             #- name : HISTORY_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS
-            #  value : "1000" # default equivalent to 1 seconds
+            #  value : "500" # default equivalent to 0,5 seconds
             # Optional, longer is the delay, less CPU and RAM is used 
             #- name : REPLICAS_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS
             #  value : "2000" # default equivalent to 2 seconds

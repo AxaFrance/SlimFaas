@@ -12,7 +12,7 @@ public class HistorySynchronizationWorker: BackgroundService
         HistoryHttpMemoryService historyHttpMemoryService, 
         HistoryHttpRedisService historyHttpRedisService, 
         ILogger<HistorySynchronizationWorker> logger, 
-        int delay = 1000)
+        int delay = 500)
     {
         _replicasService = replicasService;
         _historyHttpMemoryService = historyHttpMemoryService;
