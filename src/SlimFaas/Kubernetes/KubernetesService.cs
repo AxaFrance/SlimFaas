@@ -21,8 +21,8 @@ public record SlimFaasDeploymentInformation
 public record DeploymentsInformations
 {
     public IList<DeploymentInformation> Functions { get; set; }
-    
-    public SlimFaasDeploymentInformation SlimFaas { get; set; } 
+
+    public SlimFaasDeploymentInformation SlimFaas { get; set; }
 }
 
 public record DeploymentInformation
@@ -59,8 +59,8 @@ public class KubernetesService : IKubernetesService
             KubernetesClientConfiguration.BuildConfigFromConfigFile();
         _k8SConfig.SkipTlsVerify = true;
     }
-    
-    public async Task<ReplicaRequest?> ScaleAsync(ReplicaRequest? request)
+
+    public async Task<ReplicaRequest?> ScaleAsync(ReplicaRequest request)
     {
         try
         {
@@ -97,12 +97,12 @@ public class KubernetesService : IKubernetesService
                 await Task.WhenAll(deploymentListTask, podListTask);
                 var deploymentList = deploymentListTask.Result;
                 var podList = MapPodInformations(podListTask.Result);
-                
+
                 var slimFaasDeploymentInformation = deploymentList.Items.Where(deploymentListItem => deploymentListItem.Metadata.Name == "slimfaas").Select(deploymentListItem => new SlimFaasDeploymentInformation
                 {
                     Replicas = deploymentListItem.Spec.Replicas,
                 }).FirstOrDefault();
-                
+
                 foreach (var deploymentListItem in deploymentList.Items)
                 {
                     var annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
@@ -111,7 +111,6 @@ public class KubernetesService : IKubernetesService
                     var deploymentInformation = new DeploymentInformation
                     {
                         Deployment = deploymentListItem.Metadata.Name,
-                        Pods = podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
                         Namespace = kubeNamespace,
                         Replicas = deploymentListItem.Spec.Replicas,
                         ReplicasAtStart = annotations.ContainsKey(ReplicasAtStart)
@@ -138,7 +137,7 @@ public class KubernetesService : IKubernetesService
                     SlimFaas = slimFaasDeploymentInformation ?? new SlimFaasDeploymentInformation()
                     {
                     Replicas = 1,
-                } 
+                }
                 };
 
         }
@@ -156,7 +155,7 @@ public class KubernetesService : IKubernetesService
 
         }
     }
-    
+
     private static IList<PodInformation> MapPodInformations(V1PodList list)
     {
         IList<PodInformation> podInformations = new List<PodInformation>();
@@ -195,5 +194,5 @@ public class KubernetesService : IKubernetesService
         }
         return realName.ToString();
     }
-    
+
 }

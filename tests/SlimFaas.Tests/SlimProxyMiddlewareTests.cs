@@ -19,8 +19,8 @@ class MemoryReplicasService : IReplicasService
             {
                 new()
                 {
-                    Replicas = 0, 
-                    Deployment = "fibonacci", 
+                    Replicas = 0,
+                    Deployment = "fibonacci",
                     Namespace = "default",
                     Pods = new List<PodInformation> {  new("", true, true, "", "") }
                 }
@@ -80,7 +80,7 @@ class SendClientMock : ISendClient
 
 public class ProxyMiddlewareTests
 {
-    
+
     [Theory]
     [InlineData("/function/fibonacci/download", HttpStatusCode.OK)]
     [InlineData("/function/wrong/download", HttpStatusCode.NotFound)]
@@ -110,12 +110,12 @@ public class ProxyMiddlewareTests
                     });
             })
             .StartAsync();
-        
+
         var response = await host.GetTestClient().GetAsync(path);
-        
+
         Assert.Equal(expected, response.StatusCode);
     }
-    
+
     [Theory]
     [InlineData("/async-function/fibonacci/download", HttpStatusCode.Accepted)]
     [InlineData("/async-function/wrong/download", HttpStatusCode.NotFound)]
@@ -141,10 +141,10 @@ public class ProxyMiddlewareTests
             .StartAsync();
 
         var response = await host.GetTestClient().GetAsync(path);
-        
+
         Assert.Equal(expected, response.StatusCode);
     }
-    
+
     [Theory]
     [InlineData("/wake-function/fibonacci", HttpStatusCode.NoContent, true)]
     [InlineData("/wake-function/wrong", HttpStatusCode.NotFound, false)]
@@ -168,13 +168,13 @@ public class ProxyMiddlewareTests
                     });
             })
             .StartAsync();
-        
+
         var response = await host.GetTestClient().GetAsync(path);
-        var historyHttpMemoryService = host.Services.GetService<HistoryHttpMemoryService>();
+        var historyHttpMemoryService = host.Services.GetRequiredService<HistoryHttpMemoryService>();
         var ticksLastCall = historyHttpMemoryService.GetTicksLastCall("fibonacci");
-        
+
         Assert.Equal(ticksLastCall > 0, expectedTickFound);
         Assert.Equal(expectedHttpStatusCode, response.StatusCode);
     }
-    
+
 }
