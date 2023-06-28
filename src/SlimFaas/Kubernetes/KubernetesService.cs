@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using k8s;
 using k8s.Autorest;
@@ -39,22 +38,11 @@ public record DeploymentInformation
     public int NumberParallelRequest { get; set; }
 }
 
-public record PodInformation
+public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName)
 {
-    public PodInformation(string name, bool? started, bool? ready, string ip, string deploymentName)
-    {
-        Name = name;
-        Started = started;
-        Ready = ready;
-        Ip = ip;
-        DeploymentName = deploymentName;
-    }
-
-    public string Name { get; set; }
-    public bool? Started { get; set; }
-    public bool? Ready { get; set; }
-    public string Ip { get; init; }
-    public string DeploymentName { get; init; }
+    public string Name { get; set; } = Name;
+    public bool? Started { get; set; } = Started;
+    public bool? Ready { get; set; } = Ready;
 }
 
 [ExcludeFromCodeCoverage]
@@ -77,14 +65,13 @@ public class KubernetesService : IKubernetesService
         try
         {
             using var client = new Kubernetes(_k8SConfig);
-            var patchString = "{\"spec\": {\"replicas\": " + request.Replicas + "}}";
+            var patchString = $"{{\"spec\": {{\"replicas\": {request?.Replicas}}}}}";
             var patch = new V1Patch(patchString, V1Patch.PatchType.MergePatch);
-            await client.PatchNamespacedDeploymentScaleAsync(patch, request.Deployment, request.Namespace);
+            await client.PatchNamespacedDeploymentScaleAsync(patch, request?.Deployment, request?.Namespace);
         }
         catch (HttpOperationException e)
         {
-            var empty = "";
-            _logger.LogError(e, $"{empty}Error while scaling kubernetes deployment" + request.Deployment);
+            _logger.LogError(e, "Error while scaling kubernetes deployment {RequestDeployment}", request?.Deployment);
             return request;
         }
 

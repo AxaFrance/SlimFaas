@@ -14,11 +14,13 @@ public class SlimProxyMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IQueue _queue;
+    private readonly int _timeoutMaximumWaitWakeSyncFunctionMilliSecond;
 
-    public SlimProxyMiddleware(RequestDelegate next, IQueue queue)
+    public SlimProxyMiddleware(RequestDelegate next, IQueue queue, int timeoutWaitWakeSyncFunctionMilliSecond = 20000)
     {
         _next = next;
         _queue = queue;
+        _timeoutMaximumWaitWakeSyncFunctionMilliSecond = int.Parse(Environment.GetEnvironmentVariable("TIMEOUT_MAXIMUM_WAIT_WAKE_SYNC_FUNCTION")  ?? timeoutWaitWakeSyncFunctionMilliSecond.ToString());
     }
 
     public async Task InvokeAsync(HttpContext context, ILogger<SlimProxyMiddleware> faasLogger,
@@ -91,43 +93,56 @@ public class SlimProxyMiddleware
             context.Response.StatusCode = 404;
             return;
         }
-
-        historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
-        var numerLoop = 100;
-        while (numerLoop > 0)
-        {
-            var isAnyContainerStarted = replicasService.Deployments.Functions.Any(f => f.Replicas is > 0 && f.Pods.Any(p => p.Ready.HasValue && p.Ready.Value));
-            if(!isAnyContainerStarted)
-            {
-                numerLoop--;
-                await Task.Delay(200);
-                continue;
-            }
-            numerLoop=0;
-        }
         
+        await WaitForAnyPodStartedAsync(context, historyHttpService, replicasService, functionName);
+
         var responseMessagePromise = sendClient.SendHttpRequestSync(context, functionName, functionPath, context.Request.QueryString.ToUriComponent());
-        var counterLimit = 100;
-        // TODO manage request Aborded
+        
+        var lastSetTicks = DateTime.Now.Ticks;
+        historyHttpService.SetTickLastCall(functionName, lastSetTicks);
         while (!responseMessagePromise.IsCompleted)
         {
-            await Task.Delay(10);
-            counterLimit--;
-            if (counterLimit <= 0)
-            {
-                historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
-            }
-
-            counterLimit = 100;
+            await Task.Delay(10, context.RequestAborted);
+            var isOneSecondElapsed = new DateTime(lastSetTicks) < DateTime.Now.AddSeconds(-1);
+            if (!isOneSecondElapsed) continue;
+            lastSetTicks = DateTime.Now.Ticks;
+            historyHttpService.SetTickLastCall(functionName, lastSetTicks);
         }
+        
         historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
         using var responseMessage = responseMessagePromise.Result;
         context.Response.StatusCode = (int)responseMessage.StatusCode;
         CopyFromTargetResponseHeaders(context, responseMessage);
         await responseMessage.Content.CopyToAsync(context.Response.Body);
     }
-    
-    
+
+    private async Task WaitForAnyPodStartedAsync(HttpContext context, HistoryHttpMemoryService historyHttpService,
+        IReplicasService replicasService, string functionName)
+    {
+        var numberLoop = _timeoutMaximumWaitWakeSyncFunctionMilliSecond / 10;
+        var lastSetTicks = DateTime.Now.Ticks;
+        historyHttpService.SetTickLastCall(functionName, lastSetTicks);
+        while (numberLoop > 0)
+        {
+            var isAnyContainerStarted = replicasService.Deployments.Functions.Any(f =>
+                f.Replicas is > 0 && f.Pods.Any(p => p.Ready.HasValue && p.Ready.Value));
+            if (!isAnyContainerStarted && !context.RequestAborted.IsCancellationRequested)
+            {
+                numberLoop--;
+                await Task.Delay(10, context.RequestAborted);
+                var isOneSecondElapsed = new DateTime(lastSetTicks) < DateTime.Now.AddSeconds(-1);
+                if (isOneSecondElapsed)
+                {
+                    lastSetTicks = DateTime.Now.Ticks;
+                    historyHttpService.SetTickLastCall(functionName, lastSetTicks);
+                }
+                continue;
+            }
+
+            numberLoop = 0;
+        }
+    }
+
     private void CopyFromTargetResponseHeaders(HttpContext context, HttpResponseMessage responseMessage)
     {
         foreach (var header in responseMessage.Headers)
