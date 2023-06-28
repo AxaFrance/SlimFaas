@@ -112,6 +112,7 @@ public class KubernetesService : IKubernetesService
                     {
                         Deployment = deploymentListItem.Metadata.Name,
                         Namespace = kubeNamespace,
+                        Pods = podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
                         Replicas = deploymentListItem.Spec.Replicas,
                         ReplicasAtStart = annotations.ContainsKey(ReplicasAtStart)
                             ? int.Parse(annotations[ReplicasAtStart])
