@@ -13,7 +13,7 @@ public class ScaleReplicasWorker: BackgroundService
         _replicasService = replicasService;
         _masterService = masterService;
         _logger = logger;
-        _delay = int.Parse(Environment.GetEnvironmentVariable("SCALE_REPLICAS_WORKER_DELAY_MILLISECONDS")  ?? delay.ToString());;
+        _delay = int.Parse(Environment.GetEnvironmentVariable("SCALE_REPLICAS_WORKER_DELAY_MILLISECONDS")  ?? delay.ToString());
         _namespace =
             Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
     }

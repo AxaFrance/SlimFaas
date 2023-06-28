@@ -28,7 +28,7 @@ public record DeploymentsInformations
 public record DeploymentInformation
 {
     public string Deployment { get; set; }
-    public IList<PodInformation> Pods { get; set; }
+    public IList<PodInformation>? Pods { get; set; }
     public string Namespace { get; set; }
     public int? Replicas { get; set; }
     public int ReplicasMin { get; set; }

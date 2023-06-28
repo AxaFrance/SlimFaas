@@ -11,7 +11,7 @@ public class ReplicasSynchronizationWorker: BackgroundService
     {
         _replicasService = replicasService;
         _logger = logger;
-        _delay = int.Parse(Environment.GetEnvironmentVariable("REPLICAS_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS")  ?? delay.ToString());;
+        _delay = int.Parse(Environment.GetEnvironmentVariable("REPLICAS_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS")  ?? delay.ToString());
         _namespace =
             Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
     }
