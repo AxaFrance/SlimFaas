@@ -16,11 +16,11 @@ public class SlimProxyMiddleware
     private readonly IQueue _queue;
     private readonly int _timeoutMaximumWaitWakeSyncFunctionMilliSecond;
 
-    public SlimProxyMiddleware(RequestDelegate next, IQueue queue, int timeoutWaitWakeSyncFunctionMilliSecond = 20000)
+    public SlimProxyMiddleware(RequestDelegate next, IQueue queue, int timeoutWaitWakeSyncFunctionMilliSecond = 10000)
     {
         _next = next;
         _queue = queue;
-        _timeoutMaximumWaitWakeSyncFunctionMilliSecond = int.Parse(Environment.GetEnvironmentVariable("TIMEOUT_MAXIMUM_WAIT_WAKE_SYNC_FUNCTION")  ?? timeoutWaitWakeSyncFunctionMilliSecond.ToString());
+        _timeoutMaximumWaitWakeSyncFunctionMilliSecond = int.Parse(Environment.GetEnvironmentVariable("TIME_MAXIMUM_WAIT_FOR_AT_LEAST_ONE_POD_STARTED_FOR_SYNC_FUNCTION")  ?? timeoutWaitWakeSyncFunctionMilliSecond.ToString());
     }
 
     public async Task InvokeAsync(HttpContext context, ILogger<SlimProxyMiddleware> faasLogger,
