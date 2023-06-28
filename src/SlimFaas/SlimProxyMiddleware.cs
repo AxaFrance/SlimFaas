@@ -10,7 +10,7 @@ public enum FunctionType
     NotAFunction
 }
 
-public class SlimProxyMiddleware 
+public class SlimProxyMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IQueue _queue;
@@ -93,11 +93,11 @@ public class SlimProxyMiddleware
             context.Response.StatusCode = 404;
             return;
         }
-        
+
         await WaitForAnyPodStartedAsync(context, historyHttpService, replicasService, functionName);
 
         var responseMessagePromise = sendClient.SendHttpRequestSync(context, functionName, functionPath, context.Request.QueryString.ToUriComponent());
-        
+
         var lastSetTicks = DateTime.Now.Ticks;
         historyHttpService.SetTickLastCall(functionName, lastSetTicks);
         while (!responseMessagePromise.IsCompleted)
@@ -108,7 +108,7 @@ public class SlimProxyMiddleware
             lastSetTicks = DateTime.Now.Ticks;
             historyHttpService.SetTickLastCall(functionName, lastSetTicks);
         }
-        
+
         historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
         using var responseMessage = responseMessagePromise.Result;
         context.Response.StatusCode = (int)responseMessage.StatusCode;
@@ -125,7 +125,7 @@ public class SlimProxyMiddleware
         while (numberLoop > 0)
         {
             var isAnyContainerStarted = replicasService.Deployments.Functions.Any(f =>
-                f.Replicas is > 0 && f.Pods.Any(p => p.Ready.HasValue && p.Ready.Value));
+                f is { Replicas: > 0, Pods: not null } && f.Pods.Any(p => p.Ready.HasValue && p.Ready.Value));
             if (!isAnyContainerStarted && !context.RequestAborted.IsCancellationRequested)
             {
                 numberLoop--;
@@ -238,6 +238,6 @@ public class SlimProxyMiddleware
 
         return functionBeginPath;
     }
-    
-   
+
+
 }

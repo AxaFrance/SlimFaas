@@ -14,7 +14,7 @@ public class SlimWorker : BackgroundService
     private readonly int _delay;
     private readonly IQueue _queue;
     private readonly IReplicasService _replicasService;
-    
+
     public SlimWorker(IQueue queue, IReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider, int delay = 10)
     {
         _historyHttpService = historyHttpService;
@@ -24,7 +24,7 @@ public class SlimWorker : BackgroundService
         _queue = queue;
         _replicasService = replicasService;
     }
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var processingTasks = new Dictionary<string, IList<RequestToWait>>();
@@ -55,8 +55,8 @@ public class SlimWorker : BackgroundService
                 await UpdateTickLastCallIfRequestStillInProgress(functionReplicas, setTickLastCallCounterDictionary,
                     functionDeployment, numberProcessingTasks);
                 if (functionReplicas == 0) continue;
-                var isAnyContainerStarted = function.Pods.Any(p => p.Ready.HasValue && p.Ready.Value);
-                if(!isAnyContainerStarted) continue;
+                var isAnyContainerStarted = function.Pods?.Any(p => p.Ready.HasValue && p.Ready.Value);
+                if(!isAnyContainerStarted.HasValue || !isAnyContainerStarted.Value) continue;
                 if (numberProcessingTasks >= numberLimitProcessingTasks) continue;
                 await SendHttpRequestToFunction(processingTasks, numberLimitProcessingTasks, numberProcessingTasks,
                     functionDeployment);
@@ -92,7 +92,7 @@ public class SlimWorker : BackgroundService
     private async Task UpdateTickLastCallIfRequestStillInProgress(int? functionReplicas,
         Dictionary<string, int> setTickLastCallCounterDictionnary, string functionDeployment, int numberProcessingTasks)
     {
-        var counterLimit = functionReplicas == 0 ? 10 : 300; 
+        var counterLimit = functionReplicas == 0 ? 10 : 300;
 
         if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
         {
