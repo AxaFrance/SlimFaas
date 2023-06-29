@@ -8,8 +8,8 @@ Why use SlimFaas ?
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
 - Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
-- Simple to install: just add a classic pod
-  - No impact on kubernetes scripts: just add annotation to a pod you want to be auto-scale
+- Simple to install: just deploy a standard pod
+  - No impact on your current kubernetes manifests: just add an annotation to the pod you want to auto-scale
 - Very Slim and very Fast
 
 ![slim-faas-ram-cpu.png](documentation%2Fslim-faas-ram-cpu.png)
@@ -83,7 +83,7 @@ SlimFaas act as an HTTP proxy with 2 modes:
 ### Asynchrounous HTTP call
 
 - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
-  - Tail in memory or via Redis
+  - Tail in memory or using Redis
 
 ![async_http_call.PNG](documentation%2Fasync_http_call.PNG)
 
@@ -113,7 +113,7 @@ spec:
       labels:
         app: fibonacci1
       annotations:
-        # Just add SlimFaas annotation to your pods and that it !
+        # Just add SlimFaas annotation to your pods and that's it !
         SlimFaas/Function: "true" 
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
@@ -175,7 +175,7 @@ spec:
             #  value: "redis-ha-haproxy:6379"
             - name: MOCK_REDIS
               value: "true"
-            # If your are not on kubernetes for example docker-compose, you can use this env variable, you will loose auto-scale
+            # If your are not on kubernetes for example docker-compose, you can use this env variable, but you will lose auto-scale
             #- name: MOCK_KUBERNETES_FUNCTIONS 
             #  value: "{\"Functions\":[{\"Name\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}]}"
           resources:
@@ -193,7 +193,7 @@ spec:
 
 ### SlimFaas Annotations with defaults values
 - SlimFaas/Function: "true" 
-  - Activate SlimFaas on this pod, so your pod will be auto-scale
+  - Activate SlimFaas on this pod, so your pod will be auto-scaled
 - SlimFaas/ReplicasMin: "0"
   - Scale down to this value after a period of inactivity
 - SlimFaas/ReplicasAtStart: "1"
@@ -208,24 +208,20 @@ spec:
 ## Why SlimFaas ?
 
 We used **OpenFaas** for a long time and we love it.
-But we encounter many OpenFaas issues :
+But we encountered many OpenFaas issues :
 - Kubernetes scripts are tightly coupled to OpenFaas syntax
-- OpenFaas pro is to expensive for our projects
-- OpenFaas need to be installed on a dedicated namespace and configuration was intricate
-- OpenFaas Monitoring was not compatible with our Monitoring solution
-- It require to configure well NATS for managing fail-over
+- OpenFaas pro is too expensive for our projects
+- OpenFaas needs to be installed on a dedicated namespace and configuration was intricate
+- OpenFaas monitoring was not compatible with our monitoring solution
+- It requires to configure well NATS for managing fail-over
 - Queue configuration is not easy
-- The aggressive removes of OpenFaas teams in April 20023 of old images from docker.io create us some production issues
+- The aggressive removing of of old images from docker.io by OpenFaas team in April 20023 got us some production issues
 
 We would like to use **Knative** but:
-- We cannot have it because of some internal constraints and security issues. We know now it will be impossible to have it.
+- We cannot use it because of some internal constraints and security issues.
 
-So we decide to create **SlimFaas** to have a quick and simple replacement proxy solution that can expose prometeus metrics.
-So we could use it with **Keda** to scale to 0 and scale to N (Keda is call and can scale from any prometheus Metrics).
-
-But, we tried in few minutes to scale from SlimFaas and it was a great success.
-
-So, now we have a solution not **coupled** to anything. **SlimFaas** is **simple**, **light** and **fast** with a very cool plug and play !
+So we decided to create **SlimFaas** to have a quick and simple replacement proxy solution that can expose Prometheus metrics.
+Now we have a solution not **coupled** to anything. **SlimFaas** is **simple**, **light**, **fast** and **plug and play** !
 
 ## How it works ?
 
