@@ -75,7 +75,7 @@ public class ReplicasService : IReplicasService
 
             if (timeElapsedWhithoutRequest)
             {
-                if (!(currentScale > deploymentInformation.ReplicasMin)) continue;
+                if (currentScale <= deploymentInformation.ReplicasMin) continue;
                 var task = _kubernetesService.ScaleAsync(new ReplicaRequest(
                 Replicas : deploymentInformation.ReplicasMin,
                     Deployment : deploymentInformation.Deployment,
@@ -102,7 +102,7 @@ public class ReplicasService : IReplicasService
 
         foreach (var function in Deployments.Functions)
         {
-            var updatedFunction = tasks.FirstOrDefault(t => t.Result?.Deployment == function.Deployment);
+            var updatedFunction = tasks.Find(t => t.Result?.Deployment == function.Deployment);
             updatedFunctions.Add(function with { Replicas = updatedFunction is { Result: not null } ? updatedFunction.Result.Replicas : function.Replicas });
         }
         lock (Lock)
