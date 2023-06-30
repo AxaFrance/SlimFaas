@@ -12,16 +12,20 @@ public interface IReplicasService
 public class ReplicasService : IReplicasService
 {
     private readonly HistoryHttpMemoryService _historyHttpService;
+    private readonly ILogger<ReplicasService> _logger;
     private readonly IKubernetesService _kubernetesService;
     private DeploymentsInformations _deployments;
     private readonly object Lock = new();
+    private readonly bool _isTurnOnByDefault;
 
-    public ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService)
+    public ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService, ILogger<ReplicasService> logger)
     {
         _kubernetesService = kubernetesService;
         _historyHttpService = historyHttpService;
+        _logger = logger;
         _deployments = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
             SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1));
+        _isTurnOnByDefault = EnvironmentVariables.ReadBoolean(logger, "POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED", true);
     }
 
     public DeploymentsInformations Deployments
@@ -66,6 +70,11 @@ public class ReplicasService : IReplicasService
             var tickLastCall = deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest
                 ? maximumTicks
                 : ticksLastCall[deploymentInformation.Deployment];
+
+            if(_isTurnOnByDefault && tickLastCall == 0)
+            {
+                tickLastCall = DateTime.Now.Ticks;
+            }
 
             var timeElapsedWhithoutRequest = TimeSpan.FromTicks(tickLastCall) +
                                              TimeSpan.FromSeconds(deploymentInformation

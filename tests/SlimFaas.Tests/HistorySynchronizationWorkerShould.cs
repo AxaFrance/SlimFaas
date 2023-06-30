@@ -21,7 +21,8 @@ public class HistorySynchronizationWorkerShould
             new SlimFaasDeploymentInformation(1));
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).ReturnsAsync(deploymentsInformations);
         var historyHttpMemoryService = new HistoryHttpMemoryService();
-        var replicasService = new ReplicasService(kubernetesService.Object, historyHttpMemoryService);
+        var loggerReplicasService = new Mock<ILogger<ReplicasService>>();
+        var replicasService = new ReplicasService(kubernetesService.Object, historyHttpMemoryService, loggerReplicasService.Object);
         await replicasService.SyncDeploymentsAsync("default");
 
         var firstTicks = 1L;

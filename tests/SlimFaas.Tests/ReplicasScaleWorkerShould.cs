@@ -17,7 +17,8 @@ public class ReplicasScaleWorkerShould
         var masterService = new Mock<IMasterService>();
         var historyHttpService = new HistoryHttpMemoryService();
         historyHttpService.SetTickLastCall("fibonacci2", DateTime.Now.Ticks);
-        var replicasService = new ReplicasService(kubernetesService.Object, historyHttpService);
+        var loggerReplicasService = new Mock<ILogger<ReplicasService>>();
+        var replicasService = new ReplicasService(kubernetesService.Object, historyHttpService, loggerReplicasService.Object);
         masterService.Setup(ms => ms.IsMaster).Returns(true);
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).ReturnsAsync(deploymentsInformations);
 

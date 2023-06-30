@@ -38,7 +38,8 @@ public class ReplicasSynchronizationWorkerShould
         kubernetesService.Setup(k=>k.ListFunctionsAsync(It.IsAny<string>())).ReturnsAsync(deploymentsInformations);
         var masterService = new Mock<IMasterService>();
         var historyHttpService = new HistoryHttpMemoryService();
-        var replicasService = new ReplicasService(kubernetesService.Object, historyHttpService);
+        var loggerReplicasService = new Mock<ILogger<ReplicasService>>();
+        var replicasService = new ReplicasService(kubernetesService.Object, historyHttpService, loggerReplicasService.Object);
         masterService.Setup(ms => ms.IsMaster).Returns(true);
 
         var service = new ReplicasSynchronizationWorker(replicasService, logger.Object, 100);
@@ -57,7 +58,8 @@ public class ReplicasSynchronizationWorkerShould
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).Throws(new Exception());
         var masterService = new Mock<IMasterService>();
         var historyHttpService = new HistoryHttpMemoryService();
-        var replicasService = new ReplicasService(kubernetesService.Object, historyHttpService);
+        var loggerReplicasService = new Mock<ILogger<ReplicasService>>();
+        var replicasService = new ReplicasService(kubernetesService.Object, historyHttpService, loggerReplicasService.Object);
         masterService.Setup(ms => ms.IsMaster).Returns(true);
 
         var service = new ReplicasSynchronizationWorker(replicasService, logger.Object, 10);
