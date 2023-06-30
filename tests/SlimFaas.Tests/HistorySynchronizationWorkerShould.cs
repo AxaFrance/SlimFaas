@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Moq;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas.Tests;
 

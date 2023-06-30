@@ -4,7 +4,7 @@ using k8s;
 using k8s.Autorest;
 using k8s.Models;
 
-namespace SlimFaas;
+namespace SlimFaas.Kubernetes;
 
 public record ReplicaRequest(string Deployment, string Namespace, int Replicas);
 
@@ -36,7 +36,7 @@ public class KubernetesService : IKubernetesService
     {
         try
         {
-            using var client = new Kubernetes(_k8SConfig);
+            using var client = new k8s.Kubernetes(_k8SConfig);
             var patchString = $"{{\"spec\": {{\"replicas\": {request.Replicas}}}}}";
             var patch = new V1Patch(patchString, V1Patch.PatchType.MergePatch);
             await client.PatchNamespacedDeploymentScaleAsync(patch, request.Deployment, request.Namespace);
@@ -62,7 +62,7 @@ public class KubernetesService : IKubernetesService
         try
         {
             IList<DeploymentInformation>? deploymentInformationList = new List<DeploymentInformation>();
-                using var client = new Kubernetes(_k8SConfig);
+                using var client = new k8s.Kubernetes(_k8SConfig);
                 var deploymentListTask = client.ListNamespacedDeploymentAsync(kubeNamespace);
                 var podListTask = client.ListNamespacedPodAsync(kubeNamespace);
 
@@ -109,10 +109,9 @@ public class KubernetesService : IKubernetesService
         }
     }
 
-    private static IList<PodInformation> MapPodInformations(V1PodList list)
+    private static IEnumerable<PodInformation> MapPodInformations(V1PodList v1PodList)
     {
-        IList<PodInformation> podInformations = new List<PodInformation>();
-        foreach (var item in list.Items)
+        foreach (var item in v1PodList.Items)
         {
             var containerStatus = item.Status.ContainerStatuses.FirstOrDefault();
             if (containerStatus == null)
@@ -127,10 +126,8 @@ public class KubernetesService : IKubernetesService
             var deploymentName = ExtractPodDeploymentNameFrom(item.Metadata.GenerateName);
             var podInformation = new PodInformation(podName, started, ready, podIp, deploymentName);
 
-            podInformations.Add(podInformation);
+            yield return podInformation;
         }
-
-        return podInformations;
     }
 
     public static string ExtractPodDeploymentNameFrom(string generalName)

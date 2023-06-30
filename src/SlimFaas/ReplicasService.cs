@@ -1,4 +1,6 @@
-﻿namespace SlimFaas;
+﻿using SlimFaas.Kubernetes;
+
+namespace SlimFaas;
 
 public interface IReplicasService
 {

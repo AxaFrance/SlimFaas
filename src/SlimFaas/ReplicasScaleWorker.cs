@@ -13,11 +13,11 @@ public class ScaleReplicasWorker: BackgroundService
         _replicasService = replicasService;
         _masterService = masterService;
         _logger = logger;
-        _delay = int.Parse(Environment.GetEnvironmentVariable("SCALE_REPLICAS_WORKER_DELAY_MILLISECONDS")  ?? delay.ToString());
+        _delay = EnvironmentVariables.ReadInteger(logger, "SCALE_REPLICAS_WORKER_DELAY_MILLISECONDS", delay);
         _namespace =
             Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
     }
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
          while (stoppingToken.IsCancellationRequested == false)

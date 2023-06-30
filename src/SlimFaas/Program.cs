@@ -4,6 +4,7 @@ using SlimFaas;
 using Polly;
 using Polly.Extensions.Http;
 using Prometheus;
+using SlimFaas.Kubernetes;
 
 var builder = WebApplication.CreateBuilder(args);
 

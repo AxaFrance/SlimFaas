@@ -4,6 +4,7 @@ using Moq;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas.Tests;
 

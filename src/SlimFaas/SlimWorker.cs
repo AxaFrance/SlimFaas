@@ -1,8 +1,8 @@
 ﻿
 using System.Text.Json;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
-
 
 record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest);
 
@@ -20,7 +20,7 @@ public class SlimWorker : BackgroundService
         _historyHttpService = historyHttpService;
         _logger = logger;
         _serviceProvider = serviceProvider;
-        _delay = int.Parse(Environment.GetEnvironmentVariable("SLIM_WORKER_DELAY_MILLISECONDS")  ?? delay.ToString());
+        _delay = EnvironmentVariables.ReadInteger(logger, "SLIM_WORKER_DELAY_MILLISECONDS", delay);
         _queue = queue;
         _replicasService = replicasService;
     }

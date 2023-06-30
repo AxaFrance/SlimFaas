@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
@@ -14,20 +15,22 @@ public class SlimProxyMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IQueue _queue;
+    private readonly ILogger<SlimProxyMiddleware> _logger;
     private readonly int _timeoutMaximumWaitWakeSyncFunctionMilliSecond;
 
-    public SlimProxyMiddleware(RequestDelegate next, IQueue queue, int timeoutWaitWakeSyncFunctionMilliSecond = 10000)
+    public SlimProxyMiddleware(RequestDelegate next, IQueue queue, ILogger<SlimProxyMiddleware> logger, int timeoutWaitWakeSyncFunctionMilliSecond = 10000)
     {
         _next = next;
         _queue = queue;
-        _timeoutMaximumWaitWakeSyncFunctionMilliSecond = int.Parse(Environment.GetEnvironmentVariable("TIME_MAXIMUM_WAIT_FOR_AT_LEAST_ONE_POD_STARTED_FOR_SYNC_FUNCTION")  ?? timeoutWaitWakeSyncFunctionMilliSecond.ToString());
+        _logger = logger;
+        _timeoutMaximumWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.ReadInteger(logger, "TIME_MAXIMUM_WAIT_FOR_AT_LEAST_ONE_POD_STARTED_FOR_SYNC_FUNCTION", timeoutWaitWakeSyncFunctionMilliSecond);
     }
 
-    public async Task InvokeAsync(HttpContext context, ILogger<SlimProxyMiddleware> faasLogger,
+    public async Task InvokeAsync(HttpContext context,
         HistoryHttpMemoryService historyHttpService, ISendClient sendClient, IReplicasService replicasService)
     {
         var contextRequest = context.Request;
-        var (functionPath, functionName, functionType) = GetFunctionInfo(faasLogger, contextRequest);
+        var (functionPath, functionName, functionType) = GetFunctionInfo(_logger, contextRequest);
         var contextResponse = context.Response;
         switch (functionType)
         {
