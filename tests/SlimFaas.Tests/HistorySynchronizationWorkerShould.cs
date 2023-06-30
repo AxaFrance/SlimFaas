@@ -12,19 +12,17 @@ public class HistorySynchronizationWorkerShould
         var redisMockService = new RedisMockService();
         var historyHttpRedisService = new HistoryHttpRedisService(redisMockService);
         var kubernetesService = new Mock<IKubernetesService>();
-        var deploymentsInformations = new DeploymentsInformations()
+        var deploymentsInformations = new DeploymentsInformations(Functions: new List<DeploymentInformation>()
         {
-            Functions = new List<DeploymentInformation>()
-            {
-                new() { Deployment = "fibonacci1", Namespace = "default", Replicas = 1},
-                new() { Deployment = "fibonacci2", Namespace = "default", Replicas = 0}
-            }
-        } ;
+            new(Deployment: "fibonacci1", Namespace: "default", Replicas: 1, Pods: new List<PodInformation>()),
+            new(Deployment: "fibonacci2", Namespace: "default", Replicas: 0, Pods: new List<PodInformation>())
+        },
+            new SlimFaasDeploymentInformation(1));
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).ReturnsAsync(deploymentsInformations);
         var historyHttpMemoryService = new HistoryHttpMemoryService();
         var replicasService = new ReplicasService(kubernetesService.Object, historyHttpMemoryService);
         await replicasService.SyncDeploymentsAsync("default");
-        
+
         var firstTicks = 1L;
         await historyHttpRedisService.SetTickLastCallAsync("fibonacci1", firstTicks);
         var service = new HistorySynchronizationWorker(replicasService, historyHttpMemoryService, historyHttpRedisService, logger.Object, 100);
@@ -39,10 +37,10 @@ public class HistorySynchronizationWorkerShould
         await Task.Delay(200);
         var ticksSecondCallAsync = await historyHttpRedisService.GetTicksLastCallAsync("fibonacci1");
         Assert.Equal(secondTicks, ticksSecondCallAsync);
-        
+
         Assert.True(task.IsCompleted);
     }
-    
+
     [Fact]
     public async Task LogErrorWhenExceptionIsThrown()
     {
@@ -56,7 +54,7 @@ public class HistorySynchronizationWorkerShould
 
         var task = service.StartAsync(CancellationToken.None);
         await Task.Delay(100);
- 
+
         logger.Verify(l => l.Log(
             LogLevel.Error,
             It.IsAny<EventId>(),

@@ -109,7 +109,7 @@ public class SlimWorker : BackgroundService
         DeploymentInformation function)
     {
         int? numberLimitProcessingTasks;
-        var numberReplicas = slimFaas.Replicas ?? 0;
+        var numberReplicas = slimFaas.Replicas;
 
         if (function.NumberParallelRequest < numberReplicas || numberReplicas == 0)
         {

@@ -13,23 +13,12 @@ namespace SlimFaas.Tests;
 class MemoryReplicasService : IReplicasService
 {
     public DeploymentsInformations Deployments =>
-        new()
-        {
-            Functions = new List<DeploymentInformation>()
+        new(
+            Functions: new List<DeploymentInformation>()
             {
-                new()
-                {
-                    Replicas = 0,
-                    Deployment = "fibonacci",
-                    Namespace = "default",
-                    Pods = new List<PodInformation> {  new("", true, true, "", "") }
-                }
-            },
-            SlimFaas = new SlimFaasDeploymentInformation
-            {
-                Replicas = 1
-            }
-        };
+                new(Replicas: 0, Deployment: "fibonacci", Namespace: "default",
+                    Pods: new List<PodInformation> { new("", true, true, "", "") })
+            }, SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1));
 
     public Task SyncDeploymentsAsync(string kubeNamespace)
     {
