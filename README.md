@@ -17,7 +17,7 @@ Why use SlimFaas ?
 ## Getting Started with Kubernetes
 
 To test slimfaas on your local machine by using kubernetes with Docker Desktop, please use these commands:
- 
+
 ```bash
 git clone https://github.com/AxaFrance/slimfaas.git
 cd slimfaas/demo
@@ -72,7 +72,7 @@ Enjoy slimfaas !!!!
 
 ## How it works
 
-SlimFaas act as an HTTP proxy with 2 modes: 
+SlimFaas act as an HTTP proxy with 2 modes:
 
 ### Synchrounous HTTP call
 
@@ -99,7 +99,7 @@ SlimFaas act as an HTTP proxy with 2 modes:
 3. Have fun !
 
 sample-deployment.yaml
-````yaml 
+````yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -114,7 +114,7 @@ spec:
         app: fibonacci1
       annotations:
         # Just add SlimFaas annotation to your pods and that it !
-        SlimFaas/Function: "true" 
+        SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
@@ -171,29 +171,32 @@ spec:
             - name: NAMESPACE
               value: "default"
             # If you want to use Redis use this env variable and comment MOCK_REDIS
-            #- name: REDIS_CONNECTION_STRING 
+            #- name: REDIS_CONNECTION_STRING
             #  value: "redis-ha-haproxy:6379"
             - name: MOCK_REDIS
               value: "true"
             # If your are not on kubernetes for example docker-compose, you can use this env variable, you will loose auto-scale
-            #- name: MOCK_KUBERNETES_FUNCTIONS 
+            #- name: MOCK_KUBERNETES_FUNCTIONS
             #  value: "{\"Functions\":[{\"Name\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}]}"
 
-            # Optional, longer is the delay, less CPU and RAM is used 
+            # Optional, longer is the delay, less CPU and RAM is used
             #- name : HISTORY_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS
             #  value : "500" # default equivalent to 0,5 seconds
-            # Optional, longer is the delay, less CPU and RAM is used 
+            # Optional, longer is the delay, less CPU and RAM is used
             #- name : REPLICAS_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS
             #  value : "2000" # default equivalent to 2 seconds
-            # Optional, longer is the delay, less CPU and RAM is used 
+            # Optional, longer is the delay, less CPU and RAM is used
             #- name : SLIM_WORKER_DELAY_MILLISECONDS
             #  value : "10" # default equivalent to 10 milliseconds
-            # Optional, longer is the delay, less CPU and RAM is used 
+            # Optional, longer is the delay, less CPU and RAM is used
             #- name : SCALE_REPLICAS_WORKER_DELAY_MILLISECONDS
             #  value : "1000" # default equivalent to 1 seconds
             # Optional
             # name : TIME_MAXIMUM_WAIT_FOR_AT_LEAST_ONE_POD_STARTED_FOR_SYNC_FUNCTION
             # value : "10000" # default equivalent to 10 seconds
+            # Optional
+            # name : POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED
+            # value : "false" # default equivalent to false
           resources:
             limits:
               memory: "76Mi"
@@ -208,7 +211,7 @@ spec:
 
 
 ### SlimFaas Annotations with defaults values
-- SlimFaas/Function: "true" 
+- SlimFaas/Function: "true"
   - Activate SlimFaas on this pod, so your pod will be auto-scale
 - SlimFaas/ReplicasMin: "0"
   - Scale down to this value after a period of inactivity
@@ -216,7 +219,7 @@ spec:
   - Scale up to this value at start
 - SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
   - Scale up this pod as soon as one function retrieve a request
-- SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300" 
+- SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
   - Scale down to SlimFaas/ReplicasMin after this period of inactivity in seconds
 - SlimFaas/NumberParallelRequest : "10"
   - Limit the number of parallel HTTP requests for each underlying function
