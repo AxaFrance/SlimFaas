@@ -7,13 +7,14 @@ public class ReplicasSynchronizationWorker: BackgroundService
     private readonly int _delay;
     private readonly string _namespace;
 
-    public ReplicasSynchronizationWorker(IReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger, int delay = 10000)
+    public ReplicasSynchronizationWorker(IReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger, int delay = EnvironmentVariables.ReplicasSynchronizationWorkerDelayMillisecondsDefault)
     {
         _replicasService = replicasService;
         _logger = logger;
-        _delay = delay;
+
+        _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
         _namespace =
-            Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
+            Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

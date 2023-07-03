@@ -8,17 +8,18 @@ public class HistorySynchronizationWorker: BackgroundService
     private readonly ILogger<HistorySynchronizationWorker> _logger;
     private readonly int _delay;
 
-    public HistorySynchronizationWorker(IReplicasService replicasService, 
-        HistoryHttpMemoryService historyHttpMemoryService, 
-        HistoryHttpRedisService historyHttpRedisService, 
-        ILogger<HistorySynchronizationWorker> logger, 
-        int delay = 500)
+    public HistorySynchronizationWorker(IReplicasService replicasService,
+        HistoryHttpMemoryService historyHttpMemoryService,
+        HistoryHttpRedisService historyHttpRedisService,
+        ILogger<HistorySynchronizationWorker> logger,
+        int delay = EnvironmentVariables.HistorySynchronizationWorkerDelayMillisecondsDefault)
     {
         _replicasService = replicasService;
         _historyHttpMemoryService = historyHttpMemoryService;
         _historyHttpRedisService = historyHttpRedisService;
         _logger = logger;
-        _delay = delay;
+
+        _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.HistorySynchronisationWorkerDelayMilliseconds, delay);
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

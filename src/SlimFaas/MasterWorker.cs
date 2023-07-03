@@ -6,7 +6,7 @@ public class MasterWorker : BackgroundService
     private readonly ILogger<MasterWorker> _logger;
     private readonly int _delay;
 
-    public MasterWorker(IMasterService masterService, ILogger<MasterWorker> logger, int delay = 1000)
+    public MasterWorker(IMasterService masterService, ILogger<MasterWorker> logger, int delay = EnvironmentVariables.MasterWorkerDelayMillisecondsDefault)
     {
         _masterService = masterService;
         _logger = logger;
@@ -27,6 +27,6 @@ public class MasterWorker : BackgroundService
                 _logger.LogError(e, "Global Error in MasterWorker");
             }
         }
-       
+
     }
 }

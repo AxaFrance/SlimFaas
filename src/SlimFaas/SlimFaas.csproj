@@ -8,6 +8,7 @@
         <PublishReadyToRun>true</PublishReadyToRun>
         <PublishTrimmed>true</PublishTrimmed>
         <RootNamespace>SlimFaas</RootNamespace>
+        <WarningsAsErrors>Nullable</WarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>

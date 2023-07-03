@@ -11,16 +11,16 @@ public class RedisService : IRedisService
 
     public RedisService()
     {
-        var redisConnectionString = 
-        Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? "localhost:6379";
+        var redisConnectionString =
+        Environment.GetEnvironmentVariable(EnvironmentVariables.RedisConnectionString) ?? EnvironmentVariables.RedisConnectionStringDefault;
         _redis = ConnectionMultiplexer.Connect(redisConnectionString);
     }
-    
+
     public async Task<string> GetAsync(string key)
     {
         return (await _redis.GetDatabase().StringGetAsync(KeyPrefix+key)).ToString();
     }
-    
+
     public async Task SetAsync(string key, string value)
     {
         await _redis.GetDatabase().StringGetSetAsync(KeyPrefix+key, value);
@@ -30,13 +30,13 @@ public class RedisService : IRedisService
     {
         await _redis.GetDatabase().HashSetAsync(KeyPrefix+key, values.Select(x => new HashEntry(x.Key, x.Value)).ToArray());
     }
-    
+
     public async Task<IDictionary<string, string>> HashGetAllAsync(string key)
     {
         var hashEntries = await _redis.GetDatabase().HashGetAllAsync(KeyPrefix + key);
         return hashEntries.ToStringDictionary();
     }
-    
+
     public async Task ListLeftPushAsync(string key, string field)
     {
         await _redis.GetDatabase().ListLeftPushAsync(KeyPrefix+key, field);
@@ -59,7 +59,7 @@ public class RedisService : IRedisService
         }
         return resultList;
     }
-    
+
     public async Task<long> ListLengthAsync(string key)
     {
         return await _redis.GetDatabase().ListLengthAsync(KeyPrefix+key);

@@ -1,4 +1,6 @@
-﻿namespace SlimFaas;
+﻿using SlimFaas.Kubernetes;
+
+namespace SlimFaas;
 
 public interface IReplicasService
 {
@@ -10,22 +12,21 @@ public interface IReplicasService
 public class ReplicasService : IReplicasService
 {
     private readonly HistoryHttpMemoryService _historyHttpService;
+    private readonly ILogger<ReplicasService> _logger;
     private readonly IKubernetesService _kubernetesService;
     private DeploymentsInformations _deployments;
     private readonly object Lock = new();
+    private readonly bool _isTurnOnByDefault;
 
-    public ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService)
+    public ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService, ILogger<ReplicasService> logger)
     {
         _kubernetesService = kubernetesService;
         _historyHttpService = historyHttpService;
-        _deployments = new DeploymentsInformations()
-        {
-            Functions = new List<DeploymentInformation>(),
-            SlimFaas = new SlimFaasDeploymentInformation()
-            {
-                Replicas = 1
-            }
-        };
+        _logger = logger;
+        _deployments = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
+            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1));
+
+        _isTurnOnByDefault = EnvironmentVariables.ReadBoolean(logger, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalled, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalledDefault);
     }
 
     public DeploymentsInformations Deployments
@@ -34,14 +35,8 @@ public class ReplicasService : IReplicasService
         {
             lock (Lock)
             {
-                return new DeploymentsInformations()
-                {
-                    Functions = _deployments.Functions.ToArray(),
-                    SlimFaas = new SlimFaasDeploymentInformation()
-                    {
-                        Replicas = _deployments?.SlimFaas?.Replicas ?? 1
-                    }
-                };
+                return new DeploymentsInformations(Functions: _deployments.Functions.ToArray(),
+                    SlimFaas: new SlimFaasDeploymentInformation(Replicas: _deployments?.SlimFaas?.Replicas ?? 1));
             }
         }
     }
@@ -59,7 +54,7 @@ public class ReplicasService : IReplicasService
         }
     }
 
-    public Task CheckScaleAsync(string kubeNamespace)
+    public async Task CheckScaleAsync(string kubeNamespace)
     {
         var maximumTicks = 0L;
         IDictionary<string, long> ticksLastCall = new Dictionary<string, long>();
@@ -77,6 +72,11 @@ public class ReplicasService : IReplicasService
                 ? maximumTicks
                 : ticksLastCall[deploymentInformation.Deployment];
 
+            if(_isTurnOnByDefault && tickLastCall == 0)
+            {
+                tickLastCall = DateTime.Now.Ticks;
+            }
+
             var timeElapsedWhithoutRequest = TimeSpan.FromTicks(tickLastCall) +
                                              TimeSpan.FromSeconds(deploymentInformation
                                                  .TimeoutSecondBeforeSetReplicasMin) <
@@ -85,42 +85,39 @@ public class ReplicasService : IReplicasService
 
             if (timeElapsedWhithoutRequest)
             {
-                if (!currentScale.HasValue || !(currentScale > deploymentInformation.ReplicasMin)) continue;
-                var task = _kubernetesService.ScaleAsync(new ReplicaRequest
-                {
-                    Replicas = deploymentInformation.ReplicasMin,
-                    Deployment = deploymentInformation.Deployment,
-                    Namespace = kubeNamespace
-                });
+                if (currentScale <= deploymentInformation.ReplicasMin) continue;
+                var task = _kubernetesService.ScaleAsync(new ReplicaRequest(
+                Replicas : deploymentInformation.ReplicasMin,
+                    Deployment : deploymentInformation.Deployment,
+                    Namespace : kubeNamespace
+                ));
 
                 tasks.Add(task);
             }
             else if (currentScale is 0)
             {
-                var task = _kubernetesService.ScaleAsync(new ReplicaRequest
-                {
-                    Replicas = deploymentInformation.ReplicasAtStart,
-                    Deployment = deploymentInformation.Deployment, Namespace = kubeNamespace
-                });
+                var task = _kubernetesService.ScaleAsync(new ReplicaRequest(
+                    Replicas : deploymentInformation.ReplicasAtStart,
+                    Deployment : deploymentInformation.Deployment,
+                    Namespace : kubeNamespace
+                ));
 
                 tasks.Add(task);
             }
         }
 
-        if (tasks.Count <= 0) return Task.CompletedTask;
+        if (tasks.Count <= 0) return;
 
         var updatedFunctions = new List<DeploymentInformation>();
-        
+        ReplicaRequest?[] replicaRequests = await Task.WhenAll(tasks);
         foreach (var function in Deployments.Functions)
         {
-            var updatedFunction = tasks.FirstOrDefault(t => t.Result.Deployment == function.Deployment);
-            updatedFunctions.Add(function with { Replicas = updatedFunction != null ? updatedFunction.Result.Replicas : function.Replicas });
+            var updatedFunction = replicaRequests.ToList().Find(t => t?.Deployment == function.Deployment);
+            updatedFunctions.Add(function with { Replicas = updatedFunction?.Replicas ?? function.Replicas });
         }
         lock (Lock)
         {
             _deployments = Deployments with { Functions = updatedFunctions };
         }
-
-        return Task.CompletedTask;
     }
 }

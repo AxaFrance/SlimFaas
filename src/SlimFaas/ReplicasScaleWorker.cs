@@ -8,16 +8,18 @@ public class ScaleReplicasWorker: BackgroundService
     private readonly int _delay;
     private readonly string _namespace;
 
-    public ScaleReplicasWorker(IReplicasService replicasService, IMasterService masterService , ILogger<ScaleReplicasWorker> logger, int delay = 1000)
+    public ScaleReplicasWorker(IReplicasService replicasService, IMasterService masterService , ILogger<ScaleReplicasWorker> logger, int delay = EnvironmentVariables.ScaleReplicasWorkerDelayMillisecondsDefault)
     {
         _replicasService = replicasService;
         _masterService = masterService;
         _logger = logger;
-        _delay = delay;
+
+        _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.ScaleReplicasWorkerDelayMilliseconds, delay);
+
         _namespace =
-            Environment.GetEnvironmentVariable("NAMESPACE") ?? "default";
+            Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
     }
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
          while (stoppingToken.IsCancellationRequested == false)

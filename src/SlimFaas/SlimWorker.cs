@@ -1,8 +1,8 @@
 ﻿
 using System.Text.Json;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
-
 
 record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest);
 
@@ -11,18 +11,21 @@ public class SlimWorker : BackgroundService
     private readonly HistoryHttpMemoryService _historyHttpService;
     private readonly ILogger<SlimWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly int _delay;
     private readonly IQueue _queue;
     private readonly IReplicasService _replicasService;
-    
-    public SlimWorker(IQueue queue, IReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider)
+
+    public SlimWorker(IQueue queue, IReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider, int delay = EnvironmentVariables.SlimWorkerDelayMillisecondsDefault)
     {
         _historyHttpService = historyHttpService;
         _logger = logger;
         _serviceProvider = serviceProvider;
+
+        _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.SlimWorkerDelayMilliseconds, delay);
         _queue = queue;
         _replicasService = replicasService;
     }
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var processingTasks = new Dictionary<string, IList<RequestToWait>>();
@@ -38,7 +41,7 @@ public class SlimWorker : BackgroundService
     {
         try
         {
-            await Task.Delay(10, stoppingToken);
+            await Task.Delay(_delay, stoppingToken);
             var deployments = _replicasService.Deployments;
             var functions = deployments.Functions;
             var slimFaas = deployments.SlimFaas;
@@ -53,6 +56,8 @@ public class SlimWorker : BackgroundService
                 await UpdateTickLastCallIfRequestStillInProgress(functionReplicas, setTickLastCallCounterDictionary,
                     functionDeployment, numberProcessingTasks);
                 if (functionReplicas == 0) continue;
+                var isAnyContainerStarted = function.Pods?.Any(p => p.Ready.HasValue && p.Ready.Value);
+                if(!isAnyContainerStarted.HasValue || !isAnyContainerStarted.Value) continue;
                 if (numberProcessingTasks >= numberLimitProcessingTasks) continue;
                 await SendHttpRequestToFunction(processingTasks, numberLimitProcessingTasks, numberProcessingTasks,
                     functionDeployment);
@@ -74,9 +79,9 @@ public class SlimWorker : BackgroundService
         {
             var customRequest =
                 JsonSerializer.Deserialize(requestJson, CustomRequestSerializerContext.Default.CustomRequest);
-            _logger.LogInformation("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
+            _logger.LogDebug("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
                 customRequest.Method, customRequest.Path, customRequest.Query);
-            _logger.LogInformation("{RequestJson}", requestJson);
+            _logger.LogDebug("{RequestJson}", requestJson);
             _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
             using var scope = _serviceProvider.CreateScope();
             var taskResponse = scope.ServiceProvider.GetRequiredService<ISendClient>()
@@ -88,7 +93,7 @@ public class SlimWorker : BackgroundService
     private async Task UpdateTickLastCallIfRequestStillInProgress(int? functionReplicas,
         Dictionary<string, int> setTickLastCallCounterDictionnary, string functionDeployment, int numberProcessingTasks)
     {
-        var counterLimit = functionReplicas == 0 ? 10 : 300; 
+        var counterLimit = functionReplicas == 0 ? 10 : 300;
 
         if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
         {
@@ -105,7 +110,7 @@ public class SlimWorker : BackgroundService
         DeploymentInformation function)
     {
         int? numberLimitProcessingTasks;
-        var numberReplicas = slimFaas.Replicas ?? 0;
+        var numberReplicas = slimFaas.Replicas;
 
         if (function.NumberParallelRequest < numberReplicas || numberReplicas == 0)
         {
@@ -134,7 +139,7 @@ public class SlimWorker : BackgroundService
                 if (!processing.Task.IsCompleted) continue;
                 var httpResponseMessage = processing.Task.Result;
                 httpResponseMessage.Dispose();
-                _logger.LogInformation(
+                _logger.LogDebug(
                     "{CustomRequestMethod}: /async-function/{CustomRequestPath}{CustomRequestQuery} {StatusCode}",
                     processing.CustomRequest.Method, processing.CustomRequest.Path, processing.CustomRequest.Query,
                     httpResponseMessage.StatusCode);
