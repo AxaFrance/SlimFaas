@@ -15,12 +15,13 @@ public class SlimWorker : BackgroundService
     private readonly IQueue _queue;
     private readonly IReplicasService _replicasService;
 
-    public SlimWorker(IQueue queue, IReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider, int delay = 10)
+    public SlimWorker(IQueue queue, IReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider, int delay = EnvironmentVariables.SlimWorkerDelayMillisecondsDefault)
     {
         _historyHttpService = historyHttpService;
         _logger = logger;
         _serviceProvider = serviceProvider;
-        _delay = EnvironmentVariables.ReadInteger(logger, "SLIM_WORKER_DELAY_MILLISECONDS", delay);
+
+        _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.SlimWorkerDelayMilliseconds, delay);
         _queue = queue;
         _replicasService = replicasService;
     }

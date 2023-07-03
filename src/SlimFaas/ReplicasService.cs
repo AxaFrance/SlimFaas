@@ -25,7 +25,8 @@ public class ReplicasService : IReplicasService
         _logger = logger;
         _deployments = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
             SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1));
-        _isTurnOnByDefault = EnvironmentVariables.ReadBoolean(logger, "POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED", true);
+
+        _isTurnOnByDefault = EnvironmentVariables.ReadBoolean(logger, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalled, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalledDefault);
     }
 
     public DeploymentsInformations Deployments
@@ -53,7 +54,7 @@ public class ReplicasService : IReplicasService
         }
     }
 
-    public Task CheckScaleAsync(string kubeNamespace)
+    public async Task CheckScaleAsync(string kubeNamespace)
     {
         var maximumTicks = 0L;
         IDictionary<string, long> ticksLastCall = new Dictionary<string, long>();
@@ -105,20 +106,18 @@ public class ReplicasService : IReplicasService
             }
         }
 
-        if (tasks.Count <= 0) return Task.CompletedTask;
+        if (tasks.Count <= 0) return;
 
         var updatedFunctions = new List<DeploymentInformation>();
-
+        ReplicaRequest?[] replicaRequests = await Task.WhenAll(tasks);
         foreach (var function in Deployments.Functions)
         {
-            var updatedFunction = tasks.Find(t => t.Result?.Deployment == function.Deployment);
-            updatedFunctions.Add(function with { Replicas = updatedFunction is { Result: not null } ? updatedFunction.Result.Replicas : function.Replicas });
+            var updatedFunction = replicaRequests.ToList().Find(t => t?.Deployment == function.Deployment);
+            updatedFunctions.Add(function with { Replicas = updatedFunction?.Replicas ?? function.Replicas });
         }
         lock (Lock)
         {
             _deployments = Deployments with { Functions = updatedFunctions };
         }
-
-        return Task.CompletedTask;
     }
 }

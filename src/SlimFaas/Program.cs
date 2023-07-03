@@ -18,7 +18,8 @@ serviceCollection.AddHttpClient();
 serviceCollection.AddSingleton<IQueue, RedisQueue>();
 serviceCollection.AddSingleton<IReplicasService, ReplicasService>();
 
-var mockRedis = Environment.GetEnvironmentVariable("MOCK_REDIS");
+
+var mockRedis = Environment.GetEnvironmentVariable(EnvironmentVariables.MockRedis);
 if (!string.IsNullOrEmpty(mockRedis))
 {
     serviceCollection.AddSingleton<IRedisService, RedisMockService>();
@@ -31,7 +32,8 @@ serviceCollection.AddSingleton<IMasterService, MasterService>();
 serviceCollection.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
 serviceCollection.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
 
-var mockKubernetesFunction = Environment.GetEnvironmentVariable("MOCK_KUBERNETES_FUNCTIONS");
+
+var mockKubernetesFunction = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions);
 if (!string.IsNullOrEmpty(mockKubernetesFunction))
 {
     serviceCollection.AddSingleton<IKubernetesService, MockKubernetesService>();

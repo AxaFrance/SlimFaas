@@ -38,11 +38,12 @@ public class MockKubernetesService : IKubernetesService
     private readonly DeploymentsInformations _deploymentInformations;
     public MockKubernetesService()
     {
-        var functionsJson = Environment.GetEnvironmentVariable("MOCK_KUBERNETES_FUNCTIONS") ?? "";
+
+        var functionsJson = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions) ?? EnvironmentVariables.MockKubernetesFunctionsDefault;
 
         _deploymentInformations = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
             SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1));
-        var functions = JsonSerializer.Deserialize<FunctionsMock>(functionsJson, FunctionsMockSerializerContext.Default.FunctionsMock);
+        var functions = JsonSerializer.Deserialize(functionsJson, FunctionsMockSerializerContext.Default.FunctionsMock);
         foreach (var function in functions.Functions)
         {
 

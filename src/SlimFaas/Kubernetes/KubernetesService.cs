@@ -105,7 +105,6 @@ public class KubernetesService : IKubernetesService
             _logger.LogError(e, "Error while listing kubernetes functions");
             return new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
                 SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1));
-
         }
     }
 

@@ -19,9 +19,9 @@ public class SendClient : ISendClient
     {
         _httpClient = httpClient;
         _baseFunctionUrl =
-            Environment.GetEnvironmentVariable("BASE_FUNCTION_URL") ?? "http://{function_name}:8080/";
+            Environment.GetEnvironmentVariable(EnvironmentVariables.BaseFunctionUrl) ?? EnvironmentVariables.BaseFunctionUrlDefault;
     }
-    
+
     private void CopyFromOriginalRequestContentAndHeaders(CustomRequest context, HttpRequestMessage requestMessage)
     {
         var requestMethod = context.Method;
@@ -29,7 +29,7 @@ public class SendClient : ISendClient
         if (!HttpMethods.IsGet(requestMethod) &&
             !HttpMethods.IsHead(requestMethod) &&
             !HttpMethods.IsDelete(requestMethod) &&
-            !HttpMethods.IsTrace(requestMethod) && 
+            !HttpMethods.IsTrace(requestMethod) &&
             context.Body != null)
         {
             var streamContent = new StreamContent(new MemoryStream(context.Body));
@@ -41,7 +41,7 @@ public class SendClient : ISendClient
             requestMessage.Content?.Headers.TryAddWithoutValidation(header.Key, header.Values);
         }
     }
-    
+
     private HttpRequestMessage CreateTargetMessage(CustomRequest context, Uri targetUri)
     {
         var requestMessage = new HttpRequestMessage();
@@ -53,7 +53,7 @@ public class SendClient : ISendClient
 
         return requestMessage;
     }
-    
+
     private static HttpMethod GetMethod(string method)
     {
         if (HttpMethods.IsDelete(method)) return HttpMethod.Delete;
@@ -65,7 +65,7 @@ public class SendClient : ISendClient
         if (HttpMethods.IsTrace(method)) return HttpMethod.Trace;
         return new HttpMethod(method);
     }
-    
+
     public async Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null)
     {
         var functionUrl = _baseFunctionUrl;
@@ -78,7 +78,7 @@ public class SendClient : ISendClient
         {
             return await _httpClient.SendAsync(targetRequestMessage,
                 HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
-            
+
         }
         return await _httpClient.SendAsync(targetRequestMessage,
             HttpCompletionOption.ResponseHeadersRead);
@@ -116,7 +116,7 @@ public class SendClient : ISendClient
 
         return requestMessage;
     }
-    
+
     private void CopyFromOriginalRequestContentAndHeaders(HttpContext context, HttpRequestMessage requestMessage)
     {
         var requestMethod = context.Request.Method;
