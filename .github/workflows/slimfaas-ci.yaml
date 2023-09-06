@@ -33,7 +33,9 @@ jobs:
           path: .\.sonar\scanner
           key: ${{ runner.os }}-sonar-scanner
           restore-keys: ${{ runner.os }}-sonar-scanner
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/setup-dotnet@v3
+        with:
+          global-json-file: global.json
       - name: Install SonarCloud scanner
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: powershell
