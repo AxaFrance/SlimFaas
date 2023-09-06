@@ -10,7 +10,7 @@ RUN dotnet restore "SlimFaas.csproj"
 RUN dotnet build "SlimFaas.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish -c Release -r linux-musl-x64 --self-contained=true -p:PublishSingleFile=true  -p:PublishReadyToRun=true -p:PublishTrimmed=true -o /app/publish
+RUN dotnet publish -c Release -r linux-musl-x64 --self-contained=true -p:PublishAot=true  -p:PublishReadyToRun=true -p:PublishTrimmed=true -o /app/publish
 
 FROM base AS final
 WORKDIR /app
