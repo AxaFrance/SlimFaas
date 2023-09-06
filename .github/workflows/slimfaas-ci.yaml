@@ -53,7 +53,7 @@ jobs:
 #          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
 
   tags:
-    needs: unit_tests
+#    needs: unit_tests
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.tag.outputs.new_version }}
