@@ -4,6 +4,8 @@ EXPOSE 80
 EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0-preview AS build
+RUN apt update
+RUN apt install -y clang zlib1g-dev
 WORKDIR /src
 COPY . .
 RUN dotnet restore "SlimFaas.csproj"
