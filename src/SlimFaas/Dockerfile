@@ -4,7 +4,7 @@ EXPOSE 80
 EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0-preview-alpine AS build
-RUN apt update
+#RUN apt update
 #RUN apt install -y clang zlib1g-dev
 RUN apk add clang gcc lld musl-dev build-base zlib-dev krb5-dev
 WORKDIR /src
