@@ -17,4 +17,5 @@ RUN dotnet publish -c Release -r linux-musl-x64 --self-contained=true -p:Publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+RUN ls
 ENTRYPOINT ["./SlimFaas"]
