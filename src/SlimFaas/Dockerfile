@@ -1,4 +1,5 @@
 ﻿FROM docker.io/library/alpine:latest AS base
+RUN apk add libstdc++
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
