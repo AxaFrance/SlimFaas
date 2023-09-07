@@ -1,11 +1,12 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-preview-alpine AS base
+﻿FROM docker.io/library/alpine:latest AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0-preview-alpine AS build
 RUN apt update
-RUN apt install -y clang zlib1g-dev
+#RUN apt install -y clang zlib1g-dev
+RUN apk add clang gcc lld musl-dev build-base zlib-dev krb5-dev
 WORKDIR /src
 COPY . .
 RUN dotnet restore "SlimFaas.csproj"
