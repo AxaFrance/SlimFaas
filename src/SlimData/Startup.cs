@@ -64,8 +64,8 @@ internal sealed class Startup
     // NOTE: this way of adding members to the cluster is not recommended in production code
     private static void AddClusterMembers(ICollection<UriEndPoint> members)
     {
-        members.Add(new UriEndPoint(new("https://localhost:3262", UriKind.Absolute)));
-        members.Add(new UriEndPoint(new("https://localhost:3263", UriKind.Absolute)));
-        members.Add(new UriEndPoint(new("https://localhost:3264", UriKind.Absolute)));
+        members.Add(new UriEndPoint(new("http://localhost:3262", UriKind.Absolute)));
+        members.Add(new UriEndPoint(new("http://localhost:3263", UriKind.Absolute)));
+        members.Add(new UriEndPoint(new("http://localhost:3264", UriKind.Absolute)));
     }
 }

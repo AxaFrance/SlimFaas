@@ -29,7 +29,7 @@ static Task UseAspNetCoreHost(int port, string? persistentStorage = null)
                 {"lowerElectionTimeout", "5000" },
                 {"upperElectionTimeout", "6000" },
                 {"requestTimeout", "00:10:00"},
-                {"publicEndPoint", $"https://localhost:{port}"},
+                {"publicEndPoint", $"http://localhost:{port}"},
                 {"coldStart", "false"},
                 {"requestJournal:memoryLimit", "5" },
                 {"requestJournal:expiration", "00:01:00" }
@@ -40,7 +40,7 @@ static Task UseAspNetCoreHost(int port, string? persistentStorage = null)
     {
         webHost.UseKestrel(options =>
         {
-            options.ListenLocalhost(port, static listener => listener.UseHttps(LoadCertificate()));
+            options.ListenLocalhost(port);
         })
         .UseStartup<Startup>();
     })
