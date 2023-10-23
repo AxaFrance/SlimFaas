@@ -21,7 +21,7 @@ spec:
     spec:
       serviceAccountName: default
       containers:
-        - name: kubernetes-bootcamp1
+        - name: fibonacci1
           image: axaguildev/fibonacci:latest
           env:
             - name: ASPNETCORE_URLS
@@ -58,7 +58,7 @@ spec:
     spec:
       serviceAccountName: default
       containers:
-        - name: kubernetes-bootcamp2
+        - name: fibonacci2
           image: axaguildev/fibonacci:latest
           env:
             - name: ASPNETCORE_URLS
