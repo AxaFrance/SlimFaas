@@ -24,7 +24,7 @@ internal sealed class Startup
     private static async Task GetValueAsync(HttpContext context)
     {
         var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
-        var provider = context.RequestServices.GetRequiredService<ISupplier<List<object>>>();
+        var provider = context.RequestServices.GetRequiredService<ISupplier<SupplierPayload>>();
 
         await cluster.ApplyReadBarrierAsync(context.RequestAborted);
         await context.Response.WriteAsync(  JsonConvert.SerializeObject(provider.Invoke()), context.RequestAborted);
@@ -34,6 +34,7 @@ internal sealed class Startup
     {
         const string LeaderResource = "/leader";
         const string ValueResource = "/value";
+        const string AddHashSetResource = "/addhashset";
 
         app.UseConsensusProtocolHandler()
             .RedirectToLeader(LeaderResource)
@@ -42,6 +43,26 @@ internal sealed class Startup
             {
                 endpoints.MapGet(LeaderResource, RedirectToLeaderAsync);
                 endpoints.MapGet(ValueResource, GetValueAsync);
+                endpoints.MapPost(AddHashSetResource, async context =>
+                {
+                    var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
+                    var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
+                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
+                    try
+                    {
+                        var logEntry = provider.interpreter.CreateLogEntry(new AddHashSetCommand() { Key = DateTime.Now.Ticks.ToString(), Value = new Dictionary<string, string>()}, cluster.Term); 
+                        await provider.AppendAsync(logEntry, source.Token);
+                        await provider.CommitAsync(source.Token);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Unexpected error {0}", e);
+                    }
+                    finally
+                    {
+                        source?.Dispose();
+                    }
+                });
             });
     }
 
@@ -56,7 +77,7 @@ internal sealed class Startup
         var path = configuration[SimplePersistentState.LogLocation];
         if (!string.IsNullOrWhiteSpace(path))
         {
-            services.UsePersistenceEngine<ISupplier<List<JsonPayload>>, SimplePersistentState>()
+            services.UsePersistenceEngine<ISupplier<SupplierPayload>, SimplePersistentState>()
                 .AddSingleton<IHostedService, DataModifier>();
         }
     }

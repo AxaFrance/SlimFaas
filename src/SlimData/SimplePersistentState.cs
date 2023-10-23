@@ -9,14 +9,14 @@ namespace RaftNode;
 
 
 
-internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<List<JsonPayload>>
+internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<SupplierPayload>
 {
     internal const string LogLocation = "logLocation";
 
-    public MyInterpreter interpreter = new MyInterpreter("SimplePersistentState");
+    public SlimDataInterpreter interpreter = new SlimDataInterpreter("SimplePersistentState");
     private sealed class SimpleSnapshotBuilder : IncrementalSnapshotBuilder
     {
-        //private JsonPayload value;
+        //private SupplierPayload value;
         //private ConcurrentQueue<string> values;
         
 
@@ -24,7 +24,7 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
             : base(context)
         {
         }
-        public MyInterpreter interpreter = new("SimpleSnapshotBuilder");
+        public SlimDataInterpreter interpreter = new("SimpleSnapshotBuilder");
 
 
         protected override async ValueTask ApplyAsync(LogEntry entry)
@@ -49,16 +49,16 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
            
            //values.Enqueue((string) value);
            //values.Add(entry);
-           //value = JsonConvert.SerializeObject((JsonPayload) await entry.DeserializeFromJsonAsync());
+           //value = JsonConvert.SerializeObject((SupplierPayload) await entry.DeserializeFromJsonAsync());
         }
 
         public override async ValueTask WriteToAsync<TWriter>(TWriter writer, CancellationToken token)
         {
-            Console.WriteLine($"SimpleSnapshotBuilder>Building snapshot WriteToAsync {interpreter.state}");
+            Console.WriteLine($"SimpleSnapshotBuilder>Building snapshot WriteToAsync");
             /*foreach (var entry in values)
             {
                 Console.WriteLine(entry);
-              // var value = JsonConvert.SerializeObject((JsonPayload) await entry.DeserializeFromJsonAsync());
+              // var value = JsonConvert.SerializeObject((SupplierPayload) await entry.DeserializeFromJsonAsync());
             }*/
 
            //var log = interpreter.CreateLogEntry( new LogSnapshotCommand() { Key =  }, 1);
@@ -68,7 +68,7 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
            //var asMemory = interpreter.state.ToString().AsMemory();
            //await writer.WriteStringAsync(asMemory, new DotNext.Text.EncodingContext(Encoding.UTF8, false), LengthFormat.Plain, token);
            // write the number of entries
-           var keysValues = interpreter.payload;
+           var keysValues = interpreter.keyValues;
            var queues = interpreter.queues;
            var hashsets = interpreter.hashsets;
            
@@ -110,9 +110,7 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
         }
     }
 
-    //private string content;
-    private readonly List<JsonPayload> entries = new();
-    internal IReadOnlyList<JsonPayload> Entries => entries;
+    
 
    
     public SimplePersistentState(string path)
@@ -125,7 +123,12 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
     {
     }
 
-    List<JsonPayload> ISupplier<List<JsonPayload>>.Invoke() => entries;
+    SupplierPayload ISupplier<SupplierPayload>.Invoke() => new SupplierPayload()
+    {
+        KeyValues = interpreter.keyValues,
+        Queues = interpreter.queues,
+        Hashsets = interpreter.hashsets
+    };
     
     
 
@@ -141,19 +144,19 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
             await interpreter.InterpretAsync(entry);
             
             /*
-            JsonPayload content;
+            SupplierPayload content;
             if (entry.IsSnapshot)
             {
                 var jsonStr = await entry.GetReader().ReadStringAsync(LengthFormat.Plain, new DotNext.Text.DecodingContext(Encoding.UTF8, false));
                 if (String.IsNullOrEmpty(jsonStr)) return;
-                content = JsonConvert.DeserializeObject<JsonPayload>(jsonStr);
+                content = JsonConvert.DeserializeObject<SupplierPayload>(jsonStr);
                 Console.WriteLine("Received snapshot {0} from the leader node ont {1}", content.Key, entries.Count);
             }
             else
             {
                 switch (await entry.DeserializeFromJsonAsync())
                 {
-                    case JsonPayload command:
+                    case SupplierPayload command:
                         entries.Add(command);
                         Console.WriteLine("Received value {0} from the leader node on {1}", command.Key, entries.Count);
                         //Value = command.Key - command.Value; // interpreting the command
@@ -161,7 +164,7 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
                 }
                 
                 
-                //content = (JsonPayload) await entry.DeserializeFromJsonAsync();
+                //content = (SupplierPayload) await entry.DeserializeFromJsonAsync();
               
             }*/
         
