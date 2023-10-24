@@ -34,7 +34,10 @@ internal sealed class Startup
     {
         const string LeaderResource = "/leader";
         const string ValueResource = "/value";
-        const string AddHashSetResource = "/addhashset";
+        const string AddHashSetResource = "/AddHashset";
+        const string ListRightPopResource = "/ListRightPop";
+        const string ListLeftPushResource = "/ListLeftPush";
+        const string AddKeyValueResource = "/AddKeyValue";
 
         app.UseConsensusProtocolHandler()
             .RedirectToLeader(LeaderResource)

@@ -24,9 +24,8 @@ public class SlimDataInterpreter : CommandInterpreter
     [CommandHandler]
     public async ValueTask ListRightPopAsync(ListRightPopCommand addHashSetCommand, CancellationToken token)
     {
-        if (queues.ContainsKey(addHashSetCommand.Key))
+        if (queues.TryGetValue(addHashSetCommand.Key, out var queue))
         {
-            var queue = queues[addHashSetCommand.Key];    
             if (queue.Count > 0)
             {
                 queue.RemoveAt(0);
@@ -43,34 +42,21 @@ public class SlimDataInterpreter : CommandInterpreter
         }
         else
         {
-            queues[addHashSetCommand.Key] = new List<string> {addHashSetCommand.Value}; 
+            queues.Add(addHashSetCommand.Key, new List<string> {addHashSetCommand.Value}); 
         }
     }
     
     [CommandHandler]
     public async ValueTask AddHashSetAsync(AddHashSetCommand addHashSetCommand, CancellationToken token)
     {
-        if (hashsets.ContainsKey(addHashSetCommand.Key))
-        {
-            hashsets.Add(addHashSetCommand.Key, addHashSetCommand.Value);    
-        }
-        else
-        {
-            hashsets[addHashSetCommand.Key] = addHashSetCommand.Value; 
-        }
+        hashsets[addHashSetCommand.Key] = addHashSetCommand.Value;
+        Console.WriteLine("AddHashSetAsync " + addHashSetCommand.Key + "    " + addHashSetCommand.Value);
     }
     
     [CommandHandler]
     public async ValueTask AddKeyValueAsync(AddKeyValueCommand valueCommand, CancellationToken token)
     {
-        if (keyValues.ContainsKey(valueCommand.Key))
-        {
-            keyValues.Add(valueCommand.Key, valueCommand.Value);    
-        }
-        else
-        {
-            keyValues[valueCommand.Key] = valueCommand.Value; 
-        }
+        keyValues[valueCommand.Key] = valueCommand.Value;
         Console.WriteLine($"{prefix}>SlimDataInterpreter>Handling valueCommand SubtractAsync :{valueCommand.Value}");
     }
     
