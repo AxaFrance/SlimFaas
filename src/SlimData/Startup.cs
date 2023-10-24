@@ -50,7 +50,30 @@ internal sealed class Startup
                     var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
                     try
                     {
-                        var logEntry = provider.interpreter.CreateLogEntry(new AddHashSetCommand() { Key = DateTime.Now.Ticks.ToString(), Value = new Dictionary<string, string>()}, cluster.Term); 
+                        var form = await context.Request.ReadFormAsync(source.Token);
+
+                        var key = string.Empty;
+                        var dictionary = new Dictionary<string, string>();
+                        foreach (var formData in form)
+                        {
+                            if (formData.Key == "______key_____")
+                            {
+                                key = formData.Value.ToString();
+                            }
+                            else
+                            {
+                                dictionary.TryAdd(formData.Key, formData.Value.ToString());
+                            }
+                        }
+
+                        if (string.IsNullOrEmpty(key))
+                        {
+                            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                            await context.Response.WriteAsync("Key ______key_____ is empty", context.RequestAborted);
+                            return;
+                        }
+                        
+                        var logEntry = provider.interpreter.CreateLogEntry(new AddHashSetCommand() { Key = key, Value = dictionary}, cluster.Term); 
                         await provider.AppendAsync(logEntry, source.Token);
                         await provider.CommitAsync(source.Token);
                     }
