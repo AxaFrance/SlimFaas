@@ -3,6 +3,7 @@ using DotNext;
 using DotNext.Net.Cluster;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
+using DotNext.Net.Cluster.Consensus.Raft.Membership;
 using Microsoft.AspNetCore.Connections;
 using Newtonsoft.Json;
 using static System.Globalization.CultureInfo;
@@ -247,7 +248,43 @@ internal sealed class Startup
                         source?.Dispose();
                     }
                 });
+                endpoints.MapPost("AddMember", async context =>
+                {
+                    var cluster = context.RequestServices.GetRequiredService< IRaftCluster>();
+                    
+                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
+                    try
+                    {
+                        var form = await context.Request.ReadFormAsync(source.Token);
+
+                        var key = string.Empty;
+                        var value = string.Empty;
+                        foreach (var formData in form)
+                        {
+                            value = formData.Value.ToString();
+                            if (cluster.Members
+                                    .Count(m => m.EndPoint == new UriEndPoint(new(value, UriKind.Absolute))) == 0)
+                            {
+                                await ((RaftCluster)cluster).AddMemberAsync(new UriEndPoint(new(value, UriKind.Absolute)), context.RequestAborted);
+                            }
+                            break;
+                        }
+
+                        await context.Response.WriteAsync("", context.RequestAborted); 
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Unexpected error {0}", e);
+                    }
+                    finally
+                    {
+                        source?.Dispose();
+                    }
+                });
             });
+        
+        
     }
 
     public void ConfigureServices(IServiceCollection services)
