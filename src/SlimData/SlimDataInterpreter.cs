@@ -26,10 +26,18 @@ public class SlimDataInterpreter : CommandInterpreter
     {
         if (queues.TryGetValue(addHashSetCommand.Key, out var queue))
         {
-            if (queue.Count > 0)
+            for (var i = 0; i < addHashSetCommand.Count; i++)
             {
-                queue.RemoveAt(0);
+                if (queue.Count > 0)
+                {
+                    queue.RemoveAt(0);
+                }
+                else
+                {
+                    break;
+                }
             }
+           
         }
     }
     

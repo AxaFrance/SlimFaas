@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Text;
+﻿using System.Text;
 using DotNext;
 using DotNext.IO;
 using DotNext.Net.Cluster.Consensus.Raft;
@@ -35,39 +34,11 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
             }
             Console.WriteLine("SimpleSnapshotBuilder>Building snapshot ApplyAsync");
             await interpreter.InterpretAsync(entry);
-           //string value = await entry.ToStringAsync(Encoding.UTF8);
-           //Console.WriteLine(value);
-           /* switch (await entry.DeserializeFromJsonAsync())
-           {
-               case SubtractCommand command:
-                   Console.WriteLine("Building snapshot SubtractCommand ------------");
-                   break;
-               case LogSnapshotCommand command:
-                   Console.WriteLine("Building snapshot LogSnapshotCommand ------------ " + command.Key);
-                   break;
-           }*/
-           
-           //values.Enqueue((string) value);
-           //values.Add(entry);
-           //value = JsonConvert.SerializeObject((SupplierPayload) await entry.DeserializeFromJsonAsync());
         }
 
         public override async ValueTask WriteToAsync<TWriter>(TWriter writer, CancellationToken token)
         {
             Console.WriteLine($"SimpleSnapshotBuilder>Building snapshot WriteToAsync");
-            /*foreach (var entry in values)
-            {
-                Console.WriteLine(entry);
-              // var value = JsonConvert.SerializeObject((SupplierPayload) await entry.DeserializeFromJsonAsync());
-            }*/
-
-           //var log = interpreter.CreateLogEntry( new LogSnapshotCommand() { Key =  }, 1);
-           //await log.WriteToAsync(writer, token);
-           //log.WriteToAsync()
-
-           //var asMemory = interpreter.state.ToString().AsMemory();
-           //await writer.WriteStringAsync(asMemory, new DotNext.Text.EncodingContext(Encoding.UTF8, false), LengthFormat.Plain, token);
-           // write the number of entries
            var keysValues = interpreter.keyValues;
            var queues = interpreter.queues;
            var hashsets = interpreter.hashsets;
@@ -109,9 +80,7 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
            }
         }
     }
-
     
-
    
     public SimplePersistentState(string path)
         : base(path, 50, new Options { InitialPartitionSize = 50 * 8 })
@@ -142,33 +111,7 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
             }
             Console.WriteLine("SimplePersistentState>UpdateValue");
             await interpreter.InterpretAsync(entry);
-            
-            /*
-            SupplierPayload content;
-            if (entry.IsSnapshot)
-            {
-                var jsonStr = await entry.GetReader().ReadStringAsync(LengthFormat.Plain, new DotNext.Text.DecodingContext(Encoding.UTF8, false));
-                if (String.IsNullOrEmpty(jsonStr)) return;
-                content = JsonConvert.DeserializeObject<SupplierPayload>(jsonStr);
-                Console.WriteLine("Received snapshot {0} from the leader node ont {1}", content.Key, entries.Count);
-            }
-            else
-            {
-                switch (await entry.DeserializeFromJsonAsync())
-                {
-                    case SupplierPayload command:
-                        entries.Add(command);
-                        Console.WriteLine("Received value {0} from the leader node on {1}", command.Key, entries.Count);
-                        //Value = command.Key - command.Value; // interpreting the command
-                        break;
-                }
-                
-                
-                //content = (SupplierPayload) await entry.DeserializeFromJsonAsync();
-              
-            }*/
-        
-        //    entries.Add(content); 
+
         } catch (Exception e)
         {
             Console.WriteLine("SimplePersistentState>Cela foire ici mon coco");
@@ -179,8 +122,6 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
 
     protected override ValueTask ApplyAsync(LogEntry entry)
         => entry.Length == 0L ? new ValueTask() : UpdateValue(entry);
-    
-    
 
     protected override SnapshotBuilder CreateSnapshotBuilder(in SnapshotBuilderContext context)
     {

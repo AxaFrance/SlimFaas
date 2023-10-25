@@ -38,6 +38,7 @@ internal sealed class Startup
         const string ListRightPopResource = "/ListRightPop";
         const string ListLeftPushResource = "/ListLeftPush";
         const string AddKeyValueResource = "/AddKeyValue";
+        const string ListLengthResource = "/ListLength";
 
         app.UseConsensusProtocolHandler()
             .RedirectToLeader(LeaderResource)
@@ -46,6 +47,124 @@ internal sealed class Startup
             {
                 endpoints.MapGet(LeaderResource, RedirectToLeaderAsync);
                 endpoints.MapGet(ValueResource, GetValueAsync);
+                endpoints.MapGet(ListLengthResource, async context =>
+                {
+                    var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
+                    var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
+                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
+                    try
+                    {
+                        context.Request.Query.TryGetValue("key", out var key);
+
+                        if (string.IsNullOrEmpty(key))
+                        {
+                            await context.Response.WriteAsync("0", context.RequestAborted);
+                            return;
+                        }
+                        
+                        await cluster.ApplyReadBarrierAsync(context.RequestAborted);
+                        var queue = ((ISupplier<SupplierPayload>)provider).Invoke().Queues;
+                        var queueCount =  queue.ContainsKey(key) ?  queue[key].Count : 0;
+                        await context.Response.WriteAsync(queueCount.ToString(InvariantCulture), context.RequestAborted); 
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Unexpected error {0}", e);
+                    }
+                    finally
+                    {
+                        source?.Dispose();
+                    }
+                });
+                endpoints.MapPost(ListLeftPushResource, async context =>
+                {
+                    var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
+                    var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
+                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
+                    try
+                    {
+                        var form = await context.Request.ReadFormAsync(source.Token);
+
+                        var key = string.Empty;
+                        var value = string.Empty;
+                        foreach (var formData in form)
+                        {
+                                key = formData.Key;
+                                value = formData.Value.ToString();
+                                break;
+                        }
+
+                        if (string.IsNullOrEmpty(key))
+                        {
+                            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                            await context.Response.WriteAsync("Key key is empty", context.RequestAborted);
+                            return;
+                        }
+                        
+                        var logEntry = provider.interpreter.CreateLogEntry(new ListLeftPushCommand() { Key = key, Value = value}, cluster.Term); 
+                        await provider.AppendAsync(logEntry, source.Token);
+                        await provider.CommitAsync(source.Token);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Unexpected error {0}", e);
+                    }
+                    finally
+                    {
+                        source?.Dispose();
+                    }
+                });
+                endpoints.MapPost(ListRightPopResource, async context =>
+                {
+                    var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
+                    var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
+                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
+                    try
+                    {
+                        var form = await context.Request.ReadFormAsync(source.Token);
+
+                        var key = string.Empty;
+                        var value = string.Empty;
+                        foreach (var formData in form)
+                        {
+                            key = formData.Key;
+                            value = formData.Value.ToString();
+                            break;
+                        }
+
+                        if (string.IsNullOrEmpty(key) || int.TryParse(value, out int count))
+                        {
+                            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                            await context.Response.WriteAsync("Key key is empty or value is not a number", context.RequestAborted);
+                            return;
+                        }
+                        
+                        await cluster.ApplyReadBarrierAsync(context.RequestAborted);
+
+                        IList<string> values = new List<string>();
+                        var queue = ((ISupplier<SupplierPayload>)provider).Invoke().Queues[key];
+                        for (var i = 0; i < count; i++)
+                        {
+                            if (queue.Count <= i)
+                            {
+                                break;
+                            }
+                            values.Add(queue[i]);
+                        }
+                        await context.Response.WriteAsync(JsonConvert.SerializeObject(values), context.RequestAborted); 
+                        var logEntry = provider.interpreter.CreateLogEntry(new ListRightPopCommand() { Key = key, Count = count}, cluster.Term); 
+                        await provider.AppendAsync(logEntry, source.Token);
+                        await provider.CommitAsync(source.Token);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Unexpected error {0}", e);
+                    }
+                    finally
+                    {
+                        source?.Dispose();
+                    }
+                });
                 endpoints.MapPost(AddHashSetResource, async context =>
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
@@ -65,7 +184,7 @@ internal sealed class Startup
                             }
                             else
                             {
-                                dictionary.TryAdd(formData.Key, formData.Value.ToString());
+                                dictionary[formData.Key] = formData.Value.ToString();
                             }
                         }
 
@@ -77,6 +196,45 @@ internal sealed class Startup
                         }
                         
                         var logEntry = provider.interpreter.CreateLogEntry(new AddHashSetCommand() { Key = key, Value = dictionary}, cluster.Term); 
+                        await provider.AppendAsync(logEntry, source.Token);
+                        await provider.CommitAsync(source.Token);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Unexpected error {0}", e);
+                    }
+                    finally
+                    {
+                        source?.Dispose();
+                    }
+                });
+                endpoints.MapPost(AddKeyValueResource, async context =>
+                {
+                    var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
+                    var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
+                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
+                    try
+                    {
+                        var form = await context.Request.ReadFormAsync(source.Token);
+
+                        var key = string.Empty;
+                        var value = string.Empty;
+
+                        foreach (var keyValue in form)
+                        {
+                            key = keyValue.Key;
+                            value = keyValue.Value.ToString();
+                            break;
+                        }
+
+                        if (string.IsNullOrEmpty(key))
+                        {
+                            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                            await context.Response.WriteAsync("not data found", context.RequestAborted);
+                            return;
+                        }
+                        
+                        var logEntry = provider.interpreter.CreateLogEntry(new AddKeyValueCommand() { Key = key, Value = value}, cluster.Term); 
                         await provider.AppendAsync(logEntry, source.Token);
                         await provider.CommitAsync(source.Token);
                     }
