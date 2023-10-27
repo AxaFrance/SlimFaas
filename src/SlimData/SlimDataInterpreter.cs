@@ -58,20 +58,17 @@ public class SlimDataInterpreter : CommandInterpreter
     public async ValueTask AddHashSetAsync(AddHashSetCommand addHashSetCommand, CancellationToken token)
     {
         hashsets[addHashSetCommand.Key] = addHashSetCommand.Value;
-        Console.WriteLine("AddHashSetAsync " + addHashSetCommand.Key + "    " + addHashSetCommand.Value);
     }
     
     [CommandHandler]
     public async ValueTask AddKeyValueAsync(AddKeyValueCommand valueCommand, CancellationToken token)
     {
         keyValues[valueCommand.Key] = valueCommand.Value;
-        Console.WriteLine($"{prefix}>SlimDataInterpreter>Handling valueCommand SubtractAsync :{valueCommand.Value}");
     }
     
     [CommandHandler(IsSnapshotHandler = true)]
     public async ValueTask HandleSnapshotAsync(LogSnapshotCommand command, CancellationToken token)
     {
-        Console.WriteLine($"{prefix}>SlimDataInterpreter>Handling snapshot HandleSnapshotAsync" + JsonConvert.SerializeObject(command.keysValues) );
         keyValues = command.keysValues;
         queues = command.queues;
         hashsets = command.hashsets;

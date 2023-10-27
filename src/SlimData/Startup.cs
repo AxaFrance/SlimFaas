@@ -252,11 +252,9 @@ internal sealed class Startup
                 {
                     var cluster = context.RequestServices.GetRequiredService< IRaftCluster>();
                     
-                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
                     try
                     {
-                        var form = await context.Request.ReadFormAsync(source.Token);
-
+                        var form = await context.Request.ReadFormAsync();
                         var key = string.Empty;
                         var value = string.Empty;
                         foreach (var formData in form)
@@ -265,21 +263,15 @@ internal sealed class Startup
                             if (cluster.Members
                                     .Count(m => m.EndPoint == new UriEndPoint(new(value, UriKind.Absolute))) == 0)
                             {
-                                await ((RaftCluster)cluster).AddMemberAsync(new UriEndPoint(new(value, UriKind.Absolute)), context.RequestAborted);
+                                await ((IRaftHttpCluster)cluster).AddMemberAsync(new Uri(value), context.RequestAborted);
                             }
                             break;
                         }
-
                         await context.Response.WriteAsync("", context.RequestAborted); 
-
                     }
                     catch (Exception e)
                     {
                         Console.WriteLine("Unexpected error {0}", e);
-                    }
-                    finally
-                    {
-                        source?.Dispose();
                     }
                 });
             });
@@ -306,8 +298,8 @@ internal sealed class Startup
     // NOTE: this way of adding members to the cluster is not recommended in production code
     private static void AddClusterMembers(ICollection<UriEndPoint> members)
     {
-        members.Add(new UriEndPoint(new("http://localhost:3262", UriKind.Absolute)));
-        members.Add(new UriEndPoint(new("http://localhost:3263", UriKind.Absolute)));
-        members.Add(new UriEndPoint(new("http://localhost:3264", UriKind.Absolute)));
+        //members.Add(new UriEndPoint(new("http://localhost:3262", UriKind.Absolute)));
+        //members.Add(new UriEndPoint(new("http://localhost:3263", UriKind.Absolute)));
+        //members.Add(new UriEndPoint(new("http://localhost:3264", UriKind.Absolute)));
     }
 }

@@ -15,9 +15,6 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
     public SlimDataInterpreter interpreter = new SlimDataInterpreter("SimplePersistentState");
     private sealed class SimpleSnapshotBuilder : IncrementalSnapshotBuilder
     {
-        //private SupplierPayload value;
-        //private ConcurrentQueue<string> values;
-        
 
         public SimpleSnapshotBuilder(in SnapshotBuilderContext context)
             : base(context)
