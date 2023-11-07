@@ -19,7 +19,7 @@ class MemoryReplicasService : IReplicasService
             {
                 new(Replicas: 0, Deployment: "fibonacci", Namespace: "default",
                     Pods: new List<PodInformation> { new("", true, true, "", "") })
-            }, SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1));
+            }, SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()));
 
     public Task SyncDeploymentsAsync(string kubeNamespace)
     {

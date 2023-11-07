@@ -1,16 +1,13 @@
-﻿using System.Text.Json.Serialization;
-using DotNext;
-using DotNext.Net.Cluster;
+﻿using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
-using DotNext.Net.Cluster.Consensus.Raft.Membership;
 using Microsoft.AspNetCore.Connections;
 using Newtonsoft.Json;
 using static System.Globalization.CultureInfo;
 
 namespace RaftNode;
 
-internal sealed class Startup
+public sealed class Startup
 {
     private readonly IConfiguration configuration;
 
@@ -52,7 +49,9 @@ internal sealed class Startup
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
-                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
+                    var source =
+                        CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
+                            cluster.LeadershipToken);
                     try
                     {
                         context.Request.Query.TryGetValue("key", out var key);
@@ -62,11 +61,12 @@ internal sealed class Startup
                             await context.Response.WriteAsync("0", context.RequestAborted);
                             return;
                         }
-                        
+
                         await cluster.ApplyReadBarrierAsync(context.RequestAborted);
                         var queue = ((ISupplier<SupplierPayload>)provider).Invoke().Queues;
-                        var queueCount =  queue.ContainsKey(key) ?  queue[key].Count : 0;
-                        await context.Response.WriteAsync(queueCount.ToString(InvariantCulture), context.RequestAborted); 
+                        var queueCount = queue.ContainsKey(key) ? queue[key].Count : 0;
+                        await context.Response.WriteAsync(queueCount.ToString(InvariantCulture),
+                            context.RequestAborted);
                     }
                     catch (Exception e)
                     {
@@ -81,7 +81,9 @@ internal sealed class Startup
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
-                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
+                    var source =
+                        CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
+                            cluster.LeadershipToken);
                     try
                     {
                         var form = await context.Request.ReadFormAsync(source.Token);
@@ -90,9 +92,9 @@ internal sealed class Startup
                         var value = string.Empty;
                         foreach (var formData in form)
                         {
-                                key = formData.Key;
-                                value = formData.Value.ToString();
-                                break;
+                            key = formData.Key;
+                            value = formData.Value.ToString();
+                            break;
                         }
 
                         if (string.IsNullOrEmpty(key))
@@ -101,8 +103,10 @@ internal sealed class Startup
                             await context.Response.WriteAsync("Key key is empty", context.RequestAborted);
                             return;
                         }
-                        
-                        var logEntry = provider.interpreter.CreateLogEntry(new ListLeftPushCommand() { Key = key, Value = value}, cluster.Term); 
+
+                        var logEntry =
+                            provider.interpreter.CreateLogEntry(new ListLeftPushCommand() { Key = key, Value = value },
+                                cluster.Term);
                         await provider.AppendAsync(logEntry, source.Token);
                         await provider.CommitAsync(source.Token);
                     }
@@ -119,7 +123,9 @@ internal sealed class Startup
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
-                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
+                    var source =
+                        CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
+                            cluster.LeadershipToken);
                     try
                     {
                         var form = await context.Request.ReadFormAsync(source.Token);
@@ -136,10 +142,11 @@ internal sealed class Startup
                         if (string.IsNullOrEmpty(key) || int.TryParse(value, out int count))
                         {
                             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                            await context.Response.WriteAsync("Key key is empty or value is not a number", context.RequestAborted);
+                            await context.Response.WriteAsync("Key key is empty or value is not a number",
+                                context.RequestAborted);
                             return;
                         }
-                        
+
                         await cluster.ApplyReadBarrierAsync(context.RequestAborted);
 
                         IList<string> values = new List<string>();
@@ -150,10 +157,14 @@ internal sealed class Startup
                             {
                                 break;
                             }
+
                             values.Add(queue[i]);
                         }
-                        await context.Response.WriteAsync(JsonConvert.SerializeObject(values), context.RequestAborted); 
-                        var logEntry = provider.interpreter.CreateLogEntry(new ListRightPopCommand() { Key = key, Count = count}, cluster.Term); 
+
+                        await context.Response.WriteAsync(JsonConvert.SerializeObject(values), context.RequestAborted);
+                        var logEntry =
+                            provider.interpreter.CreateLogEntry(new ListRightPopCommand() { Key = key, Count = count },
+                                cluster.Term);
                         await provider.AppendAsync(logEntry, source.Token);
                         await provider.CommitAsync(source.Token);
                     }
@@ -170,7 +181,9 @@ internal sealed class Startup
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
-                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
+                    var source =
+                        CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
+                            cluster.LeadershipToken);
                     try
                     {
                         var form = await context.Request.ReadFormAsync(source.Token);
@@ -195,8 +208,10 @@ internal sealed class Startup
                             await context.Response.WriteAsync("Key ______key_____ is empty", context.RequestAborted);
                             return;
                         }
-                        
-                        var logEntry = provider.interpreter.CreateLogEntry(new AddHashSetCommand() { Key = key, Value = dictionary}, cluster.Term); 
+
+                        var logEntry =
+                            provider.interpreter.CreateLogEntry(
+                                new AddHashSetCommand() { Key = key, Value = dictionary }, cluster.Term);
                         await provider.AppendAsync(logEntry, source.Token);
                         await provider.CommitAsync(source.Token);
                     }
@@ -213,7 +228,9 @@ internal sealed class Startup
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
-                    var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, cluster.LeadershipToken);
+                    var source =
+                        CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
+                            cluster.LeadershipToken);
                     try
                     {
                         var form = await context.Request.ReadFormAsync(source.Token);
@@ -234,8 +251,10 @@ internal sealed class Startup
                             await context.Response.WriteAsync("not data found", context.RequestAborted);
                             return;
                         }
-                        
-                        var logEntry = provider.interpreter.CreateLogEntry(new AddKeyValueCommand() { Key = key, Value = value}, cluster.Term); 
+
+                        var logEntry =
+                            provider.interpreter.CreateLogEntry(new AddKeyValueCommand() { Key = key, Value = value },
+                                cluster.Term);
                         await provider.AppendAsync(logEntry, source.Token);
                         await provider.CommitAsync(source.Token);
                     }
@@ -248,35 +267,43 @@ internal sealed class Startup
                         source?.Dispose();
                     }
                 });
+                endpoints.MapGet("", async context =>
+                {
+
+                });
                 endpoints.MapPost("AddMember", async context =>
                 {
-                    var cluster = context.RequestServices.GetRequiredService< IRaftCluster>();
-                    
-                    try
+                    var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
+                    var leadershipToken = cluster.LeadershipToken;
+                    if (!leadershipToken.IsCancellationRequested)
                     {
-                        var form = await context.Request.ReadFormAsync();
-                        var key = string.Empty;
-                        var value = string.Empty;
-                        foreach (var formData in form)
+                        try
                         {
-                            value = formData.Value.ToString();
-                            if (cluster.Members
-                                    .Count(m => m.EndPoint == new UriEndPoint(new(value, UriKind.Absolute))) == 0)
+                            var form = await context.Request.ReadFormAsync();
+                            var key = string.Empty;
+                            var value = string.Empty;
+                            foreach (var formData in form)
                             {
-                                await ((IRaftHttpCluster)cluster).AddMemberAsync(new Uri(value), context.RequestAborted);
+                                value = formData.Value.ToString();
+                                if (cluster.Members
+                                        .Count(m => m.EndPoint == new UriEndPoint(new(value, UriKind.Absolute))) == 0)
+                                {
+                                    await ((IRaftHttpCluster)cluster).AddMemberAsync(new Uri(value),
+                                        context.RequestAborted);
+                                }
+
+                                break;
                             }
-                            break;
+
+                            await context.Response.WriteAsync("", context.RequestAborted);
                         }
-                        await context.Response.WriteAsync("", context.RequestAborted); 
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Unexpected error {0}", e);
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Unexpected error {0}", e);
+                        }
                     }
                 });
             });
-        
-        
     }
 
     public void ConfigureServices(IServiceCollection services)
@@ -295,9 +322,14 @@ internal sealed class Startup
         }
     }
 
+    public static readonly IList<string> ClusterMembers = new List<string>(2); 
     // NOTE: this way of adding members to the cluster is not recommended in production code
     private static void AddClusterMembers(ICollection<UriEndPoint> members)
     {
+        foreach (var clusterMember in ClusterMembers)
+        {
+            members.Add(new UriEndPoint(new(clusterMember, UriKind.Absolute)));
+        }
         //members.Add(new UriEndPoint(new("http://localhost:3262", UriKind.Absolute)));
         //members.Add(new UriEndPoint(new("http://localhost:3263", UriKind.Absolute)));
         //members.Add(new UriEndPoint(new("http://localhost:3264", UriKind.Absolute)));

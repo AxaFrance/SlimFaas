@@ -24,7 +24,7 @@ public class ReplicasService : IReplicasService
         _historyHttpService = historyHttpService;
         _logger = logger;
         _deployments = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
-            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1));
+            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()));
 
         _isTurnOnByDefault = EnvironmentVariables.ReadBoolean(logger, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalled, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalledDefault);
     }
@@ -36,7 +36,7 @@ public class ReplicasService : IReplicasService
             lock (Lock)
             {
                 return new DeploymentsInformations(Functions: _deployments.Functions.ToArray(),
-                    SlimFaas: new SlimFaasDeploymentInformation(Replicas: _deployments?.SlimFaas?.Replicas ?? 1));
+                    SlimFaas: new SlimFaasDeploymentInformation(Replicas: _deployments?.SlimFaas?.Replicas ?? 1, new List<PodInformation>()));
             }
         }
     }

@@ -9,14 +9,14 @@ public class DeploymentsTestData:IEnumerable<object[]>
 {
     public IEnumerator<object[]> GetEnumerator()
     {
-        yield return new object[] { new DeploymentsInformations(new List<DeploymentInformation>(),new SlimFaasDeploymentInformation(Replicas: 1)) };
+        yield return new object[] { new DeploymentsInformations(new List<DeploymentInformation>(),new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>())) };
         yield return new object[] {
             new DeploymentsInformations( new List<DeploymentInformation>()
                 {
                     new(Deployment: "fibonacci1", Namespace: "default", Replicas: 1, Pods: new List<PodInformation>()),
                     new(Deployment: "fibonacci2", Namespace: "default", Replicas: 0, Pods: new List<PodInformation>())
                 },
-            new SlimFaasDeploymentInformation(Replicas: 1)
+            new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>())
             )
         };
     }

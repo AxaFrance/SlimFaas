@@ -15,11 +15,11 @@ public class SlimWorkerShould
     {
         var responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
-        
+
         var sendClientMock = new Mock<ISendClient>();
         sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>()))
             .ReturnsAsync(responseMessage);
-        
+
         var serviceProvider = new Mock<IServiceProvider>();
         serviceProvider
             .Setup(x => x.GetService(typeof(ISendClient)))
@@ -39,7 +39,7 @@ public class SlimWorkerShould
 
         var replicasService = new Mock<IReplicasService>();
         replicasService.Setup(rs => rs.Deployments).Returns(new DeploymentsInformations(
-            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 2),
+            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 2, new List<PodInformation>()),
             Functions: new List<DeploymentInformation>()
             {
                 new(Replicas: 1, Deployment: "fibonacci", Namespace: "default", NumberParallelRequest: 1,
@@ -56,27 +56,27 @@ public class SlimWorkerShould
             }));
         var historyHttpService = new HistoryHttpMemoryService();
         var logger = new Mock<ILogger<SlimWorker>>();
-        
+
         var redisQueue = new RedisQueue(new RedisMockService());
         var customRequest = new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new []{"value1"}}}, new byte[1], "fibonacci", "/download", "GET", "");
         var jsonCustomRequest =
             JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest);
         await redisQueue.EnqueueAsync("fibonacci", jsonCustomRequest);
-        
+
         var customRequestNoPodStarted = new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new []{"value1"}}}, new byte[1], "no-pod-started", "/download", "GET", "");
         var jsonCustomNoPodStarted =
             JsonSerializer.Serialize(customRequestNoPodStarted, CustomRequestSerializerContext.Default.CustomRequest);
         await redisQueue.EnqueueAsync("no-pod-started", jsonCustomNoPodStarted);
-        
+
         var customRequestReplicas = new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new []{"value1"}}}, new byte[1], "no-replicas", "/download", "GET", "");
         var jsonCustomNoReplicas =
             JsonSerializer.Serialize(customRequestReplicas, CustomRequestSerializerContext.Default.CustomRequest);
         await redisQueue.EnqueueAsync("no-replicas", jsonCustomNoReplicas);
-        
-        var service = new SlimWorker(redisQueue, 
-            replicasService.Object, 
-            historyHttpService, 
-            logger.Object, 
+
+        var service = new SlimWorker(redisQueue,
+            replicasService.Object,
+            historyHttpService,
+            logger.Object,
             serviceProvider.Object);
 
         var task = service.StartAsync(CancellationToken.None);
@@ -86,7 +86,7 @@ public class SlimWorkerShould
         Assert.True(task.IsCompleted);
         sendClientMock.Verify(v => v.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>()), Times.Once());
     }
-    
+
         [Fact]
     public async Task LogErrorWhenExceptionIsThrown()
     {
@@ -97,10 +97,10 @@ public class SlimWorkerShould
         var logger = new Mock<ILogger<SlimWorker>>();
         var redisQueue = new RedisQueue(new RedisMockService());
 
-        var service = new SlimWorker(redisQueue, 
-            replicasService.Object, 
-            historyHttpService, 
-            logger.Object, 
+        var service = new SlimWorker(redisQueue,
+            replicasService.Object,
+            historyHttpService,
+            logger.Object,
             serviceProvider.Object);
 
         var task = service.StartAsync(CancellationToken.None);

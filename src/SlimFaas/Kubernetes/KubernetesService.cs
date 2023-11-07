@@ -8,7 +8,7 @@ namespace SlimFaas.Kubernetes;
 
 public record ReplicaRequest(string Deployment, string Namespace, int Replicas);
 
-public record SlimFaasDeploymentInformation(int Replicas);
+public record SlimFaasDeploymentInformation(int Replicas, IList<PodInformation> Pods);
 public record DeploymentsInformations(IList<DeploymentInformation> Functions, SlimFaasDeploymentInformation SlimFaas);
 
 public record DeploymentInformation(string Deployment, string Namespace, IList<PodInformation> Pods, int Replicas,
@@ -56,6 +56,8 @@ public class KubernetesService : IKubernetesService
     private const string ReplicasStartAsSoonAsOneFunctionRetrieveARequest = "SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest";
     private const string TimeoutSecondBeforeSetReplicasMin = "SlimFaas/TimeoutSecondBeforeSetReplicasMin";
     private const string NumberParallelRequest = "SlimFaas/NumberParallelRequest";
+    private const string SlimfaasDeploymentName = "slimfaas";
+
 
     public async Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace)
     {
@@ -70,8 +72,8 @@ public class KubernetesService : IKubernetesService
                 var deploymentList = deploymentListTask.Result;
                 var podList = MapPodInformations(podListTask.Result);
 
-                var slimFaasDeploymentInformation = deploymentList.Items.Where(deploymentListItem => deploymentListItem.Metadata.Name == "slimfaas").Select(deploymentListItem =>
-                    new SlimFaasDeploymentInformation(deploymentListItem.Spec.Replicas ?? 0)).FirstOrDefault();
+                var slimFaasDeploymentInformation = deploymentList.Items.Where(deploymentListItem => deploymentListItem.Metadata.Name == SlimfaasDeploymentName).Select(deploymentListItem =>
+                    new SlimFaasDeploymentInformation(deploymentListItem.Spec.Replicas ?? 0, podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList())).FirstOrDefault();
 
                 foreach (var deploymentListItem in deploymentList.Items)
                 {
@@ -97,14 +99,14 @@ public class KubernetesService : IKubernetesService
                 }
 
                 return new DeploymentsInformations(Functions: deploymentInformationList,
-                    SlimFaas: slimFaasDeploymentInformation ?? new SlimFaasDeploymentInformation(Replicas: 1));
+                    SlimFaas: slimFaasDeploymentInformation ?? new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()));
 
         }
         catch (HttpOperationException e)
         {
             _logger.LogError(e, "Error while listing kubernetes functions");
             return new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
-                SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1));
+                SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()));
         }
     }
 
