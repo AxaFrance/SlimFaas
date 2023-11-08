@@ -147,7 +147,7 @@ public sealed class Startup
                             break;
                         }
 
-                        if (string.IsNullOrEmpty(key) || int.TryParse(value, out int count))
+                        if (string.IsNullOrEmpty(key) || !int.TryParse(value, out int count))
                         {
                             context.Response.StatusCode = StatusCodes.Status400BadRequest;
                             await context.Response.WriteAsync("Key key is empty or value is not a number",

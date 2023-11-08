@@ -33,10 +33,10 @@ public class SlimDataService : IRedisService
     public async Task HashSetAsync(string key, IDictionary<string, string> values)
     {
         var multipart = new MultipartFormDataContent();
-        multipart.Add(new StringContent("______key_____"), key);
+        multipart.Add(new StringContent(key), "______key_____");
         foreach (KeyValuePair<string,string> value in values)
         {
-            multipart.Add(new StringContent(value.Key), value.Value);
+            multipart.Add(new StringContent(value.Value), value.Key);
         }
 
         var response = await _httpClient.PostAsync(new Uri("http://localhost:3262/AddHashset"), multipart);
@@ -53,7 +53,7 @@ public class SlimDataService : IRedisService
     {
         var request = new HttpRequestMessage(HttpMethod.Post, new Uri("http://localhost:3262/ListRightPop"));
         var multipart = new MultipartFormDataContent();
-        multipart.Add(new StringContent(key), count.ToString());
+        multipart.Add(new StringContent(count.ToString()), key);
 
         request.Content = multipart;
         var response = await _httpClient.SendAsync(request);
