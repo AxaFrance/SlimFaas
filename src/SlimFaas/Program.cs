@@ -1,10 +1,37 @@
 using System.Net;
+using DotNext;
+using DotNext.Net.Cluster.Consensus.Raft;
 using OpenTelemetry.Trace;
 using SlimFaas;
 using Polly;
 using Polly.Extensions.Http;
 using Prometheus;
+using RaftNode;
 using SlimFaas.Kubernetes;
+
+#pragma warning disable CA2252
+
+var slimDataPort = int.Parse( Environment.GetEnvironmentVariable("SLIMDATA_PORT") ?? "3262");
+var slimDataDirectory = Environment.GetEnvironmentVariable("SLIMDATA_DIRECTORY") ?? "c://Demo1";
+Startup.ClusterMembers.Add($"http://localhost:3262");
+Startup.ClusterMembers.Add($"http://localhost:3263");
+Starter.StartNode("http", slimDataPort, slimDataDirectory);
+
+while (Starter.ServiceProvider == null)
+{
+    Thread.Sleep(100);
+}
+
+var raftCluster = Starter.ServiceProvider.GetRequiredService<IRaftCluster>();
+while (raftCluster.Readiness == Task.CompletedTask)
+{
+    Thread.Sleep(100);
+}
+
+while (raftCluster.Leader == null)
+{
+    Thread.Sleep(100);
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,15 +45,20 @@ serviceCollection.AddHttpClient();
 serviceCollection.AddSingleton<IQueue, RedisQueue>();
 serviceCollection.AddSingleton<IReplicasService, ReplicasService>();
 
+serviceCollection.AddSingleton<IRaftCluster, IRaftCluster>((sp) => Starter.ServiceProvider.GetRequiredService<IRaftCluster>());
+serviceCollection.AddSingleton<SimplePersistentState, SimplePersistentState>((sp) => Starter.ServiceProvider.GetRequiredService<SimplePersistentState>());
 
+#pragma warning restore CA2252
 var mockRedis = Environment.GetEnvironmentVariable(EnvironmentVariables.MockRedis);
-if (!string.IsNullOrEmpty(mockRedis))
+//if (!string.IsNullOrEmpty(mockRedis))
 {
-    serviceCollection.AddSingleton<IRedisService, RedisMockService>();
+  //  serviceCollection.AddSingleton<IRedisService, RedisMockService>();
 }
-else
+//else
 {
-    serviceCollection.AddSingleton<IRedisService, RedisService>();
+    serviceCollection.AddSingleton<IRedisService, SlimDataService>();
+    serviceCollection.AddHttpClient<IRedisService, SlimDataService>()
+        .SetHandlerLifetime(TimeSpan.FromMinutes(5));
 }
 serviceCollection.AddSingleton<IMasterService, MasterService>();
 serviceCollection.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
@@ -52,7 +84,6 @@ serviceCollection.AddOpenTelemetry()
     .WithTracing(builder => builder
         .AddHttpClientInstrumentation()
         .AddAspNetCoreInstrumentation());
-        //.AddConsoleExporter());
 
 var app = builder.Build();
 
@@ -79,6 +110,8 @@ app.Run(context =>
 
 app.Run();
 
+
+
 static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
 {
     return HttpPolicyExtensions
@@ -99,3 +132,4 @@ static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
 }
 
 public partial class Program { }
+

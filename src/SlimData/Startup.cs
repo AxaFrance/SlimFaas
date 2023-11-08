@@ -267,10 +267,6 @@ public sealed class Startup
                         source?.Dispose();
                     }
                 });
-                endpoints.MapGet("", async context =>
-                {
-
-                });
                 endpoints.MapPost("AddMember", async context =>
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
@@ -318,11 +314,13 @@ public sealed class Startup
         if (!string.IsNullOrWhiteSpace(path))
         {
             services.UsePersistenceEngine<ISupplier<SupplierPayload>, SimplePersistentState>()
+                
                 .AddSingleton<IHostedService, DataModifier>();
         }
     }
 
     public static readonly IList<string> ClusterMembers = new List<string>(2); 
+    
     // NOTE: this way of adding members to the cluster is not recommended in production code
     private static void AddClusterMembers(ICollection<UriEndPoint> members)
     {

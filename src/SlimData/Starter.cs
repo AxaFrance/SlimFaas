@@ -2,11 +2,15 @@
 
 namespace RaftNode;
 
+
 public class Starter
 {
     
+    public static IServiceProvider ServiceProvider { get; private set; } = null!;
+    
     static Task UseAspNetCoreHost(int port, string? persistentStorage = null)
     {
+        
         var configuration = new Dictionary<string, string>
                 {
                     {"partitioning", "false"},
@@ -20,19 +24,22 @@ public class Starter
                 };
         if (!string.IsNullOrEmpty(persistentStorage))
             configuration[SimplePersistentState.LogLocation] = persistentStorage;
-        return new HostBuilder().ConfigureWebHost(webHost =>
-        {
-            webHost.UseKestrel(options =>
+
+        var host = new HostBuilder().ConfigureWebHost(webHost =>
             {
-                options.ListenLocalhost(port);
+                webHost.UseKestrel(options =>
+                    {
+                        ServiceProvider = options.ApplicationServices;
+                        options.ListenLocalhost(port);
+                    })
+                    .UseStartup<Startup>();
             })
-            .UseStartup<Startup>();
-        })
-        .ConfigureLogging(ConfigureLogging)
-        .ConfigureAppConfiguration(builder => builder.AddInMemoryCollection(configuration))
-        .JoinCluster()
-        .Build()
-        .RunAsync();
+            .ConfigureLogging(ConfigureLogging)
+            .ConfigureAppConfiguration(builder => builder.AddInMemoryCollection(configuration))
+            .JoinCluster()
+            .Build();
+        
+        return host.RunAsync();
     }
 
     static void ConfigureLogging(ILoggingBuilder builder)

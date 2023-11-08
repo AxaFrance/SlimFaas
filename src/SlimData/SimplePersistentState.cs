@@ -8,7 +8,7 @@ namespace RaftNode;
 
 
 
-internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<SupplierPayload>
+public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<SupplierPayload>
 {
     internal const string LogLocation = "logLocation";
 
@@ -95,8 +95,6 @@ internal sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier
         Queues = interpreter.queues,
         Hashsets = interpreter.hashsets
     };
-    
-    
 
     private async ValueTask UpdateValue(LogEntry entry)
     {
