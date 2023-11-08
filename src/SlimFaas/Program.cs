@@ -58,7 +58,10 @@ var mockRedis = Environment.GetEnvironmentVariable(EnvironmentVariables.MockRedi
 {
     serviceCollection.AddSingleton<IRedisService, SlimDataService>();
     serviceCollection.AddHttpClient<IRedisService, SlimDataService>()
-        .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+        .SetHandlerLifetime(TimeSpan.FromMinutes(5)).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+        {
+            AllowAutoRedirect = true
+        });;
 }
 serviceCollection.AddSingleton<IMasterService, MasterService>();
 serviceCollection.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();

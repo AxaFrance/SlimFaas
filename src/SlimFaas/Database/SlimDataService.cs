@@ -27,13 +27,19 @@ public class SlimDataService : IRedisService
         var multipart = new MultipartFormDataContent();
         multipart.Add(new StringContent(key), value);
 
-        var httpClient = new HttpClient();
-        var response = await httpClient.PostAsync(new Uri("http://localhost:55530"), multipart);
+        var response = await _httpClient.PostAsync(new Uri("http://localhost:3262/AddKeyValue"), multipart);
     }
 
-    public Task HashSetAsync(string key, IDictionary<string, string> values)
+    public async Task HashSetAsync(string key, IDictionary<string, string> values)
     {
-        throw new NotImplementedException();
+        var multipart = new MultipartFormDataContent();
+        multipart.Add(new StringContent("______key_____"), key);
+        foreach (KeyValuePair<string,string> value in values)
+        {
+            multipart.Add(new StringContent(value.Key), value.Value);
+        }
+
+        var response = await _httpClient.PostAsync(new Uri("http://localhost:3262/AddHashset"), multipart);
     }
 
     public Task<IDictionary<string, string>> HashGetAllAsync(string key)  {
@@ -49,9 +55,8 @@ public class SlimDataService : IRedisService
         var multipart = new MultipartFormDataContent();
         multipart.Add(new StringContent(key), count.ToString());
 
-        var httpClient = new HttpClient();
         request.Content = multipart;
-        var response = await httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request);
         var json = await response.Content.ReadAsStringAsync();
         if (string.IsNullOrEmpty(json))
         {

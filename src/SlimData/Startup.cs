@@ -40,6 +40,11 @@ public sealed class Startup
 
         app.UseConsensusProtocolHandler()
             .RedirectToLeader(LeaderResource)
+            .RedirectToLeader(ListLengthResource)
+            .RedirectToLeader(ListLeftPushResource)
+            .RedirectToLeader(ListRightPopResource)
+            .RedirectToLeader(AddKeyValueResource)
+            .RedirectToLeader(AddHashSetResource)
             .UseRouting()
             .UseEndpoints(static endpoints =>
             {
@@ -71,6 +76,7 @@ public sealed class Startup
                     catch (Exception e)
                     {
                         Console.WriteLine("Unexpected error {0}", e);
+                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                     }
                     finally
                     {
@@ -113,10 +119,12 @@ public sealed class Startup
                     catch (Exception e)
                     {
                         Console.WriteLine("Unexpected error {0}", e);
+                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                     }
                     finally
                     {
                         source?.Dispose();
+                        
                     }
                 });
                 endpoints.MapPost(ListRightPopResource, async context =>
@@ -171,6 +179,7 @@ public sealed class Startup
                     catch (Exception e)
                     {
                         Console.WriteLine("Unexpected error {0}", e);
+                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                     }
                     finally
                     {
@@ -218,6 +227,7 @@ public sealed class Startup
                     catch (Exception e)
                     {
                         Console.WriteLine("Unexpected error {0}", e);
+                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                     }
                     finally
                     {
@@ -261,6 +271,7 @@ public sealed class Startup
                     catch (Exception e)
                     {
                         Console.WriteLine("Unexpected error {0}", e);
+                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                     }
                     finally
                     {
@@ -296,6 +307,7 @@ public sealed class Startup
                         catch (Exception e)
                         {
                             Console.WriteLine("Unexpected error {0}", e);
+                            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                         }
                     }
                 });
