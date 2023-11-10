@@ -6,12 +6,20 @@ using RaftNode;
 namespace SlimFaas;
 #pragma warning disable CA2252
 
-public class SlimDataService(HttpClient httpClient, SimplePersistentState simplePersistentState)
-    : IRedisService
+public class SlimDataService : IRedisService
 {
+    private readonly HttpClient _httpClient;
+    private readonly ISupplier<SupplierPayload> _simplePersistentState;
+
+    public SlimDataService(HttpClient httpClient, SimplePersistentState simplePersistentState)
+    {
+        _httpClient = httpClient;
+        _simplePersistentState =  (ISupplier<SupplierPayload>)simplePersistentState;
+    }
+
     public Task<string> GetAsync(string key) {
 
-        var data = ((ISupplier<SupplierPayload>)simplePersistentState).Invoke();
+        var data = _simplePersistentState.Invoke();
         return data.KeyValues.TryGetValue(key, out var value) ? Task.FromResult(value) : Task.FromResult(string.Empty);
     }
 
@@ -20,7 +28,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
         var multipart = new MultipartFormDataContent();
         multipart.Add(new StringContent(value), key);
 
-        var response = await httpClient.PostAsync(new Uri("http://localhost:3262/AddKeyValue"), multipart);
+        var response = await _httpClient.PostAsync(new Uri("http://localhost:3262/AddKeyValue"), multipart);
         if ((int)response.StatusCode >= 500)
         {
             throw new DataException("Error in Redis Service");
@@ -36,7 +44,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
             multipart.Add(new StringContent(value.Value), value.Key);
         }
 
-        var response = await httpClient.PostAsync(new Uri("http://localhost:3262/AddHashset"), multipart);
+        var response = await _httpClient.PostAsync(new Uri("http://localhost:3262/AddHashset"), multipart);
         if ((int)response.StatusCode >= 500)
         {
             throw new DataException("Error in Redis Service");
@@ -44,7 +52,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
     }
 
     public Task<IDictionary<string, string>> HashGetAllAsync(string key)  {
-        var data = ((ISupplier<SupplierPayload>)simplePersistentState).Invoke();
+        var data = _simplePersistentState.Invoke();
         return data.Hashsets.TryGetValue(key, out var value) ? Task.FromResult((IDictionary<string, string>)value) : Task.FromResult((IDictionary<string, string>)new Dictionary<string, string>());
     }
 
@@ -53,7 +61,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
         var multipart = new MultipartFormDataContent();
         multipart.Add(new StringContent(field), key);
         request.Content = multipart;
-        var response = httpClient.SendAsync(request);
+        var response = _httpClient.SendAsync(request);
         return Task.CompletedTask;
     }
 
@@ -64,13 +72,13 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
         multipart.Add(new StringContent(count.ToString()), key);
 
         request.Content = multipart;
-        var response = await httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request);
         var json = await response.Content.ReadAsStringAsync();
         return string.IsNullOrEmpty(json) ? new List<string>() : JsonConvert.DeserializeObject<IList<string>>(json);
     }
 
     public Task<long> ListLengthAsync(string key) {
-        var data = ((ISupplier<SupplierPayload>)simplePersistentState).Invoke();
+        var data = _simplePersistentState.Invoke();
         var result = data.Queues.TryGetValue(key, out var value) ? Task.FromResult((long)value.Count) : Task.FromResult(0L);
         return result;
     }

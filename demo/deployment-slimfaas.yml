@@ -12,6 +12,10 @@ spec:
       labels:
         app: slimfaas
     spec:
+      volumes:
+        - name: slimfaas-volume
+          emptyDir:
+            sizeLimit: 10Mi
       serviceAccountName: slimfaas
       containers:
         - name: slimfaas
@@ -25,8 +29,13 @@ spec:
               value: "slimfaas-demo"
             - name: MOCK_REDIS
               value: "true"
+            - name: SLIMDATA_DIRECTORY
+              value: "/database"
             #- name: REDIS_CONNECTION_STRING
             #  value: "redis-ha-haproxy:6379"
+          volumeMounts:
+            - name: slimfaas-volume
+              mountPath: /database
           resources:
             limits:
               memory: "76Mi"
@@ -36,6 +45,7 @@ spec:
               cpu: "200m"
           ports:
             - containerPort: 5000
+
 ---
 apiVersion: v1
 kind: Service
