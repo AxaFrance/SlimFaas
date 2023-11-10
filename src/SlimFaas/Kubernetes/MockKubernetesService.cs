@@ -42,17 +42,21 @@ public class MockKubernetesService : IKubernetesService
         var functionsJson = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions) ?? EnvironmentVariables.MockKubernetesFunctionsDefault;
 
         _deploymentInformations = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
-            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()));
+            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()
+            {
+                new("slimfaas1", true, false, "localhost", "slimfaas" , "3262"  ),
+                new("slimfaas2", true, false, "localhost", "slimfaas", "3263" )
+            }));
         var functions = JsonSerializer.Deserialize(functionsJson, FunctionsMockSerializerContext.Default.FunctionsMock);
         foreach (var function in functions.Functions)
         {
-
             var deploymentInformation = new DeploymentInformation(Deployment: function.Name, Replicas: 1,
                 ReplicasMin: 1, ReplicasAtStart: 1, TimeoutSecondBeforeSetReplicasMin: 1000000,
                 Namespace: "default",
                 ReplicasStartAsSoonAsOneFunctionRetrieveARequest: false,
                 NumberParallelRequest: function.NumberParallelRequest,
-                Pods: new List<PodInformation>() { new("", true, true, "", "") });
+                Pods: new List<PodInformation>() { new("", true, true, "", "", "") }
+                );
             _deploymentInformations.Functions.Add(deploymentInformation);
         }
     }

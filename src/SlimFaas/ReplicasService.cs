@@ -9,25 +9,16 @@ public interface IReplicasService
     Task CheckScaleAsync(string kubeNamespace);
 }
 
-public class ReplicasService : IReplicasService
+public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService,
+        ILogger<ReplicasService> logger)
+    : IReplicasService
 {
-    private readonly HistoryHttpMemoryService _historyHttpService;
-    private readonly ILogger<ReplicasService> _logger;
-    private readonly IKubernetesService _kubernetesService;
-    private DeploymentsInformations _deployments;
+    private readonly ILogger<ReplicasService> _logger = logger;
+
+    private DeploymentsInformations _deployments = new(Functions: new List<DeploymentInformation>(),
+        SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()));
     private readonly object Lock = new();
-    private readonly bool _isTurnOnByDefault;
-
-    public ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService, ILogger<ReplicasService> logger)
-    {
-        _kubernetesService = kubernetesService;
-        _historyHttpService = historyHttpService;
-        _logger = logger;
-        _deployments = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
-            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()));
-
-        _isTurnOnByDefault = EnvironmentVariables.ReadBoolean(logger, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalled, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalledDefault);
-    }
+    private readonly bool _isTurnOnByDefault = EnvironmentVariables.ReadBoolean(logger, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalled, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalledDefault);
 
     public DeploymentsInformations Deployments
     {
@@ -36,18 +27,14 @@ public class ReplicasService : IReplicasService
             lock (Lock)
             {
                 return new DeploymentsInformations(Functions: _deployments.Functions.ToArray(),
-                    SlimFaas: new SlimFaasDeploymentInformation(Replicas: _deployments?.SlimFaas?.Replicas ?? 1, new List<PodInformation>()));
+                    SlimFaas: new SlimFaasDeploymentInformation(Replicas: _deployments?.SlimFaas?.Replicas ?? 1, _deployments?.SlimFaas?.Pods ?? new List<PodInformation>()));
             }
         }
     }
 
     public async Task SyncDeploymentsAsync(string kubeNamespace)
     {
-        var deployments = await _kubernetesService.ListFunctionsAsync(kubeNamespace);
-        if (deployments.Functions.Count <= 0)
-        {
-            return;
-        }
+        var deployments = await kubernetesService.ListFunctionsAsync(kubeNamespace);
         lock (Lock)
         {
             _deployments = deployments;
@@ -60,7 +47,7 @@ public class ReplicasService : IReplicasService
         IDictionary<string, long> ticksLastCall = new Dictionary<string, long>();
         foreach (var deploymentInformation in Deployments.Functions)
         {
-            var tickLastCall = _historyHttpService.GetTicksLastCall(deploymentInformation.Deployment);
+            var tickLastCall = historyHttpService.GetTicksLastCall(deploymentInformation.Deployment);
             ticksLastCall.Add(deploymentInformation.Deployment, tickLastCall);
             maximumTicks = Math.Max(maximumTicks, tickLastCall);
         }
@@ -86,7 +73,7 @@ public class ReplicasService : IReplicasService
             if (timeElapsedWhithoutRequest)
             {
                 if (currentScale <= deploymentInformation.ReplicasMin) continue;
-                var task = _kubernetesService.ScaleAsync(new ReplicaRequest(
+                var task = kubernetesService.ScaleAsync(new ReplicaRequest(
                 Replicas : deploymentInformation.ReplicasMin,
                     Deployment : deploymentInformation.Deployment,
                     Namespace : kubeNamespace
@@ -96,7 +83,7 @@ public class ReplicasService : IReplicasService
             }
             else if (currentScale is 0)
             {
-                var task = _kubernetesService.ScaleAsync(new ReplicaRequest(
+                var task = kubernetesService.ScaleAsync(new ReplicaRequest(
                     Replicas : deploymentInformation.ReplicasAtStart,
                     Deployment : deploymentInformation.Deployment,
                     Namespace : kubeNamespace

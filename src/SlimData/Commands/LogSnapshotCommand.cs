@@ -2,24 +2,18 @@
 using DotNext.IO;
 using DotNext.Runtime.Serialization;
 using DotNext.Text;
-using Newtonsoft.Json;
 
 namespace RaftNode;
 
-public struct LogSnapshotCommand : ISerializable<LogSnapshotCommand>
+public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
+        Dictionary<string, Dictionary<string, string>> hashsets, Dictionary<string, List<string>> queues)
+    : ISerializable<LogSnapshotCommand>
 {
     public const int Id = 5;
 
-    public readonly Dictionary<string, string> keysValues;
-    public readonly Dictionary<string, Dictionary<string, string>> hashsets;
-    public readonly Dictionary<string, List<string>> queues;
-
-    public LogSnapshotCommand(Dictionary<string, string> keysValues, Dictionary<string, Dictionary<string, string>> hashsets, Dictionary<string, List<string>> queues)
-    {
-        this.keysValues = keysValues;
-        this.hashsets = hashsets;
-        this.queues = queues;
-    }   
+    public readonly Dictionary<string, string> keysValues = keysValues;
+    public readonly Dictionary<string, Dictionary<string, string>> hashsets = hashsets;
+    public readonly Dictionary<string, List<string>> queues = queues;
 
 
     long? IDataTransferObject.Length // optional implementation, may return null
@@ -98,8 +92,6 @@ public struct LogSnapshotCommand : ISerializable<LogSnapshotCommand>
                 await writer.WriteStringAsync(value.AsMemory(), context, LengthFormat.Plain, token);
             }
         }
-        
-        Console.WriteLine("1 Writing snapshot ReadFromAsync" + JsonConvert.SerializeObject(keysValues));
     }
 
 #pragma warning disable CA2252
@@ -151,7 +143,6 @@ public struct LogSnapshotCommand : ISerializable<LogSnapshotCommand>
             hashsets.Add(key, hashset);
         }
         
-        Console.WriteLine("1 Reading snapshot ReadFromAsync" + JsonConvert.SerializeObject(keysValues));
         return new LogSnapshotCommand(keysValues, hashsets, queues);
     }
 }

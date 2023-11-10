@@ -1,5 +1,4 @@
 ﻿using DotNext.Net.Cluster.Consensus.Raft.Commands;
-using Newtonsoft.Json;
 
 namespace RaftNode;
 

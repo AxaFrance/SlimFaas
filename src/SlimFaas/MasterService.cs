@@ -48,7 +48,7 @@ public class MasterService : IMasterService
             }
         }
 
-        var isMasterTimeElapsed = TimeSpan.FromTicks(currentTicks) + TimeSpan.FromSeconds(2) < TimeSpan.FromTicks(DateTime.Now.Ticks);
+        var isMasterTimeElapsed = TimeSpan.FromTicks(currentTicks) + TimeSpan.FromSeconds(5) < TimeSpan.FromTicks(DateTime.Now.Ticks);
         switch (isMaster)
         {
             case false when isMasterTimeElapsed:

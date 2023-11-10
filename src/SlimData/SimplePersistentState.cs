@@ -12,7 +12,7 @@ public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<S
 {
     internal const string LogLocation = "logLocation";
 
-    public SlimDataInterpreter interpreter = new SlimDataInterpreter("SimplePersistentState");
+    public SlimDataInterpreter interpreter = new("SimplePersistentState");
     private sealed class SimpleSnapshotBuilder : IncrementalSnapshotBuilder
     {
 
@@ -25,17 +25,11 @@ public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<S
 
         protected override async ValueTask ApplyAsync(LogEntry entry)
         {
-            if (entry.IsSnapshot)
-            {
-                Console.WriteLine("SimpleSnapshotBuilder>entry.IsSnapshot ----------------------------");
-            }
-            Console.WriteLine("SimpleSnapshotBuilder>Building snapshot ApplyAsync");
             await interpreter.InterpretAsync(entry);
         }
 
         public override async ValueTask WriteToAsync<TWriter>(TWriter writer, CancellationToken token)
         {
-            Console.WriteLine($"SimpleSnapshotBuilder>Building snapshot WriteToAsync");
            var keysValues = interpreter.keyValues;
            var queues = interpreter.queues;
            var hashsets = interpreter.hashsets;
@@ -98,21 +92,7 @@ public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<S
 
     private async ValueTask UpdateValue(LogEntry entry)
     {
-        try
-        {
-            if (entry.IsSnapshot)
-            {
-                Console.WriteLine("SimplePersistentState>entry.IsSnapshot ----------------------------");
-            }
-            Console.WriteLine("SimplePersistentState>UpdateValue");
-            await interpreter.InterpretAsync(entry);
-
-        } catch (Exception e)
-        {
-            Console.WriteLine("SimplePersistentState>Cela foire ici mon coco");
-            Console.WriteLine(e);
-            throw;
-        }
+        await interpreter.InterpretAsync(entry);
     }
 
     protected override ValueTask ApplyAsync(LogEntry entry)
@@ -120,8 +100,6 @@ public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<S
 
     protected override SnapshotBuilder CreateSnapshotBuilder(in SnapshotBuilderContext context)
     {
-      //  return null;
-        Console.WriteLine("SimplePersistentState>Building snapshot");
         return new SimpleSnapshotBuilder(context);
     }
     

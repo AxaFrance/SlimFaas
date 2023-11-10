@@ -50,39 +50,6 @@ public sealed class Startup
             {
                 endpoints.MapGet(LeaderResource, RedirectToLeaderAsync);
                 endpoints.MapGet(ValueResource, GetValueAsync);
-                endpoints.MapGet(ListLengthResource, async context =>
-                {
-                    var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
-                    var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
-                    var source =
-                        CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
-                            cluster.LeadershipToken);
-                    try
-                    {
-                        context.Request.Query.TryGetValue("key", out var key);
-
-                        if (string.IsNullOrEmpty(key))
-                        {
-                            await context.Response.WriteAsync("0", context.RequestAborted);
-                            return;
-                        }
-
-                        await cluster.ApplyReadBarrierAsync(context.RequestAborted);
-                        var queue = ((ISupplier<SupplierPayload>)provider).Invoke().Queues;
-                        var queueCount = queue.ContainsKey(key) ? queue[key].Count : 0;
-                        await context.Response.WriteAsync(queueCount.ToString(InvariantCulture),
-                            context.RequestAborted);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Unexpected error {0}", e);
-                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                    }
-                    finally
-                    {
-                        source?.Dispose();
-                    }
-                });
                 endpoints.MapPost(ListLeftPushResource, async context =>
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
@@ -96,17 +63,18 @@ public sealed class Startup
 
                         var key = string.Empty;
                         var value = string.Empty;
-                        foreach (var formData in form)
+
+                        foreach (var keyValue in form)
                         {
-                            key = formData.Key;
-                            value = formData.Value.ToString();
+                            key = keyValue.Key;
+                            value = keyValue.Value.ToString();
                             break;
                         }
 
                         if (string.IsNullOrEmpty(key))
                         {
                             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                            await context.Response.WriteAsync("Key key is empty", context.RequestAborted);
+                            await context.Response.WriteAsync("not data found", context.RequestAborted);
                             return;
                         }
 
@@ -124,9 +92,9 @@ public sealed class Startup
                     finally
                     {
                         source?.Dispose();
-                        
                     }
                 });
+                
                 endpoints.MapPost(ListRightPopResource, async context =>
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();

@@ -15,7 +15,7 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
     int ReplicasAtStart=1, int ReplicasMin=0, int TimeoutSecondBeforeSetReplicasMin=300, int NumberParallelRequest=10,
     bool ReplicasStartAsSoonAsOneFunctionRetrieveARequest = false);
 
-public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
+public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName, string Port);
 
 [ExcludeFromCodeCoverage]
 public class KubernetesService : IKubernetesService
@@ -125,7 +125,7 @@ public class KubernetesService : IKubernetesService
             var podIp = item.Status.PodIP;
             var podName = item.Metadata.Name;
             var deploymentName = ExtractPodDeploymentNameFrom(item.Metadata.GenerateName);
-            var podInformation = new PodInformation(podName, started, ready, podIp, deploymentName);
+            var podInformation = new PodInformation(podName, started, ready, podIp, deploymentName,"");
 
             yield return podInformation;
         }

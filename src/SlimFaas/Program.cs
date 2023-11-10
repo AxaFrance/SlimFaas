@@ -1,5 +1,4 @@
 using System.Net;
-using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using OpenTelemetry.Trace;
 using SlimFaas;
@@ -13,37 +12,85 @@ using SlimFaas.Kubernetes;
 
 var slimDataPort = int.Parse( Environment.GetEnvironmentVariable("SLIMDATA_PORT") ?? "3262");
 var slimDataDirectory = Environment.GetEnvironmentVariable("SLIMDATA_DIRECTORY") ?? "c://Demo1";
-Startup.ClusterMembers.Add($"http://localhost:3262");
-Startup.ClusterMembers.Add($"http://localhost:3263");
-Starter.StartNode("http", slimDataPort, slimDataDirectory);
 
-while (Starter.ServiceProvider == null)
+var serviceCollectionStarter = new ServiceCollection();
+serviceCollectionStarter.AddSingleton<IReplicasService, ReplicasService>();
+serviceCollectionStarter.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
+
+var mockKubernetesFunction = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions);
+if (!string.IsNullOrEmpty(mockKubernetesFunction))
 {
-    Thread.Sleep(100);
+    serviceCollectionStarter.AddSingleton<IKubernetesService, MockKubernetesService>();
+}
+else
+{
+    serviceCollectionStarter.AddSingleton<IKubernetesService, KubernetesService>();
 }
 
-var raftCluster = Starter.ServiceProvider.GetRequiredService<IRaftCluster>();
-while (raftCluster.Readiness == Task.CompletedTask)
+serviceCollectionStarter.AddLogging(loggingBuilder =>
 {
-    Thread.Sleep(100);
-}
+    loggingBuilder.AddConsole();
+    loggingBuilder.AddDebug();
+});
 
-while (raftCluster.Leader == null)
+var serviceProviderStarter = serviceCollectionStarter.BuildServiceProvider();
+
+    var replicasService = serviceProviderStarter.GetService<IReplicasService>();
+    string namespace_ =
+    Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
+    replicasService?.SyncDeploymentsAsync(namespace_).Wait();
+
+
+    if (replicasService?.Deployments?.SlimFaas?.Pods != null)
+    {
+        foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods)
+        {
+            Startup.ClusterMembers.Add(
+                $"http://{podInformation.Ip}:{(string.IsNullOrEmpty(podInformation.Port) ? "3262" : podInformation.Port)}");
+        }
+    }
+
+    Starter.StartNode("http", slimDataPort, slimDataDirectory);
+
+    while (Starter.ServiceProvider == null)
+    {
+        Thread.Sleep(100);
+    }
+
+    var raftCluster = Starter.ServiceProvider.GetRequiredService<IRaftCluster>();
+    while (raftCluster.Readiness == Task.CompletedTask)
+    {
+        Thread.Sleep(100);
+    }
+
+    while (raftCluster.Leader == null)
+    {
+        Thread.Sleep(100);
+    }
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    var serviceCollection = builder.Services;
+    serviceCollection.AddHostedService<SlimWorker>();
+    serviceCollection.AddHostedService<ScaleReplicasWorker>();
+    serviceCollection.AddHostedService<MasterWorker>();
+    serviceCollection.AddHostedService<ReplicasSynchronizationWorker>();
+    serviceCollection.AddHostedService<HistorySynchronizationWorker>();
+    serviceCollection.AddHttpClient();
+    serviceCollection.AddSingleton<IQueue, RedisQueue>();
+
+serviceCollection.AddSingleton<IReplicasService, ReplicasService>((sp) => (ReplicasService)serviceProviderStarter.GetService<IReplicasService>()!);
+serviceCollection.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
+serviceCollection.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>((sp) => serviceProviderStarter.GetService<HistoryHttpMemoryService>()!);
+
+if (!string.IsNullOrEmpty(mockKubernetesFunction))
 {
-    Thread.Sleep(100);
+    serviceCollection.AddSingleton<IKubernetesService, MockKubernetesService>((sp) => (MockKubernetesService)serviceProviderStarter.GetService<IKubernetesService>()!);
 }
-
-var builder = WebApplication.CreateBuilder(args);
-
-var serviceCollection = builder.Services;
-serviceCollection.AddHostedService<SlimWorker>();
-serviceCollection.AddHostedService<ScaleReplicasWorker>();
-serviceCollection.AddHostedService<MasterWorker>();
-serviceCollection.AddHostedService<ReplicasSynchronizationWorker>();
-serviceCollection.AddHostedService<HistorySynchronizationWorker>();
-serviceCollection.AddHttpClient();
-serviceCollection.AddSingleton<IQueue, RedisQueue>();
-serviceCollection.AddSingleton<IReplicasService, ReplicasService>();
+else
+{
+    serviceCollection.AddSingleton<IKubernetesService, KubernetesService>((sp) => (KubernetesService)serviceProviderStarter.GetService<IKubernetesService>()!);
+}
 
 serviceCollection.AddSingleton<IRaftCluster, IRaftCluster>((sp) => Starter.ServiceProvider.GetRequiredService<IRaftCluster>());
 serviceCollection.AddSingleton<SimplePersistentState, SimplePersistentState>((sp) => Starter.ServiceProvider.GetRequiredService<SimplePersistentState>());
@@ -52,7 +99,7 @@ serviceCollection.AddSingleton<SimplePersistentState, SimplePersistentState>((sp
 var mockRedis = Environment.GetEnvironmentVariable(EnvironmentVariables.MockRedis);
 //if (!string.IsNullOrEmpty(mockRedis))
 {
-  //  serviceCollection.AddSingleton<IRedisService, RedisMockService>();
+    //  serviceCollection.AddSingleton<IRedisService, RedisMockService>();
 }
 //else
 {
@@ -64,20 +111,6 @@ var mockRedis = Environment.GetEnvironmentVariable(EnvironmentVariables.MockRedi
         });;
 }
 serviceCollection.AddSingleton<IMasterService, MasterService>();
-serviceCollection.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
-serviceCollection.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
-
-
-var mockKubernetesFunction = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions);
-if (!string.IsNullOrEmpty(mockKubernetesFunction))
-{
-    serviceCollection.AddSingleton<IKubernetesService, MockKubernetesService>();
-}
-else
-{
-    serviceCollection.AddSingleton<IKubernetesService, KubernetesService>();
-}
-
 
 serviceCollection.AddScoped<ISendClient, SendClient>();
 serviceCollection.AddHttpClient<ISendClient, SendClient>()
@@ -113,26 +146,26 @@ app.Run(context =>
 
 app.Run();
 
-
-
+serviceProviderStarter.Dispose();
 static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
-{
-    return HttpPolicyExtensions
-        .HandleTransientHttpError()
-        .OrResult(msg =>
-        {
-            HttpStatusCode[] httpStatusCodesWorthRetrying = {
-                HttpStatusCode.RequestTimeout, // 408
-                HttpStatusCode.InternalServerError, // 500
-                HttpStatusCode.BadGateway, // 502
-                HttpStatusCode.ServiceUnavailable, // 503
-                HttpStatusCode.GatewayTimeout // 504
-            };
-            return httpStatusCodesWorthRetrying.Contains(msg.StatusCode);
-        })
-        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
-            retryAttempt)));
-}
+    {
+        return HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .OrResult(msg =>
+            {
+                HttpStatusCode[] httpStatusCodesWorthRetrying = {
+                    HttpStatusCode.RequestTimeout, // 408
+                    HttpStatusCode.InternalServerError, // 500
+                    HttpStatusCode.BadGateway, // 502
+                    HttpStatusCode.ServiceUnavailable, // 503
+                    HttpStatusCode.GatewayTimeout // 504
+                };
+                return httpStatusCodesWorthRetrying.Contains(msg.StatusCode);
+            })
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
+                retryAttempt)));
+    }
 
-public partial class Program { }
+    public partial class Program { }
+
 
