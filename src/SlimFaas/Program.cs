@@ -11,7 +11,7 @@ using SlimFaas.Kubernetes;
 #pragma warning disable CA2252
 
 var slimDataPort = int.Parse( Environment.GetEnvironmentVariable("SLIMDATA_PORT") ?? "3262");
-var slimDataDirectory = Environment.GetEnvironmentVariable("SLIMDATA_DIRECTORY") ?? "c://Demo1";
+var slimDataDirectory = Environment.GetEnvironmentVariable("SLIMDATA_DIRECTORY") ?? "c://Demo4";
 
 var serviceCollectionStarter = new ServiceCollection();
 serviceCollectionStarter.AddSingleton<IReplicasService, ReplicasService>();
@@ -39,45 +39,53 @@ var serviceProviderStarter = serviceCollectionStarter.BuildServiceProvider();
     string namespace_ =
     Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
     replicasService?.SyncDeploymentsAsync(namespace_).Wait();
-
-
-    if (replicasService?.Deployments?.SlimFaas?.Pods != null)
+if (replicasService?.Deployments?.SlimFaas?.Pods != null)
+{
+    foreach (string enumerateDirectory in Directory.EnumerateDirectories(slimDataDirectory))
     {
-        foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods)
-        {
-            Startup.ClusterMembers.Add(
-                $"http://{podInformation.Ip}:{(string.IsNullOrEmpty(podInformation.Port) ? "3262" : podInformation.Port)}");
-        }
+        if(replicasService.Deployments.SlimFaas.Pods.Any(p => p.Name == new DirectoryInfo(enumerateDirectory).Name) == false)
+            Directory.Delete(enumerateDirectory, false);
     }
 
-    Starter.StartNode("http", slimDataPort, slimDataDirectory);
-
-    while (Starter.ServiceProvider == null)
+    foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods)
     {
-        Thread.Sleep(100);
+        Startup.ClusterMembers.Add(
+            $"http://{podInformation.Ip}:{(string.IsNullOrEmpty(podInformation.Port) ? "3262" : podInformation.Port)}");
     }
 
-    var raftCluster = Starter.ServiceProvider.GetRequiredService<IRaftCluster>();
-    while (raftCluster.Readiness == Task.CompletedTask)
-    {
-        Thread.Sleep(100);
-    }
+    var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == Environment.GetEnvironmentVariable("HOSTNAME"));
+    var podDataDirectory =  Path.Combine(slimDataDirectory, currentPod.Name);
+    if(Directory.Exists(podDataDirectory) == false)
+        Directory.CreateDirectory(podDataDirectory);
+    Starter.StartNode("http", slimDataPort, podDataDirectory);
+}
 
-    while (raftCluster.Leader == null)
-    {
-        Thread.Sleep(100);
-    }
+while (Starter.ServiceProvider == null)
+{
+    Thread.Sleep(100);
+}
 
-    var builder = WebApplication.CreateBuilder(args);
+var raftCluster = Starter.ServiceProvider.GetRequiredService<IRaftCluster>();
+while (raftCluster.Readiness == Task.CompletedTask)
+{
+    Thread.Sleep(100);
+}
 
-    var serviceCollection = builder.Services;
-    serviceCollection.AddHostedService<SlimWorker>();
-    serviceCollection.AddHostedService<ScaleReplicasWorker>();
-    serviceCollection.AddHostedService<MasterWorker>();
-    serviceCollection.AddHostedService<ReplicasSynchronizationWorker>();
-    serviceCollection.AddHostedService<HistorySynchronizationWorker>();
-    serviceCollection.AddHttpClient();
-    serviceCollection.AddSingleton<IQueue, RedisQueue>();
+while (raftCluster.Leader == null)
+{
+    Thread.Sleep(100);
+}
+
+var builder = WebApplication.CreateBuilder(args);
+
+var serviceCollection = builder.Services;
+serviceCollection.AddHostedService<SlimWorker>();
+serviceCollection.AddHostedService<ScaleReplicasWorker>();
+serviceCollection.AddHostedService<MasterWorker>();
+serviceCollection.AddHostedService<ReplicasSynchronizationWorker>();
+serviceCollection.AddHostedService<HistorySynchronizationWorker>();
+serviceCollection.AddHttpClient();
+serviceCollection.AddSingleton<IQueue, RedisQueue>();
 
 serviceCollection.AddSingleton<IReplicasService, ReplicasService>((sp) => (ReplicasService)serviceProviderStarter.GetService<IReplicasService>()!);
 serviceCollection.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();

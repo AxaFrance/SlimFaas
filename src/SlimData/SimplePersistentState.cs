@@ -11,6 +11,8 @@ namespace RaftNode;
 public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<SupplierPayload>
 {
     internal const string LogLocation = "logLocation";
+    
+    
 
     public SlimDataInterpreter interpreter = new("SimplePersistentState");
     private sealed class SimpleSnapshotBuilder : IncrementalSnapshotBuilder
@@ -30,6 +32,7 @@ public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<S
 
         public override async ValueTask WriteToAsync<TWriter>(TWriter writer, CancellationToken token)
         {
+            
            var keysValues = interpreter.keyValues;
            var queues = interpreter.queues;
            var hashsets = interpreter.hashsets;
@@ -74,7 +77,7 @@ public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<S
     
    
     public SimplePersistentState(string path)
-        : base(path, 50, new Options { InitialPartitionSize = 50 * 8 })
+        : base(path, 50, new Options { InitialPartitionSize = 50 * 8, UseCaching = true })
     {
     }
 

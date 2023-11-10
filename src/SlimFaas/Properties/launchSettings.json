@@ -8,10 +8,11 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "NAMESPACE" : "slimfaas-demo",
+        "HOSTNAME" : "slimfaas1",
         "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}]}",
         "MOCK_REDIS": "True",
         "SLIMDATA_PORT": "3262",
-        "SLIMDATA_DIRECTORY": "C:\\Demo1"
+        "SLIMDATA_DIRECTORY": "C:\\Demo4"
       }
     },
     "http_2": {
@@ -22,10 +23,11 @@
           "environmentVariables": {
               "ASPNETCORE_ENVIRONMENT": "Development",
               "NAMESPACE" : "slimfaas-demo",
+              "HOSTNAME" : "slimfaas2",
               "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}]}",
               "MOCK_REDIS": "True",
               "SLIMDATA_PORT": "3263",
-              "SLIMDATA_DIRECTORY": "C:\\Demo2"
+              "SLIMDATA_DIRECTORY": "C:\\Demo4"
           }
       }
   }

@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using DotNext;
+using DotNext.Net.Cluster.Consensus.Raft;
 using Newtonsoft.Json;
 using RaftNode;
 
@@ -9,18 +10,21 @@ namespace SlimFaas;
 public class SlimDataService : IRedisService
 {
     private readonly HttpClient _httpClient;
+    private readonly IRaftCluster _cluster;
     private readonly ISupplier<SupplierPayload> _simplePersistentState;
 
-    public SlimDataService(HttpClient httpClient, SimplePersistentState simplePersistentState)
+    public SlimDataService(HttpClient httpClient, SimplePersistentState simplePersistentState, IRaftCluster cluster)
     {
         _httpClient = httpClient;
+        _cluster = cluster;
         _simplePersistentState =  (ISupplier<SupplierPayload>)simplePersistentState;
     }
 
-    public Task<string> GetAsync(string key) {
+    public async Task<string> GetAsync(string key) {
 
+        await _cluster.ApplyReadBarrierAsync();
         var data = _simplePersistentState.Invoke();
-        return data.KeyValues.TryGetValue(key, out var value) ? Task.FromResult(value) : Task.FromResult(string.Empty);
+        return data.KeyValues.TryGetValue(key, out var value) ? value: string.Empty;
     }
 
     public async Task SetAsync(string key, string value)
@@ -51,9 +55,10 @@ public class SlimDataService : IRedisService
         }
     }
 
-    public Task<IDictionary<string, string>> HashGetAllAsync(string key)  {
+    public async Task<IDictionary<string, string>> HashGetAllAsync(string key)  {
+        await _cluster.ApplyReadBarrierAsync();
         var data = _simplePersistentState.Invoke();
-        return data.Hashsets.TryGetValue(key, out var value) ? Task.FromResult((IDictionary<string, string>)value) : Task.FromResult((IDictionary<string, string>)new Dictionary<string, string>());
+        return data.Hashsets.TryGetValue(key, out var value) ? (IDictionary<string, string>)value : new Dictionary<string, string>();
     }
 
     public Task ListLeftPushAsync(string key, string field) {
@@ -77,9 +82,10 @@ public class SlimDataService : IRedisService
         return string.IsNullOrEmpty(json) ? new List<string>() : JsonConvert.DeserializeObject<IList<string>>(json);
     }
 
-    public Task<long> ListLengthAsync(string key) {
+    public async Task<long> ListLengthAsync(string key) {
+        await _cluster.ApplyReadBarrierAsync();
         var data = _simplePersistentState.Invoke();
-        var result = data.Queues.TryGetValue(key, out var value) ? Task.FromResult((long)value.Count) : Task.FromResult(0L);
+        var result = data.Queues.TryGetValue(key, out var value) ? (long)value.Count :0L;
         return result;
     }
 }
