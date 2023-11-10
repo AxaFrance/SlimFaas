@@ -25,7 +25,7 @@ public class SlimDataService : IRedisService
     public async Task SetAsync(string key, string value)
     {
         var multipart = new MultipartFormDataContent();
-        multipart.Add(new StringContent(key), value);
+        multipart.Add(new StringContent(value), key);
 
         var response = await _httpClient.PostAsync(new Uri("http://localhost:3262/AddKeyValue"), multipart);
     }
@@ -47,7 +47,14 @@ public class SlimDataService : IRedisService
         return data.Hashsets.TryGetValue(key, out var value) ? Task.FromResult((IDictionary<string, string>)value) : Task.FromResult((IDictionary<string, string>)new Dictionary<string, string>());
     }
 
-    public Task ListLeftPushAsync(string key, string field) => throw new NotImplementedException();
+    public Task ListLeftPushAsync(string key, string field) {
+        var request = new HttpRequestMessage(HttpMethod.Post, new Uri("http://localhost:3262/ListLeftPush"));
+        var multipart = new MultipartFormDataContent();
+        multipart.Add(new StringContent(field), key);
+        request.Content = multipart;
+        var response = _httpClient.SendAsync(request);
+        return Task.CompletedTask;
+    }
 
     public async Task<IList<string>> ListRightPopAsync(string key, long count = 1)
     {
@@ -58,17 +65,13 @@ public class SlimDataService : IRedisService
         request.Content = multipart;
         var response = await _httpClient.SendAsync(request);
         var json = await response.Content.ReadAsStringAsync();
-        if (string.IsNullOrEmpty(json))
-        {
-            return new List<string>();
-        }
-        return JsonConvert.DeserializeObject<IList<string>>(json);
+        return string.IsNullOrEmpty(json) ? new List<string>() : JsonConvert.DeserializeObject<IList<string>>(json);
     }
 
     public Task<long> ListLengthAsync(string key) {
-
         var data = ((ISupplier<SupplierPayload>)_simplePersistentState).Invoke();
-        return data.Queues.TryGetValue(key, out var value) ? Task.FromResult((long)value.Count) : Task.FromResult(0L);
+        var result = data.Queues.TryGetValue(key, out var value) ? Task.FromResult((long)value.Count) : Task.FromResult(0L);
+        return result;
     }
 }
 #pragma warning restore CA2252

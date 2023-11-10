@@ -1,4 +1,6 @@
-﻿namespace SlimFaas;
+﻿using Newtonsoft.Json;
+
+namespace SlimFaas;
 
 public interface IMasterService
 {
@@ -18,12 +20,13 @@ public class MasterService : IMasterService
 
     public MasterService(IRedisService redisService)
     {
-        _redisService = redisService; 
+        _redisService = redisService;
     }
 
     public async Task CheckAsync()
     {
         var dictionary= await _redisService.HashGetAllAsync(SlimFaasMaster);
+        Console.WriteLine(JsonConvert.SerializeObject(dictionary));
         if (dictionary.Count == 0)
         {
             await _redisService.HashSetAsync(SlimFaasMaster, new Dictionary<string, string>

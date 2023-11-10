@@ -32,7 +32,6 @@ public class SlimDataSynchronizationWorker: BackgroundService
                     {
 #pragma warning disable CA2252
                         Startup.ClusterMembers.Add($"http://{pod.Ip}:3262");
-
                     }
                    // Starter.StartNode("http", 3262);
 #pragma warning restore CA2252

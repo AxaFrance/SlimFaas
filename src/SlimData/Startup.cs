@@ -158,23 +158,27 @@ public sealed class Startup
                         await cluster.ApplyReadBarrierAsync(context.RequestAborted);
 
                         IList<string> values = new List<string>();
-                        var queue = ((ISupplier<SupplierPayload>)provider).Invoke().Queues[key];
-                        for (var i = 0; i < count; i++)
+                        var queues = ((ISupplier<SupplierPayload>)provider).Invoke().Queues;
+                        if (queues.ContainsKey(key))
                         {
-                            if (queue.Count <= i)
+                            var queue = ((ISupplier<SupplierPayload>)provider).Invoke().Queues[key];
+                            for (var i = 0; i < count; i++)
                             {
-                                break;
+                                if (queue.Count <= i)
+                                {
+                                    break;
+                                }
+
+                                values.Add(queue[i]);
                             }
 
-                            values.Add(queue[i]);
+                            await context.Response.WriteAsync(JsonConvert.SerializeObject(values), context.RequestAborted);
+                            var logEntry =
+                                provider.interpreter.CreateLogEntry(new ListRightPopCommand() { Key = key, Count = count },
+                                    cluster.Term);
+                            await provider.AppendAsync(logEntry, source.Token);
+                            await provider.CommitAsync(source.Token);
                         }
-
-                        await context.Response.WriteAsync(JsonConvert.SerializeObject(values), context.RequestAborted);
-                        var logEntry =
-                            provider.interpreter.CreateLogEntry(new ListRightPopCommand() { Key = key, Count = count },
-                                cluster.Term);
-                        await provider.AppendAsync(logEntry, source.Token);
-                        await provider.CommitAsync(source.Token);
                     }
                     catch (Exception e)
                     {

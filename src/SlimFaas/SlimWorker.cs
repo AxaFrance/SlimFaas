@@ -53,9 +53,9 @@ public class SlimWorker : BackgroundService
                 var numberLimitProcessingTasks = ComputeNumberLimitProcessingTasks(slimFaas, function);
                 setTickLastCallCounterDictionary[functionDeployment]++;
                 var functionReplicas = function.Replicas;
-                await UpdateTickLastCallIfRequestStillInProgress(functionReplicas, setTickLastCallCounterDictionary,
+                var queueLenght = await UpdateTickLastCallIfRequestStillInProgress(functionReplicas, setTickLastCallCounterDictionary,
                     functionDeployment, numberProcessingTasks);
-                if (functionReplicas == 0) continue;
+                if (functionReplicas == 0 || queueLenght <= 0 ) continue;
                 var isAnyContainerStarted = function.Pods?.Any(p => p.Ready.HasValue && p.Ready.Value);
                 if(!isAnyContainerStarted.HasValue || !isAnyContainerStarted.Value) continue;
                 if (numberProcessingTasks >= numberLimitProcessingTasks) continue;
@@ -90,20 +90,21 @@ public class SlimWorker : BackgroundService
         }
     }
 
-    private async Task UpdateTickLastCallIfRequestStillInProgress(int? functionReplicas,
+    private async Task<long> UpdateTickLastCallIfRequestStillInProgress(int? functionReplicas,
         Dictionary<string, int> setTickLastCallCounterDictionnary, string functionDeployment, int numberProcessingTasks)
     {
         var counterLimit = functionReplicas == 0 ? 10 : 300;
-
+        var queueLenght = await _queue.CountAsync(functionDeployment);
         if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
         {
             setTickLastCallCounterDictionnary[functionDeployment] = 0;
-            var queueLenght = await _queue.CountAsync(functionDeployment);
+
             if (queueLenght > 0 || numberProcessingTasks > 0)
             {
                 _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
             }
         }
+        return queueLenght;
     }
 
     private static int? ComputeNumberLimitProcessingTasks(SlimFaasDeploymentInformation slimFaas,

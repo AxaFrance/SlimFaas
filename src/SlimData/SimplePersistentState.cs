@@ -72,7 +72,7 @@ public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<S
                foreach (var (key, value) in hashset.Value)
                {
                    await writer.WriteStringAsync(key.AsMemory(), context, LengthFormat.Plain, token);
-                   await writer.WriteStringAsync(key.AsMemory(), context, LengthFormat.Plain, token);
+                   await writer.WriteStringAsync(value.AsMemory(), context, LengthFormat.Plain, token);
                }
            }
         }

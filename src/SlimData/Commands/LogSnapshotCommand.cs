@@ -2,6 +2,7 @@
 using DotNext.IO;
 using DotNext.Runtime.Serialization;
 using DotNext.Text;
+using Newtonsoft.Json;
 
 namespace RaftNode;
 
@@ -98,6 +99,7 @@ public struct LogSnapshotCommand : ISerializable<LogSnapshotCommand>
             }
         }
         
+        Console.WriteLine("1 Writing snapshot ReadFromAsync" + JsonConvert.SerializeObject(keysValues));
     }
 
 #pragma warning disable CA2252
@@ -149,7 +151,7 @@ public struct LogSnapshotCommand : ISerializable<LogSnapshotCommand>
             hashsets.Add(key, hashset);
         }
         
-        Console.WriteLine("1 Reading snapshot ReadFromAsync");
+        Console.WriteLine("1 Reading snapshot ReadFromAsync" + JsonConvert.SerializeObject(keysValues));
         return new LogSnapshotCommand(keysValues, hashsets, queues);
     }
 }
