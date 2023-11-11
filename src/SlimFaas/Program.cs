@@ -106,18 +106,18 @@ serviceCollection.AddSingleton<SimplePersistentState, SimplePersistentState>((sp
 
 #pragma warning restore CA2252
 var mockRedis = Environment.GetEnvironmentVariable(EnvironmentVariables.MockRedis);
-//if (!string.IsNullOrEmpty(mockRedis))
+if (!string.IsNullOrEmpty(mockRedis))
 {
-    //  serviceCollection.AddSingleton<IRedisService, RedisMockService>();
+      serviceCollection.AddSingleton<IRedisService, RedisMockService>();
 }
-//else
+else
 {
     serviceCollection.AddSingleton<IRedisService, SlimDataService>();
     serviceCollection.AddHttpClient<IRedisService, SlimDataService>()
         .SetHandlerLifetime(TimeSpan.FromMinutes(5)).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
         {
             AllowAutoRedirect = true
-        });;
+        });
 }
 serviceCollection.AddSingleton<IMasterService, MasterService>();
 
