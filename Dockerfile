@@ -6,11 +6,11 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY . .
-RUN dotnet restore "SlimFaas.csproj"
-RUN dotnet build "SlimFaas.csproj" -c Release -o /app/build
+RUN dotnet restore "./src/SlimFaas/SlimFaas.csproj"
+RUN dotnet build "./src/SlimFaas/SlimFaas.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish -c Release -r linux-musl-x64 --self-contained=true -p:PublishSingleFile=true -o /app/publish
+RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -r linux-musl-x64 --self-contained=true -p:PublishSingleFile=true -o /app/publish
 
 FROM base AS final
 WORKDIR /app
