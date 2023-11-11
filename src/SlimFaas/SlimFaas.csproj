@@ -5,8 +5,6 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <PublishReadyToRun>true</PublishReadyToRun>
-        <PublishTrimmed>true</PublishTrimmed>
         <RootNamespace>SlimFaas</RootNamespace>
         <WarningsAsErrors>Nullable</WarningsAsErrors>
     </PropertyGroup>

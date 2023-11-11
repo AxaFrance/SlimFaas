@@ -250,39 +250,6 @@ public sealed class Startup
                         source?.Dispose();
                     }
                 });
-                endpoints.MapPost("AddMember", async context =>
-                {
-                    var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
-                    var leadershipToken = cluster.LeadershipToken;
-                    if (!leadershipToken.IsCancellationRequested)
-                    {
-                        try
-                        {
-                            var form = await context.Request.ReadFormAsync();
-                            var key = string.Empty;
-                            var value = string.Empty;
-                            foreach (var formData in form)
-                            {
-                                value = formData.Value.ToString();
-                                if (cluster.Members
-                                        .Count(m => m.EndPoint == new UriEndPoint(new(value, UriKind.Absolute))) == 0)
-                                {
-                                    await ((IRaftHttpCluster)cluster).AddMemberAsync(new Uri(value),
-                                        context.RequestAborted);
-                                }
-
-                                break;
-                            }
-
-                            await context.Response.WriteAsync("", context.RequestAborted);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("Unexpected error {0}", e);
-                            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                        }
-                    }
-                });
             });
     }
 
