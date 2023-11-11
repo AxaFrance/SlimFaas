@@ -84,6 +84,7 @@ serviceCollection.AddHostedService<ScaleReplicasWorker>();
 serviceCollection.AddHostedService<MasterWorker>();
 serviceCollection.AddHostedService<ReplicasSynchronizationWorker>();
 serviceCollection.AddHostedService<HistorySynchronizationWorker>();
+serviceCollection.AddHostedService<SlimDataSynchronizationWorker>();
 serviceCollection.AddHttpClient();
 serviceCollection.AddSingleton<IQueue, RedisQueue>();
 
@@ -100,7 +101,7 @@ else
     serviceCollection.AddSingleton<IKubernetesService, KubernetesService>((sp) => (KubernetesService)serviceProviderStarter.GetService<IKubernetesService>()!);
 }
 
-serviceCollection.AddSingleton<IRaftCluster, IRaftCluster>((sp) => Starter.ServiceProvider.GetRequiredService<IRaftCluster>());
+serviceCollection.AddSingleton<IRaftCluster, IRaftCluster>((sp) => raftCluster);
 serviceCollection.AddSingleton<SimplePersistentState, SimplePersistentState>((sp) => Starter.ServiceProvider.GetRequiredService<SimplePersistentState>());
 
 #pragma warning restore CA2252

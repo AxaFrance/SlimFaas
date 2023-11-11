@@ -32,7 +32,7 @@ public class SlimDataService : IRedisService
         var multipart = new MultipartFormDataContent();
         multipart.Add(new StringContent(value), key);
 
-        var response = await _httpClient.PostAsync(new Uri("http://localhost:3262/AddKeyValue"), multipart);
+        var response = await _httpClient.PostAsync(new Uri($"{_cluster.Leader!.EndPoint}AddKeyValue"), multipart);
         if ((int)response.StatusCode >= 500)
         {
             throw new DataException("Error in Redis Service");
@@ -48,7 +48,7 @@ public class SlimDataService : IRedisService
             multipart.Add(new StringContent(value.Value), value.Key);
         }
 
-        var response = await _httpClient.PostAsync(new Uri("http://localhost:3262/AddHashset"), multipart);
+        var response = await _httpClient.PostAsync(new Uri($"{_cluster.Leader!.EndPoint}AddHashset"), multipart);
         if ((int)response.StatusCode >= 500)
         {
             throw new DataException("Error in Redis Service");
@@ -62,7 +62,7 @@ public class SlimDataService : IRedisService
     }
 
     public Task ListLeftPushAsync(string key, string field) {
-        var request = new HttpRequestMessage(HttpMethod.Post, new Uri("http://localhost:3262/ListLeftPush"));
+        var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{_cluster.Leader!.EndPoint}ListLeftPush"));
         var multipart = new MultipartFormDataContent();
         multipart.Add(new StringContent(field), key);
         request.Content = multipart;
@@ -72,14 +72,15 @@ public class SlimDataService : IRedisService
 
     public async Task<IList<string>> ListRightPopAsync(string key, long count = 1)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, new Uri("http://localhost:3262/ListRightPop"));
-        var multipart = new MultipartFormDataContent();
-        multipart.Add(new StringContent(count.ToString()), key);
+            var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{_cluster.Leader!.EndPoint}ListRightPop"));
+            var multipart = new MultipartFormDataContent();
+            multipart.Add(new StringContent(count.ToString()), key);
 
-        request.Content = multipart;
-        var response = await _httpClient.SendAsync(request);
-        var json = await response.Content.ReadAsStringAsync();
-        return string.IsNullOrEmpty(json) ? new List<string>() : JsonConvert.DeserializeObject<IList<string>>(json);
+            request.Content = multipart;
+            var response = await _httpClient.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            return string.IsNullOrEmpty(json) ? new List<string>() : JsonConvert.DeserializeObject<IList<string>>(json);
+
     }
 
     public async Task<long> ListLengthAsync(string key) {

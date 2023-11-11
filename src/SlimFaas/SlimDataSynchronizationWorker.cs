@@ -1,17 +1,21 @@
-﻿using RaftNode;
+﻿using DotNext.Net.Cluster.Consensus.Raft;
+using DotNext.Net.Cluster.Consensus.Raft.Http;
+using RaftNode;
 
 namespace SlimFaas;
 
 public class SlimDataSynchronizationWorker: BackgroundService
 {
     private readonly IReplicasService _replicasService;
+    private readonly IRaftCluster _cluster;
     private readonly ILogger<SlimDataSynchronizationWorker> _logger;
     private readonly int _delay;
     private bool _isStarted = false;
 
-    public SlimDataSynchronizationWorker(IReplicasService replicasService, ILogger<SlimDataSynchronizationWorker> logger, int delay = EnvironmentVariables.ReplicasSynchronizationWorkerDelayMillisecondsDefault)
+    public SlimDataSynchronizationWorker(IReplicasService replicasService, IRaftCluster cluster, ILogger<SlimDataSynchronizationWorker> logger, int delay = EnvironmentVariables.ReplicasSynchronizationWorkerDelayMillisecondsDefault)
     {
         _replicasService = replicasService;
+        _cluster = cluster;
         _logger = logger;
         _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
     }
@@ -25,24 +29,36 @@ public class SlimDataSynchronizationWorker: BackgroundService
                 await Task.Delay(_delay, stoppingToken);
                 // Start SlimData only when 2 replicas are in ready state
 
-                if (_replicasService.Deployments.SlimFaas.Replicas >= 2 && _isStarted == false)
+                var leadershipToken = _cluster.LeadershipToken;
+                if (!leadershipToken.IsCancellationRequested)
                 {
-                    _logger.LogInformation("SlimData is starting");
-                    foreach (var pod in _replicasService.Deployments.SlimFaas.Pods)
+                    foreach (var slimFaasPod in _replicasService.Deployments.SlimFaas.Pods)
                     {
-#pragma warning disable CA2252
-                        Startup.ClusterMembers.Add($"http://{pod.Ip}:3262");
+                        string url = $"http://{slimFaasPod.Ip}:{slimFaasPod.Port}/";
+                        if (_cluster.Members.ToList().Any(m => m.EndPoint.ToString() == url) != false)
+                        {
+                            continue;
+                        }
+                        _logger.LogInformation("SlimFaas pod {PodName} has to be added in the cluster", slimFaasPod.Name);
+                        await ((IRaftHttpCluster)_cluster).AddMemberAsync(new Uri(url),stoppingToken);
                     }
-                   // Starter.StartNode("http", 3262);
-#pragma warning restore CA2252
-                    _isStarted = true;
-                }
 
+                    foreach (IRaftClusterMember raftClusterMember in _cluster.Members)
+                    {
+                        if (_replicasService.Deployments.SlimFaas.Pods.ToList().Any(slimFaasPod => $"http://{slimFaasPod.Ip}:{slimFaasPod.Port}/" == raftClusterMember.EndPoint.ToString()))
+                        {
+                            continue;
+                        }
+                        _logger.LogInformation("SlimFaas pod {PodName} need to be remove from the cluster", raftClusterMember.EndPoint.ToString());
+                        await ((IRaftHttpCluster)_cluster).RemoveMemberAsync( new Uri(raftClusterMember.EndPoint.ToString() ?? string.Empty) ,stoppingToken);
+                    }
+
+                }
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Global Error in ScaleReplicasWorker");
+                _logger.LogError(e, "Global Error in SlimDataSynchronizationWorker");
             }
         }
-    }
+}
 }
