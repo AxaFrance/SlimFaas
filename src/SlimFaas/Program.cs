@@ -22,8 +22,6 @@ var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json")
     .AddJsonFile($"appsettings.{environment} .json", true)
     .AddEnvironmentVariables().Build();
 
-
-
 var mockKubernetesFunction = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions);
 if (!string.IsNullOrEmpty(mockKubernetesFunction))
 {
@@ -49,6 +47,13 @@ var serviceProviderStarter = serviceCollectionStarter.BuildServiceProvider();
 var replicasService = serviceProviderStarter.GetService<IReplicasService>();
 string namespace_ = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
 replicasService?.SyncDeploymentsAsync(namespace_).Wait();
+
+while (replicasService?.Deployments.SlimFaas.Pods.Count <= 2)
+{
+    Console.WriteLine("Waiting for pods to be ready");
+    Thread.Sleep(1000);
+    replicasService?.SyncDeploymentsAsync(namespace_).Wait();
+}
 
 if (replicasService?.Deployments?.SlimFaas?.Pods != null)
 {
