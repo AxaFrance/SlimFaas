@@ -23,10 +23,9 @@ public class KubernetesService : IKubernetesService
     private readonly ILogger<KubernetesService> _logger;
     private readonly KubernetesClientConfiguration _k8SConfig;
 
-    public KubernetesService(IConfiguration config, ILogger<KubernetesService> logger)
+    public KubernetesService(ILogger<KubernetesService> logger, bool useKubeConfig)
     {
         _logger = logger;
-        var useKubeConfig = bool.Parse(config["UseKubeConfig"] ?? "false");
         _k8SConfig = !useKubeConfig ? KubernetesClientConfiguration.InClusterConfig() :
             KubernetesClientConfiguration.BuildConfigFromConfigFile();
         _k8SConfig.SkipTlsVerify = true;

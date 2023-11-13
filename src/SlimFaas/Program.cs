@@ -22,7 +22,7 @@ var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json")
     .AddJsonFile($"appsettings.{environment} .json", true)
     .AddEnvironmentVariables().Build();
 
-serviceCollectionStarter.AddSingleton<IConfiguration>().AddSingleton((sp) => configuration );
+
 
 var mockKubernetesFunction = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions);
 if (!string.IsNullOrEmpty(mockKubernetesFunction))
@@ -31,7 +31,11 @@ if (!string.IsNullOrEmpty(mockKubernetesFunction))
 }
 else
 {
-    serviceCollectionStarter.AddSingleton<IKubernetesService, KubernetesService>();
+    serviceCollectionStarter.AddSingleton<IKubernetesService, KubernetesService>(sp =>
+    {
+        var useKubeConfig = bool.Parse(configuration["UseKubeConfig"] ?? "false");
+        return new KubernetesService(sp.GetRequiredService<ILogger<KubernetesService>>(), useKubeConfig);
+    });
 }
 
 serviceCollectionStarter.AddLogging(loggingBuilder =>
@@ -42,10 +46,10 @@ serviceCollectionStarter.AddLogging(loggingBuilder =>
 
 var serviceProviderStarter = serviceCollectionStarter.BuildServiceProvider();
 
-    var replicasService = serviceProviderStarter.GetService<IReplicasService>();
-    string namespace_ =
-    Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
-    replicasService?.SyncDeploymentsAsync(namespace_).Wait();
+var replicasService = serviceProviderStarter.GetService<IReplicasService>();
+string namespace_ = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
+replicasService?.SyncDeploymentsAsync(namespace_).Wait();
+
 if (replicasService?.Deployments?.SlimFaas?.Pods != null)
 {
     foreach (string enumerateDirectory in Directory.EnumerateDirectories(slimDataDirectory))
