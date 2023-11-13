@@ -49,7 +49,7 @@ string namespace_ = Environment.GetEnvironmentVariable(EnvironmentVariables.Name
 Console.WriteLine($"Starting in namespace {namespace_}");
 replicasService?.SyncDeploymentsAsync(namespace_).Wait();
 
-while (replicasService?.Deployments.SlimFaas.Pods.Count <= 2)
+while (replicasService?.Deployments.SlimFaas.Pods.Select(p => !string.IsNullOrEmpty(p.Ip)).Count() < 2)
 {
     Console.WriteLine("Waiting for pods to be ready");
     Thread.Sleep(1000);
@@ -74,7 +74,7 @@ if (replicasService?.Deployments?.SlimFaas?.Pods != null)
         }
     }
 
-    foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods)
+    foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods.Where(p => !string.IsNullOrEmpty(p.Ip)).ToList())
     {
         string item = $"http://{podInformation.Ip}:{(string.IsNullOrEmpty(podInformation.Port) ? "3262" : podInformation.Port)}";
         Console.WriteLine($"Adding node  {item}");
