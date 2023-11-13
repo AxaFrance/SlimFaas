@@ -82,14 +82,17 @@ if (replicasService?.Deployments?.SlimFaas?.Pods != null)
     }
 
     var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == Environment.GetEnvironmentVariable("HOSTNAME"));
+    Console.WriteLine($"Starting node {currentPod.Name}");
     var podDataDirectory =  Path.Combine(slimDataDirectory, currentPod.Name);
     if(Directory.Exists(podDataDirectory) == false)
         Directory.CreateDirectory(podDataDirectory);
     Starter.StartNode("http", slimDataPort, podDataDirectory);
+    Console.WriteLine($"Node started {currentPod.Name}");
 }
 
 while (Starter.ServiceProvider == null)
 {
+    Console.WriteLine($"Waiting node to start");
     Thread.Sleep(100);
 }
 
@@ -102,6 +105,7 @@ while (raftCluster.Readiness == Task.CompletedTask)
 
 while (raftCluster.Leader == null)
 {
+    Console.WriteLine($"Raft cluster has no leader");
     Thread.Sleep(100);
 }
 
