@@ -17,6 +17,13 @@ var serviceCollectionStarter = new ServiceCollection();
 serviceCollectionStarter.AddSingleton<IReplicasService, ReplicasService>();
 serviceCollectionStarter.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
 
+var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json")
+    .AddJsonFile($"appsettings.{environment} .json", true)
+    .AddEnvironmentVariables().Build();
+
+serviceCollectionStarter.AddSingleton<IConfiguration>().AddSingleton((sp) => configuration );
+
 var mockKubernetesFunction = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions);
 if (!string.IsNullOrEmpty(mockKubernetesFunction))
 {
