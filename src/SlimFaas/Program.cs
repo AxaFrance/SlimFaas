@@ -43,8 +43,17 @@ if (replicasService?.Deployments?.SlimFaas?.Pods != null)
 {
     foreach (string enumerateDirectory in Directory.EnumerateDirectories(slimDataDirectory))
     {
-        if(replicasService.Deployments.SlimFaas.Pods.Any(p => p.Name == new DirectoryInfo(enumerateDirectory).Name) == false)
-            Directory.Delete(enumerateDirectory, false);
+        if (replicasService.Deployments.SlimFaas.Pods.Any(p => p.Name == new DirectoryInfo(enumerateDirectory).Name) == false)
+        {
+            try
+            {
+                Directory.Delete(enumerateDirectory, false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
     }
 
     foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods)

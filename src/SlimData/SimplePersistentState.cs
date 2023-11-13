@@ -12,8 +12,6 @@ public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<S
 {
     internal const string LogLocation = "logLocation";
     
-    
-
     public SlimDataInterpreter interpreter = new("SimplePersistentState");
     private sealed class SimpleSnapshotBuilder : IncrementalSnapshotBuilder
     {
