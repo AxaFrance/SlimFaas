@@ -8,7 +8,7 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  unit_tests:
+  sonarcloud:
     name: Build and analyze
     runs-on: windows-latest
     steps:
@@ -52,6 +52,19 @@ jobs:
           dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
 
+  unit_tests:
+    name: Build and analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - uses: actions/setup-dotnet@v3
+        with:
+          global-json-file: global.json
+      - name: Run unit tests
+        run: |
+          dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
   tags:
     needs: unit_tests
     runs-on: ubuntu-latest
