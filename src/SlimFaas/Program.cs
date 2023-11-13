@@ -96,6 +96,7 @@ while (Starter.ServiceProvider == null)
 var raftCluster = Starter.ServiceProvider.GetRequiredService<IRaftCluster>();
 while (raftCluster.Readiness == Task.CompletedTask)
 {
+    Console.WriteLine($"Raft cluster is not ready");
     Thread.Sleep(100);
 }
 
