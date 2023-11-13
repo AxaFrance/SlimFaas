@@ -46,6 +46,7 @@ var serviceProviderStarter = serviceCollectionStarter.BuildServiceProvider();
 
 var replicasService = serviceProviderStarter.GetService<IReplicasService>();
 string namespace_ = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
+Console.WriteLine($"Starting in namespace {namespace_}");
 replicasService?.SyncDeploymentsAsync(namespace_).Wait();
 
 while (replicasService?.Deployments.SlimFaas.Pods.Count <= 2)
@@ -63,6 +64,7 @@ if (replicasService?.Deployments?.SlimFaas?.Pods != null)
         {
             try
             {
+                Console.WriteLine($"Deleting {enumerateDirectory}");
                 Directory.Delete(enumerateDirectory, false);
             }
             catch (Exception ex)
@@ -74,8 +76,9 @@ if (replicasService?.Deployments?.SlimFaas?.Pods != null)
 
     foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods)
     {
-        Startup.ClusterMembers.Add(
-            $"http://{podInformation.Ip}:{(string.IsNullOrEmpty(podInformation.Port) ? "3262" : podInformation.Port)}");
+        string item = $"http://{podInformation.Ip}:{(string.IsNullOrEmpty(podInformation.Port) ? "3262" : podInformation.Port)}";
+        Console.WriteLine($"Adding node  {item}");
+        Startup.ClusterMembers.Add(item);
     }
 
     var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == Environment.GetEnvironmentVariable("HOSTNAME"));
