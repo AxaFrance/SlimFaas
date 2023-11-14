@@ -42,8 +42,11 @@ public class Starter
     }
 
     static void ConfigureLogging(ILoggingBuilder builder)
-        => builder.AddConsole().SetMinimumLevel(LogLevel.Error);
-    
+    {
+        builder.AddConsole().SetMinimumLevel(LogLevel.Information);
+        builder.AddDebug();
+    }
+
     public static Task StartNode(string protocol = "http", int port = 3262, string domain= "localhost", string? persistentStorage = null)
     {
         switch (protocol.ToLowerInvariant())

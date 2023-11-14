@@ -11,6 +11,6 @@ switch (args.LongLength)
         await Starter.StartNode(args[0], int.Parse(args[1]));
         break;
     case 3:
-        await Starter.StartNode(args[0], int.Parse(args[1]), args[2]);
+        await Starter.StartNode(args[0], int.Parse(args[1]), "localhost", args[2]);
         break;
 }
