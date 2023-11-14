@@ -18,6 +18,7 @@ public class SlimDataSynchronizationWorker: BackgroundService
         _cluster = cluster;
         _logger = logger;
         _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
+
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -45,7 +46,8 @@ public class SlimDataSynchronizationWorker: BackgroundService
 
                     foreach (IRaftClusterMember raftClusterMember in _cluster.Members)
                     {
-                        if (_replicasService.Deployments.SlimFaas.Pods.ToList().Any(slimFaasPod => $"http://{slimFaasPod.Ip}:{slimFaasPod.Port}/" == raftClusterMember.EndPoint.ToString()))
+                        var slimDataPort = int.Parse( Environment.GetEnvironmentVariable("SLIMDATA_PORT") ?? "3262");
+                        if (_replicasService.Deployments.SlimFaas.Pods.ToList().Any(slimFaasPod => $"http://{slimFaasPod.Ip}:{slimDataPort}/" == raftClusterMember.EndPoint.ToString()))
                         {
                             continue;
                         }
