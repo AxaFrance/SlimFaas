@@ -50,7 +50,7 @@ public class Starter
         {
             case "http":
             case "https":
-                return UseAspNetCoreHost(port, persistentStorage);
+                return UseAspNetCoreHost(port, domain, persistentStorage);
             default:
                 Console.Error.WriteLine("Unsupported protocol type");
                 Environment.ExitCode = 1;

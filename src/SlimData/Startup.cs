@@ -97,7 +97,6 @@ public sealed class Startup(IConfiguration configuration)
                     var source =
                         CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
                             cluster.LeadershipToken);
-                    IList<string> values = new List<string>();
                     try
                     {
                         var form = await context.Request.ReadFormAsync(source.Token);
@@ -121,6 +120,7 @@ public sealed class Startup(IConfiguration configuration)
 
                         await cluster.ApplyReadBarrierAsync(context.RequestAborted);
 
+                        var values = new List<string>();
                         var queues = ((ISupplier<SupplierPayload>)provider).Invoke().Queues;
                         if (queues.ContainsKey(key))
                         {
@@ -131,6 +131,7 @@ public sealed class Startup(IConfiguration configuration)
                                 {
                                     break;
                                 }
+
                                 values.Add(queue[i]);
                             }
 
