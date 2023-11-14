@@ -279,8 +279,8 @@ public sealed class Startup(IConfiguration configuration)
         {
             members.Add(new UriEndPoint(new(clusterMember, UriKind.Absolute)));
         }
-        //members.Add(new UriEndPoint(new("http://localhost:3262", UriKind.Absolute)));
-        //members.Add(new UriEndPoint(new("http://localhost:3263", UriKind.Absolute)));
+        members.Add(new UriEndPoint(new("http://localhost:3262", UriKind.Absolute)));
+        members.Add(new UriEndPoint(new("http://localhost:3263", UriKind.Absolute)));
         //members.Add(new UriEndPoint(new("http://localhost:3264", UriKind.Absolute)));
     }
 }

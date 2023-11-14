@@ -1,4 +1,5 @@
-﻿using DotNext.Net.Cluster.Consensus.Raft.Http;
+﻿using System.Net;
+using DotNext.Net.Cluster.Consensus.Raft.Http;
 
 namespace RaftNode;
 
@@ -28,8 +29,10 @@ public class Starter
             {
                 webHost.UseKestrel(options =>
                     {
-                        ServiceProvider = options.ApplicationServices;
-                        options.ListenLocalhost(port);
+                        ServiceProvider = options.ApplicationServices; 
+                        options.ListenAnyIP(port);    
+
+                        
                     })
                     .UseStartup<Startup>();
             })

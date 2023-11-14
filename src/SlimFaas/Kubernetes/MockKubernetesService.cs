@@ -44,8 +44,8 @@ public class MockKubernetesService : IKubernetesService
         _deploymentInformations = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
             SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()
             {
-                new("slimfaas1", true, false, "localhost", "slimfaas" , "3262"  ),
-                new("slimfaas2", true, false, "localhost", "slimfaas", "3263" )
+                new("slimfaas1", true, false, "localhost", "slimfaas"   ),
+                new("slimfaas2", true, false, "localhost", "slimfaas" )
             }));
         var functions = JsonSerializer.Deserialize(functionsJson, FunctionsMockSerializerContext.Default.FunctionsMock);
         foreach (var function in functions.Functions)
@@ -55,7 +55,7 @@ public class MockKubernetesService : IKubernetesService
                 Namespace: "default",
                 ReplicasStartAsSoonAsOneFunctionRetrieveARequest: false,
                 NumberParallelRequest: function.NumberParallelRequest,
-                Pods: new List<PodInformation>() { new("", true, true, "", "", "") }
+                Pods: new List<PodInformation>() { new("", true, true, "", "") }
                 );
             _deploymentInformations.Functions.Add(deploymentInformation);
         }

@@ -77,7 +77,7 @@ if (replicasService?.Deployments?.SlimFaas?.Pods != null)
 
     foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods.Where(p => !string.IsNullOrEmpty(p.Ip)).ToList())
     {
-        string item = $"http://{podInformation.Ip}:{(string.IsNullOrEmpty(podInformation.Port) ? "3262" : podInformation.Port)}";
+        string item = $"http://{podInformation.Ip}:{slimDataPort}";
         Console.WriteLine($"Adding node  {item}");
         Startup.ClusterMembers.Add(item);
     }
