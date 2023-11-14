@@ -49,7 +49,8 @@ string namespace_ = Environment.GetEnvironmentVariable(EnvironmentVariables.Name
 Console.WriteLine($"Starting in namespace {namespace_}");
 replicasService?.SyncDeploymentsAsync(namespace_).Wait();
 
-while (replicasService?.Deployments.SlimFaas.Pods.Select(p => !string.IsNullOrEmpty(p.Ip)).Count() < 2)
+var hostname = Environment.GetEnvironmentVariable("HOSTNAME");
+while (replicasService?.Deployments.SlimFaas.Pods.Select(p => !string.IsNullOrEmpty(p.Ip)).Count() < 2 || replicasService?.Deployments.SlimFaas.Pods.Any(p => p.Name == hostname) == false)
 {
     Console.WriteLine("Waiting for pods to be ready");
     Thread.Sleep(1000);
@@ -81,12 +82,12 @@ if (replicasService?.Deployments?.SlimFaas?.Pods != null)
         Startup.ClusterMembers.Add(item);
     }
 
-    var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == Environment.GetEnvironmentVariable("HOSTNAME"));
+    var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == hostname);
     Console.WriteLine($"Starting node {currentPod.Name}");
     var podDataDirectory =  Path.Combine(slimDataDirectory, currentPod.Name);
     if(Directory.Exists(podDataDirectory) == false)
         Directory.CreateDirectory(podDataDirectory);
-    Starter.StartNode("http", slimDataPort, podDataDirectory);
+    Starter.StartNode("http", slimDataPort, currentPod.Ip, podDataDirectory);
     Console.WriteLine($"Node started {currentPod.Name}");
 }
 
@@ -164,7 +165,6 @@ serviceCollection.AddOpenTelemetry()
         .AddAspNetCoreInstrumentation());
 
 var app = builder.Build();
-
 
 app.Use(async (context, next) =>
 {

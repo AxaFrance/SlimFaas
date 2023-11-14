@@ -3,16 +3,11 @@ using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 using Microsoft.AspNetCore.Connections;
 using Newtonsoft.Json;
-using static System.Globalization.CultureInfo;
 
 namespace RaftNode;
 
-public sealed class Startup
+public sealed class Startup(IConfiguration configuration)
 {
-    private readonly IConfiguration configuration;
-
-    public Startup(IConfiguration configuration) => this.configuration = configuration;
-
     private static Task RedirectToLeaderAsync(HttpContext context)
     {
         var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
@@ -102,6 +97,7 @@ public sealed class Startup
                     var source =
                         CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
                             cluster.LeadershipToken);
+                    IList<string> values = new List<string>();
                     try
                     {
                         var form = await context.Request.ReadFormAsync(source.Token);
@@ -125,7 +121,6 @@ public sealed class Startup
 
                         await cluster.ApplyReadBarrierAsync(context.RequestAborted);
 
-                        IList<string> values = new List<string>();
                         var queues = ((ISupplier<SupplierPayload>)provider).Invoke().Queues;
                         if (queues.ContainsKey(key))
                         {
@@ -136,7 +131,6 @@ public sealed class Startup
                                 {
                                     break;
                                 }
-
                                 values.Add(queue[i]);
                             }
 
