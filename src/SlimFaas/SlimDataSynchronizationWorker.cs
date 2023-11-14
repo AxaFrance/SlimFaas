@@ -34,7 +34,7 @@ public class SlimDataSynchronizationWorker: BackgroundService
                 {
                     foreach (var slimFaasPod in _replicasService.Deployments.SlimFaas.Pods)
                     {
-                        string url = $"http://{slimFaasPod.Ip}:{slimFaasPod.Port}/";
+                        string url = $"http://{slimFaasPod.Ip}:3262/";
                         if (_cluster.Members.ToList().Any(m => m.EndPoint.ToString() == url) != false)
                         {
                             continue;
