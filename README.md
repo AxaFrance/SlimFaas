@@ -83,7 +83,7 @@ SlimFaas act as an HTTP proxy with 2 modes:
 ### Asynchrounous HTTP call
 
 - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
-  - Tail in memory or using Redis
+  - Tail in memory or using SlimData database included in SlimFaas pod
 
 ![async_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/async_http_call.PNG)
 
@@ -114,7 +114,7 @@ spec:
         app: fibonacci1
       annotations:
         # Just add SlimFaas annotation to your pods and that's it !
-        SlimFaas/Function: "true" 
+        SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
@@ -175,12 +175,12 @@ spec:
             - name: NAMESPACE
               value: "default"
             - name: SLIMDATA_DIRECTORY
-              value: "/database" 
-            # If you want to use Redis use this env variable and comment MOCK_REDIS
+              value: "/database"
+            # If you want to use just one pod for testing purpose, you can use this env variable
             - name: MOCK_SLIMDATA
               value: "true"
             # If your are not on kubernetes for example docker-compose, you can use this env variable, but you will lose auto-scale
-            #- name: MOCK_KUBERNETES_FUNCTIONS 
+            #- name: MOCK_KUBERNETES_FUNCTIONS
             #  value: "{\"Functions\":[{\"Name\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}]}"
 
             # Optional, longer is the delay, less CPU and RAM is used
@@ -219,7 +219,7 @@ spec:
 
 
 ### SlimFaas Annotations with defaults values
-- SlimFaas/Function: "true" 
+- SlimFaas/Function: "true"
   - Activate SlimFaas on this pod, so your pod will be auto-scaled
 - SlimFaas/ReplicasMin: "0"
   - Scale down to this value after a period of inactivity
@@ -259,10 +259,13 @@ Instead of creating many pods, SlimFaas use internally many workers in the same 
 - **ReplicasSynchronizationWorker**: Manage replicas synchronization between the pod and kubernetes
 - **ReplicasScaleWorker**: If master, then scale up and down kubernetes pods
 
+**SlimData** is a simple database included inside SlimFaas pod. It is based on **Raft** algorithm offered by awesome https://github.com/dotnet/dotNext library.
+By default **SlimData** use a second HTTP port 3262 to expose its API. Don't expose it and keep it internal.
+
 ### Build with .NET
 
 Why .NET ?
-- .NET is always getting faster and faster : https://www.techempower.com/benchmarks/#section=data-r21
+- .NET is always getting faster and faster : https://www.techempower.com/benchmarks/#section=data-r22
 - ASP.NET Core allow to resolve complex use cases with few lines of codes
 - .NET is always getting smaller and smaller: https://twitter.com/MStrehovsky/status/1660806238979117056?t=WPrZwi7WrIWi4tjoDUXEgg&s=19
 
