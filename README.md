@@ -1,6 +1,6 @@
 # SlimFaas : The slimest and simplest Function As A Service [![Continuous Integration](https://github.com/AxaFrance/SlimFaas/actions/workflows/slimfaas-ci.yaml/badge.svg)](https://github.com/AxaFrance/SlimFaas/actions/workflows/slimfaas-ci.yaml) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=alert_status)](https://sonarcloud.io/dashboard?id=AxaFrance_SlimFaas) [![Reliability](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=AxaFrance_SlimFaas&metric=reliability_rating) [![Security](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=security_rating)](https://sonarcloud.io/component_measures?id=AxaGuilDEv_ml-cli&metric=security_rating) [![Code Corevage](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=coverage)](https://sonarcloud.io/component_measures?id=AxaFrance_SlimFaas&metric=Coverage) [![Docker SlimFaas](https://img.shields.io/docker/pulls/axaguildev/slimfaas.svg)](https://hub.docker.com/r/axaguildev/slimfaas/builds)
 
-![SlimFaas.png](/documentation%2FSlimFaas.png)
+![SlimFaas.png](https://github.com/AxaFrance/SlimFaas/documentation%2FSlimFaas.png)
 
 Why use SlimFaas ?
 - Scale to 0 after a period of inactivity
@@ -12,7 +12,7 @@ Why use SlimFaas ?
   - No impact on your current kubernetes manifests: just add an annotation to the pod you want to auto-scale
 - Very Slim and very Fast
 
-![slim-faas-ram-cpu.png](documentation%2Fslim-faas-ram-cpu.png)
+![slim-faas-ram-cpu.png](https://github.com/AxaFrance/SlimFaas/documentation%2Fslim-faas-ram-cpu.png)
 
 ## Getting Started with Kubernetes
 
@@ -78,7 +78,7 @@ SlimFaas act as an HTTP proxy with 2 modes:
 
 - Synchronous http://slimfaas/function/myfunction = > HTTP response function
 
-![sync_http_call.PNG](documentation%2Fsync_http_call.PNG)
+![sync_http_call.PNG](https://github.com/AxaFrance/slimfaas/documentation%2Fsync_http_call.PNG)
 
 ### Asynchrounous HTTP call
 
