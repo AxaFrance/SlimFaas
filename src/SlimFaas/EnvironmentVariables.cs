@@ -21,11 +21,6 @@ public static class EnvironmentVariables
     public const string PodScaledUpByDefaultWhenInfrastructureHasNeverCalled = "POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED";
     public const bool PodScaledUpByDefaultWhenInfrastructureHasNeverCalledDefault = false;
 
-    public const string RedisConnectionString = "REDIS_CONNECTION_STRING";
-    public const string RedisConnectionStringDefault = "localhost:6379";
-
-    public const string MockRedis = "MOCK_REDIS";
-
     public const string BaseFunctionUrl = "BASE_FUNCTION_URL";
     public const string BaseFunctionUrlDefault = "http://{function_name}:8080/";
 
@@ -34,6 +29,13 @@ public static class EnvironmentVariables
 
     public const string MockKubernetesFunctions = "MOCK_KUBERNETES_FUNCTIONS";
     public const string MockKubernetesFunctionsDefault = "";
+
+    public const string SlimDataDirectory = "SLIMDATA_DIRECTORY";
+    public const string SlimDataDirectoryDefault = "c://SlimData";
+    public const string SlimDataPort = "SLIMDATA_PORT";
+    public const int SlimDataPortDefault = 3262;
+
+    public const string MockSlimData = "MOCK_SLIMDATA";
 
     public static int ReadInteger<T>(ILogger<T> logger, string environmentVariableName, int defaultInteger)
     {

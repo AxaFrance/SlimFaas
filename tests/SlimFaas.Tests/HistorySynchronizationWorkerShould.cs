@@ -10,7 +10,7 @@ public class HistorySynchronizationWorkerShould
     public async Task SyncLastTicksBetweenDatabaseAndMemory()
     {
         var logger = new Mock<ILogger<HistorySynchronizationWorker>>();
-        var redisMockService = new RedisMockService();
+        var redisMockService = new DatabaseMockService();
         var historyHttpRedisService = new HistoryHttpRedisService(redisMockService);
         var kubernetesService = new Mock<IKubernetesService>();
         var deploymentsInformations = new DeploymentsInformations(Functions: new List<DeploymentInformation>()
@@ -47,7 +47,7 @@ public class HistorySynchronizationWorkerShould
     public async Task LogErrorWhenExceptionIsThrown()
     {
         var logger = new Mock<ILogger<HistorySynchronizationWorker>>();
-        var redisMockService = new RedisMockService();
+        var redisMockService = new DatabaseMockService();
         var historyHttpRedisService = new HistoryHttpRedisService(redisMockService);
         var historyHttpMemoryService = new HistoryHttpMemoryService();
         var replicasService = new Mock<IReplicasService>();

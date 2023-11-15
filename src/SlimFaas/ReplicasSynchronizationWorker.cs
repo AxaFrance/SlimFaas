@@ -1,21 +1,13 @@
 ﻿namespace SlimFaas;
 
-public class ReplicasSynchronizationWorker: BackgroundService
+public class ReplicasSynchronizationWorker(IReplicasService replicasService,
+        ILogger<ReplicasSynchronizationWorker> logger,
+        int delay = EnvironmentVariables.ReplicasSynchronizationWorkerDelayMillisecondsDefault)
+    : BackgroundService
 {
-    private readonly IReplicasService _replicasService;
-    private readonly ILogger<ReplicasSynchronizationWorker> _logger;
-    private readonly int _delay;
-    private readonly string _namespace;
+    private readonly int _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
+    private readonly string _namespace = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
 
-    public ReplicasSynchronizationWorker(IReplicasService replicasService, ILogger<ReplicasSynchronizationWorker> logger, int delay = EnvironmentVariables.ReplicasSynchronizationWorkerDelayMillisecondsDefault)
-    {
-        _replicasService = replicasService;
-        _logger = logger;
-
-        _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
-        _namespace =
-            Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
-    }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (stoppingToken.IsCancellationRequested == false)
@@ -23,11 +15,11 @@ public class ReplicasSynchronizationWorker: BackgroundService
             try
             {
                 await Task.Delay(_delay, stoppingToken);
-                await _replicasService.SyncDeploymentsAsync(_namespace);
+                await replicasService.SyncDeploymentsAsync(_namespace);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Global Error in ScaleReplicasWorker");
+                logger.LogError(e, "Global Error in ScaleReplicasWorker");
             }
         }
     }

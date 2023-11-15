@@ -4,22 +4,13 @@ using RaftNode;
 
 namespace SlimFaas;
 
-public class SlimDataSynchronizationWorker: BackgroundService
+public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRaftCluster cluster,
+        ILogger<SlimDataSynchronizationWorker> logger,
+        int delay = EnvironmentVariables.ReplicasSynchronizationWorkerDelayMillisecondsDefault)
+    : BackgroundService
 {
-    private readonly IReplicasService _replicasService;
-    private readonly IRaftCluster _cluster;
-    private readonly ILogger<SlimDataSynchronizationWorker> _logger;
-    private readonly int _delay;
-    private bool _isStarted = false;
-
-    public SlimDataSynchronizationWorker(IReplicasService replicasService, IRaftCluster cluster, ILogger<SlimDataSynchronizationWorker> logger, int delay = EnvironmentVariables.ReplicasSynchronizationWorkerDelayMillisecondsDefault)
-    {
-        _replicasService = replicasService;
-        _cluster = cluster;
-        _logger = logger;
-        _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
-
-    }
+    private readonly int _delay = EnvironmentVariables.ReadInteger<SlimDataSynchronizationWorker>(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
+    private readonly int _slimDataPort = EnvironmentVariables.ReadInteger<SlimDataSynchronizationWorker>(logger, EnvironmentVariables.SlimDataPort, EnvironmentVariables.SlimDataPortDefault);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -30,36 +21,35 @@ public class SlimDataSynchronizationWorker: BackgroundService
                 await Task.Delay(_delay, stoppingToken);
                 // Start SlimData only when 2 replicas are in ready state
 
-                var leadershipToken = _cluster.LeadershipToken;
+                var leadershipToken = cluster.LeadershipToken;
                 if (!leadershipToken.IsCancellationRequested)
                 {
-                    foreach (var slimFaasPod in _replicasService.Deployments.SlimFaas.Pods)
+                    foreach (var slimFaasPod in replicasService.Deployments.SlimFaas.Pods)
                     {
                         string url = $"http://{slimFaasPod.Ip}:3262/";
-                        if (_cluster.Members.ToList().Any(m => m.EndPoint.ToString() == url) != false)
+                        if (cluster.Members.ToList().Any(m => m.EndPoint.ToString() == url) != false)
                         {
                             continue;
                         }
-                        _logger.LogInformation("SlimFaas pod {PodName} has to be added in the cluster", slimFaasPod.Name);
-                        await ((IRaftHttpCluster)_cluster).AddMemberAsync(new Uri(url),stoppingToken);
+                        logger.LogInformation("SlimFaas pod {PodName} has to be added in the cluster", slimFaasPod.Name);
+                        await ((IRaftHttpCluster)cluster).AddMemberAsync(new Uri(url),stoppingToken);
                     }
 
-                    foreach (IRaftClusterMember raftClusterMember in _cluster.Members)
+                    foreach (IRaftClusterMember raftClusterMember in cluster.Members)
                     {
-                        var slimDataPort = int.Parse( Environment.GetEnvironmentVariable("SLIMDATA_PORT") ?? "3262");
-                        if (_replicasService.Deployments.SlimFaas.Pods.ToList().Any(slimFaasPod => $"http://{slimFaasPod.Ip}:{slimDataPort}/" == raftClusterMember.EndPoint.ToString()))
+                        if (replicasService.Deployments.SlimFaas.Pods.ToList().Any(slimFaasPod => $"http://{slimFaasPod.Ip}:{_slimDataPort}/" == raftClusterMember.EndPoint.ToString()))
                         {
                             continue;
                         }
-                        _logger.LogInformation("SlimFaas pod {PodName} need to be remove from the cluster", raftClusterMember.EndPoint.ToString());
-                        await ((IRaftHttpCluster)_cluster).RemoveMemberAsync( new Uri(raftClusterMember.EndPoint.ToString() ?? string.Empty) ,stoppingToken);
+                        logger.LogInformation("SlimFaas pod {PodName} need to be remove from the cluster", raftClusterMember.EndPoint.ToString());
+                        await ((IRaftHttpCluster)cluster).RemoveMemberAsync( new Uri(raftClusterMember.EndPoint.ToString() ?? string.Empty) ,stoppingToken);
                     }
 
                 }
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Global Error in SlimDataSynchronizationWorker");
+                logger.LogError(e, "Global Error in SlimDataSynchronizationWorker");
             }
         }
 }

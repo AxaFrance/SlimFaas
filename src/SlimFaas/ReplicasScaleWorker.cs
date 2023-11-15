@@ -1,24 +1,12 @@
 ﻿namespace SlimFaas;
 
-public class ScaleReplicasWorker: BackgroundService
+public class ScaleReplicasWorker(IReplicasService replicasService, IMasterService masterService,
+        ILogger<ScaleReplicasWorker> logger,
+        int delay = EnvironmentVariables.ScaleReplicasWorkerDelayMillisecondsDefault)
+    : BackgroundService
 {
-    private readonly IReplicasService _replicasService;
-    private readonly IMasterService _masterService;
-    private readonly ILogger<ScaleReplicasWorker> _logger;
-    private readonly int _delay;
-    private readonly string _namespace;
-
-    public ScaleReplicasWorker(IReplicasService replicasService, IMasterService masterService , ILogger<ScaleReplicasWorker> logger, int delay = EnvironmentVariables.ScaleReplicasWorkerDelayMillisecondsDefault)
-    {
-        _replicasService = replicasService;
-        _masterService = masterService;
-        _logger = logger;
-
-        _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.ScaleReplicasWorkerDelayMilliseconds, delay);
-
-        _namespace =
-            Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
-    }
+    private readonly int _delay = EnvironmentVariables.ReadInteger<ScaleReplicasWorker>(logger, EnvironmentVariables.ScaleReplicasWorkerDelayMilliseconds, delay);
+    private readonly string _namespace = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -27,12 +15,12 @@ public class ScaleReplicasWorker: BackgroundService
              try
              {
                  await Task.Delay(_delay, stoppingToken);
-                 if(_masterService.IsMaster == false) continue;
-                 await _replicasService.CheckScaleAsync(_namespace);
+                 if(masterService.IsMaster == false) continue;
+                 await replicasService.CheckScaleAsync(_namespace);
              }
              catch (Exception e)
              {
-                _logger.LogError(e, "Global Error in ScaleReplicasWorker");
+                logger.LogError(e, "Global Error in ScaleReplicasWorker");
              }
          }
     }

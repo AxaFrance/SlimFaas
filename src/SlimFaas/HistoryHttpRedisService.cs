@@ -2,22 +2,22 @@
 
 public class HistoryHttpRedisService
 {
-    private readonly IRedisService _redisService;
+    private readonly IDatabaseService _databaseService;
 
-    public HistoryHttpRedisService(IRedisService redisService)
+    public HistoryHttpRedisService(IDatabaseService databaseService)
     {
-        _redisService = redisService;
+        _databaseService = databaseService;
     }
     
     public async Task<long> GetTicksLastCallAsync(string functionName)
     {
-        var result = await _redisService.GetAsync(functionName);
+        var result = await _databaseService.GetAsync(functionName);
         return string.IsNullOrEmpty(result) ? 0 : long.Parse(result);
     }
     
     public async Task SetTickLastCallAsync(string functionName, long ticks)
     {
-       await _redisService.SetAsync(functionName, ticks.ToString());
+       await _databaseService.SetAsync(functionName, ticks.ToString());
     }
     
 }

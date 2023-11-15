@@ -14,14 +14,14 @@ public enum FunctionType
 public class SlimProxyMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IQueue _queue;
+    private readonly ISlimFaasQueue _slimFaasQueue;
     private readonly ILogger<SlimProxyMiddleware> _logger;
     private readonly int _timeoutMaximumWaitWakeSyncFunctionMilliSecond;
 
-    public SlimProxyMiddleware(RequestDelegate next, IQueue queue, ILogger<SlimProxyMiddleware> logger, int timeoutWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault)
+    public SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue, ILogger<SlimProxyMiddleware> logger, int timeoutWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault)
     {
         _next = next;
-        _queue = queue;
+        _slimFaasQueue = slimFaasQueue;
         _logger = logger;
 
         _timeoutMaximumWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.TimeMaximumWaitForAtLeastOnePodStartedForSyncFunction, timeoutWaitWakeSyncFunctionMilliSecond);
@@ -83,7 +83,7 @@ public class SlimProxyMiddleware
             contextResponse.StatusCode = 404;
             return;
         }
-        await _queue.EnqueueAsync(functionName,
+        await _slimFaasQueue.EnqueueAsync(functionName,
             JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest));
         contextResponse.StatusCode = 202;
     }

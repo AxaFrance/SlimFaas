@@ -32,7 +32,7 @@ class MemoryReplicasService : IReplicasService
     }
 }
 
-class MemoryQueue: IQueue
+class MemorySlimFaasQueue: ISlimFaasQueue
 {
     public async Task EnqueueAsync(string key, string message)
     {
@@ -91,7 +91,7 @@ public class ProxyMiddlewareTests
                     {
                         services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
                         services.AddSingleton<ISendClient, SendClientMock>();
-                        services.AddSingleton<IQueue, MemoryQueue>();
+                        services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicasService>();
                     })
                     .Configure(app =>
@@ -120,7 +120,7 @@ public class ProxyMiddlewareTests
                     {
                         services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
                         services.AddSingleton<ISendClient, SendClientMock>();
-                        services.AddSingleton<IQueue, MemoryQueue>();
+                        services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicasService>();
                     })
                     .Configure(app =>
@@ -149,7 +149,7 @@ public class ProxyMiddlewareTests
                     {
                         services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
                         services.AddSingleton<ISendClient, SendClientMock>();
-                        services.AddSingleton<IQueue, MemoryQueue>();
+                        services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicasService>();
                     })
                     .Configure(app =>

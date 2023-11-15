@@ -12,17 +12,17 @@ public class SlimWorker : BackgroundService
     private readonly ILogger<SlimWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly int _delay;
-    private readonly IQueue _queue;
+    private readonly ISlimFaasQueue _slimFaasQueue;
     private readonly IReplicasService _replicasService;
 
-    public SlimWorker(IQueue queue, IReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider, int delay = EnvironmentVariables.SlimWorkerDelayMillisecondsDefault)
+    public SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider, int delay = EnvironmentVariables.SlimWorkerDelayMillisecondsDefault)
     {
         _historyHttpService = historyHttpService;
         _logger = logger;
         _serviceProvider = serviceProvider;
 
         _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.SlimWorkerDelayMilliseconds, delay);
-        _queue = queue;
+        _slimFaasQueue = slimFaasQueue;
         _replicasService = replicasService;
     }
 
@@ -73,7 +73,7 @@ public class SlimWorker : BackgroundService
         string functionDeployment)
     {
         var numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
-        var jsons = await _queue.DequeueAsync(functionDeployment,
+        var jsons = await _slimFaasQueue.DequeueAsync(functionDeployment,
             numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue : 1);
         foreach (var requestJson in jsons)
         {
@@ -94,7 +94,7 @@ public class SlimWorker : BackgroundService
         Dictionary<string, int> setTickLastCallCounterDictionnary, string functionDeployment, int numberProcessingTasks)
     {
         var counterLimit = functionReplicas == 0 ? 10 : 300;
-        var queueLenght = await _queue.CountAsync(functionDeployment);
+        var queueLenght = await _slimFaasQueue.CountAsync(functionDeployment);
         if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
         {
             setTickLastCallCounterDictionnary[functionDeployment] = 0;

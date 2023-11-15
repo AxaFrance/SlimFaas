@@ -9,7 +9,7 @@ internal sealed class RaftClientHandlerFactory : IHttpMessageHandlerFactory
 
     public HttpMessageHandler CreateHandler(string name)
     {
-        var handler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromMilliseconds(100) };
+        var handler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromMilliseconds(300)};
         handler.SslOptions.RemoteCertificateValidationCallback = AllowCertificate;
         handler.UseProxy = false;
         return handler;

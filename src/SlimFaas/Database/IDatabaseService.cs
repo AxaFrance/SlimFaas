@@ -1,6 +1,6 @@
 ﻿namespace SlimFaas;
 
-public interface IRedisService
+public interface IDatabaseService
 {
     Task<string> GetAsync(string key);
     Task SetAsync(string key, string value);

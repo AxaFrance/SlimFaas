@@ -8,18 +8,13 @@ namespace RaftNode;
 [Command<ListRightPopCommand>(ListRightPopCommand.Id)]
 [Command<AddHashSetCommand>(AddHashSetCommand.Id)]
 #pragma warning restore CA2252
-public class SlimDataInterpreter : CommandInterpreter
+public class SlimDataInterpreter(string prefix) : CommandInterpreter
 {
-    private readonly string prefix;
+    private readonly string prefix = prefix;
     public IDictionary<string, string> keyValues = new Dictionary<string, string>();
     public IDictionary<string, List<string>> queues = new Dictionary<string, List<string>>();
     public IDictionary<string, Dictionary<string,string>> hashsets = new Dictionary<string, Dictionary<string, string>>();
 
-    public SlimDataInterpreter(string prefix)
-    {
-        this.prefix = prefix;
-    }
-    
     [CommandHandler]
     public async ValueTask ListRightPopAsync(ListRightPopCommand addHashSetCommand, CancellationToken token)
     {

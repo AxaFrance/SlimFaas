@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using DotNext;
+using DotNext.Net.Cluster;
 using DotNext.Net.Cluster.Consensus.Raft;
 using Newtonsoft.Json;
 using RaftNode;
@@ -7,22 +8,30 @@ using RaftNode;
 namespace SlimFaas;
 #pragma warning disable CA2252
 
-public class SlimDataService : IRedisService
+public class SlimDataService(HttpClient httpClient, SimplePersistentState simplePersistentState, IRaftCluster cluster)
+    : IDatabaseService
 {
-    private readonly HttpClient _httpClient;
-    private readonly IRaftCluster _cluster;
-    private readonly ISupplier<SupplierPayload> _simplePersistentState;
+    private readonly ISupplier<SupplierPayload> _simplePersistentState = simplePersistentState;
 
-    public SlimDataService(HttpClient httpClient, SimplePersistentState simplePersistentState, IRaftCluster cluster)
+    private IClusterMember GetAndWaitForLeader()
     {
-        _httpClient = httpClient;
-        _cluster = cluster;
-        _simplePersistentState =  (ISupplier<SupplierPayload>)simplePersistentState;
+        var numberWaitMaximum = 10;
+        while (cluster.Leader == null && numberWaitMaximum > 0)
+        {
+            Thread.Sleep(300);
+            numberWaitMaximum--;
+        }
+
+        if (cluster.Leader == null)
+        {
+            throw new DataException("Not leader found");
+        }
+        return cluster.Leader;
     }
 
     public async Task<string> GetAsync(string key) {
 
-        await _cluster.ApplyReadBarrierAsync();
+        await cluster.ApplyReadBarrierAsync();
         var data = _simplePersistentState.Invoke();
         return data.KeyValues.TryGetValue(key, out var value) ? value: string.Empty;
     }
@@ -32,10 +41,10 @@ public class SlimDataService : IRedisService
         var multipart = new MultipartFormDataContent();
         multipart.Add(new StringContent(value), key);
 
-        var response = await _httpClient.PostAsync(new Uri($"{_cluster.Leader!.EndPoint}AddKeyValue"), multipart);
+        var response = await httpClient.PostAsync(new Uri($"{GetAndWaitForLeader().EndPoint}AddKeyValue"), multipart);
         if ((int)response.StatusCode >= 500)
         {
-            throw new DataException("Error in Redis Service");
+            throw new DataException("Error in calling SlimData HTTP Service");
         }
     }
 
@@ -48,43 +57,49 @@ public class SlimDataService : IRedisService
             multipart.Add(new StringContent(value.Value), value.Key);
         }
 
-        var response = await _httpClient.PostAsync(new Uri($"{_cluster.Leader!.EndPoint}AddHashset"), multipart);
+        var response = await httpClient.PostAsync(new Uri($"{GetAndWaitForLeader().EndPoint}AddHashset"), multipart);
         if ((int)response.StatusCode >= 500)
         {
-            throw new DataException("Error in Redis Service");
+            throw new DataException("Error in calling SlimData HTTP Service");
         }
     }
 
     public async Task<IDictionary<string, string>> HashGetAllAsync(string key)  {
-        await _cluster.ApplyReadBarrierAsync();
+        await cluster.ApplyReadBarrierAsync();
         var data = _simplePersistentState.Invoke();
         return data.Hashsets.TryGetValue(key, out var value) ? (IDictionary<string, string>)value : new Dictionary<string, string>();
     }
 
-    public Task ListLeftPushAsync(string key, string field) {
-        var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{_cluster.Leader!.EndPoint}ListLeftPush"));
+    public async Task ListLeftPushAsync(string key, string field) {
+        var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{GetAndWaitForLeader().EndPoint}ListLeftPush"));
         var multipart = new MultipartFormDataContent();
         multipart.Add(new StringContent(field), key);
         request.Content = multipart;
-        var response = _httpClient.SendAsync(request);
-        return Task.CompletedTask;
+        var response = await httpClient.SendAsync(request);
+        if ((int)response.StatusCode >= 500)
+        {
+            throw new DataException("Error in calling SlimData HTTP Service");
+        }
     }
 
     public async Task<IList<string>> ListRightPopAsync(string key, long count = 1)
     {
-            var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{_cluster.Leader!.EndPoint}ListRightPop"));
+            var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{GetAndWaitForLeader().EndPoint}ListRightPop"));
             var multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent(count.ToString()), key);
 
             request.Content = multipart;
-            var response = await _httpClient.SendAsync(request);
+            var response = await httpClient.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
+            if ((int)response.StatusCode >= 500)
+            {
+                throw new DataException("Error in calling SlimData HTTP Service");
+            }
             return string.IsNullOrEmpty(json) ? new List<string>() : JsonConvert.DeserializeObject<IList<string>>(json);
-
     }
 
     public async Task<long> ListLengthAsync(string key) {
-        await _cluster.ApplyReadBarrierAsync();
+        await cluster.ApplyReadBarrierAsync();
         var data = _simplePersistentState.Invoke();
         var result = data.Queues.TryGetValue(key, out var value) ? (long)value.Count :0L;
         return result;

@@ -1,5 +1,4 @@
-﻿using System.Net;
-using DotNext.Net.Cluster.Consensus.Raft.Http;
+﻿using DotNext.Net.Cluster.Consensus.Raft.Http;
 
 namespace RaftNode;
 
@@ -15,8 +14,8 @@ public class Starter
                 {
                     {"partitioning", "false"},
                     {"lowerElectionTimeout", "500" },
-                    {"upperElectionTimeout", "6000" },
-                    {"requestTimeout", "00:10:00"},
+                    {"upperElectionTimeout", "10000" },
+                    {"requestTimeout", "00:15:00"},
                     {"publicEndPoint", $"http://{domain}:{port}"},
                     {"coldStart", "false"},
                     {"requestJournal:memoryLimit", "5" },
@@ -30,9 +29,7 @@ public class Starter
                 webHost.UseKestrel(options =>
                     {
                         ServiceProvider = options.ApplicationServices; 
-                        options.ListenAnyIP(port);    
-
-                        
+                        options.ListenAnyIP(port);
                     })
                     .UseStartup<Startup>();
             })

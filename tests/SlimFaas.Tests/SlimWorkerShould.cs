@@ -57,7 +57,7 @@ public class SlimWorkerShould
         var historyHttpService = new HistoryHttpMemoryService();
         var logger = new Mock<ILogger<SlimWorker>>();
 
-        var redisQueue = new RedisQueue(new RedisMockService());
+        var redisQueue = new SlimFaasSlimFaasQueue(new DatabaseMockService());
         var customRequest = new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new []{"value1"}}}, new byte[1], "fibonacci", "/download", "GET", "");
         var jsonCustomRequest =
             JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest);
@@ -95,7 +95,7 @@ public class SlimWorkerShould
         replicasService.Setup(rs => rs.Deployments).Throws(new Exception());
         var historyHttpService = new HistoryHttpMemoryService();
         var logger = new Mock<ILogger<SlimWorker>>();
-        var redisQueue = new RedisQueue(new RedisMockService());
+        var redisQueue = new SlimFaasSlimFaasQueue(new DatabaseMockService());
 
         var service = new SlimWorker(redisQueue,
             replicasService.Object,

@@ -259,14 +259,11 @@ public sealed class Startup(IConfiguration configuration)
             .AddSingleton<IHttpMessageHandlerFactory, RaftClientHandlerFactory>()
             .AddOptions()
             .AddRouting();
-
-
+        
         var path = configuration[SimplePersistentState.LogLocation];
         if (!string.IsNullOrWhiteSpace(path))
         {
-            services.UsePersistenceEngine<ISupplier<SupplierPayload>, SimplePersistentState>()
-                
-                .AddSingleton<IHostedService, DataModifier>();
+            services.UsePersistenceEngine<ISupplier<SupplierPayload>, SimplePersistentState>();
         }
     }
 

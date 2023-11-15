@@ -10,8 +10,9 @@ using SlimFaas.Kubernetes;
 
 #pragma warning disable CA2252
 
-var slimDataPort = int.Parse( Environment.GetEnvironmentVariable("SLIMDATA_PORT") ?? "3262");
-var slimDataDirectory = Environment.GetEnvironmentVariable("SLIMDATA_DIRECTORY") ?? "c://Demo4";
+var slimDataPort = int.Parse( Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataPort) ?? EnvironmentVariables.SlimDataPort);
+var slimDataDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataDirectory) ?? EnvironmentVariables.SlimDataDirectoryDefault;
+var mockSlimData = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(EnvironmentVariables.MockSlimData));
 
 var serviceCollectionStarter = new ServiceCollection();
 serviceCollectionStarter.AddSingleton<IReplicasService, ReplicasService>();
@@ -43,123 +44,125 @@ serviceCollectionStarter.AddLogging(loggingBuilder =>
 });
 
 var serviceProviderStarter = serviceCollectionStarter.BuildServiceProvider();
-
 var replicasService = serviceProviderStarter.GetService<IReplicasService>();
-string namespace_ = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
-Console.WriteLine($"Starting in namespace {namespace_}");
-replicasService?.SyncDeploymentsAsync(namespace_).Wait();
 
-var hostname = Environment.GetEnvironmentVariable("HOSTNAME");
-while (replicasService?.Deployments.SlimFaas.Pods.Select(p => !string.IsNullOrEmpty(p.Ip)).Count() < 2 || replicasService?.Deployments.SlimFaas.Pods.Any(p => p.Name == hostname) == false)
-{
-    Console.WriteLine("Waiting for pods to be ready");
-    Thread.Sleep(1000);
-    replicasService?.SyncDeploymentsAsync(namespace_).Wait();
-}
-
-if (replicasService?.Deployments?.SlimFaas?.Pods != null)
-{
-    foreach (string enumerateDirectory in Directory.EnumerateDirectories(slimDataDirectory))
-    {
-        if (replicasService.Deployments.SlimFaas.Pods.Any(p => p.Name == new DirectoryInfo(enumerateDirectory).Name) == false)
-        {
-            try
-            {
-                Console.WriteLine($"Deleting {enumerateDirectory}");
-                Directory.Delete(enumerateDirectory, false);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-        }
-    }
-
-    foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods.Where(p => !string.IsNullOrEmpty(p.Ip)).ToList())
-    {
-        string item = $"http://{podInformation.Ip}:{slimDataPort}";
-        Console.WriteLine($"Adding node  {item}");
-        Startup.ClusterMembers.Add(item);
-    }
-
-    var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == hostname);
-    Console.WriteLine($"Starting node {currentPod.Name}");
-    var podDataDirectory =  Path.Combine(slimDataDirectory, currentPod.Name);
-    if(Directory.Exists(podDataDirectory) == false)
-        Directory.CreateDirectory(podDataDirectory);
-    Starter.StartNode("http", slimDataPort, currentPod.Ip, podDataDirectory);
-    Console.WriteLine($"Node started {currentPod.Name}");
-}
-
-while (Starter.ServiceProvider == null)
-{
-    Console.WriteLine($"Waiting node to start");
-    Thread.Sleep(100);
-}
-
-var raftCluster = Starter.ServiceProvider.GetRequiredService<IRaftCluster>();
-while (raftCluster.Readiness == Task.CompletedTask)
-{
-    Console.WriteLine($"Raft cluster is not ready");
-    Thread.Sleep(100);
-}
-
-while (raftCluster.Leader == null)
-{
-    Console.WriteLine($"Raft cluster has no leader");
-    Thread.Sleep(100);
-}
 
 var builder = WebApplication.CreateBuilder(args);
 
-var serviceCollection = builder.Services;
-serviceCollection.AddHostedService<SlimWorker>();
-serviceCollection.AddHostedService<ScaleReplicasWorker>();
-serviceCollection.AddHostedService<MasterWorker>();
-serviceCollection.AddHostedService<ReplicasSynchronizationWorker>();
-serviceCollection.AddHostedService<HistorySynchronizationWorker>();
-serviceCollection.AddHostedService<SlimDataSynchronizationWorker>();
-serviceCollection.AddHttpClient();
-serviceCollection.AddSingleton<IQueue, RedisQueue>();
-
-serviceCollection.AddSingleton<IReplicasService, ReplicasService>((sp) => (ReplicasService)serviceProviderStarter.GetService<IReplicasService>()!);
-serviceCollection.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
-serviceCollection.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>((sp) => serviceProviderStarter.GetService<HistoryHttpMemoryService>()!);
+var serviceCollectionSlimFaas = builder.Services;
+serviceCollectionSlimFaas.AddHostedService<SlimWorker>();
+serviceCollectionSlimFaas.AddHostedService<ScaleReplicasWorker>();
+serviceCollectionSlimFaas.AddHostedService<ReplicasSynchronizationWorker>();
+serviceCollectionSlimFaas.AddHostedService<HistorySynchronizationWorker>();
+serviceCollectionSlimFaas.AddHttpClient();
+serviceCollectionSlimFaas.AddSingleton<ISlimFaasQueue, SlimFaasSlimFaasQueue>();
+serviceCollectionSlimFaas.AddSingleton<IReplicasService, ReplicasService>((sp) => (ReplicasService)serviceProviderStarter.GetService<IReplicasService>()!);
+serviceCollectionSlimFaas.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
+serviceCollectionSlimFaas.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>((sp) => serviceProviderStarter.GetService<HistoryHttpMemoryService>()!);
 
 if (!string.IsNullOrEmpty(mockKubernetesFunction))
 {
-    serviceCollection.AddSingleton<IKubernetesService, MockKubernetesService>((sp) => (MockKubernetesService)serviceProviderStarter.GetService<IKubernetesService>()!);
+    serviceCollectionSlimFaas.AddSingleton<IKubernetesService, MockKubernetesService>((sp) => (MockKubernetesService)serviceProviderStarter.GetService<IKubernetesService>()!);
 }
 else
 {
-    serviceCollection.AddSingleton<IKubernetesService, KubernetesService>((sp) => (KubernetesService)serviceProviderStarter.GetService<IKubernetesService>()!);
+    serviceCollectionSlimFaas.AddSingleton<IKubernetesService, KubernetesService>((sp) => (KubernetesService)serviceProviderStarter.GetService<IKubernetesService>()!);
 }
 
-serviceCollection.AddSingleton<IRaftCluster, IRaftCluster>((sp) => raftCluster);
-serviceCollection.AddSingleton<SimplePersistentState, SimplePersistentState>((sp) => Starter.ServiceProvider.GetRequiredService<SimplePersistentState>());
 
-#pragma warning restore CA2252
-var mockRedis = Environment.GetEnvironmentVariable(EnvironmentVariables.MockRedis);
-if (!string.IsNullOrEmpty(mockRedis))
+if (mockSlimData == false)
 {
-      serviceCollection.AddSingleton<IRedisService, RedisMockService>();
-}
-else
-{
-    serviceCollection.AddSingleton<IRedisService, SlimDataService>();
-    serviceCollection.AddHttpClient<IRedisService, SlimDataService>()
-        .SetHandlerLifetime(TimeSpan.FromMinutes(5)).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+    string namespace_ = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ??
+                        EnvironmentVariables.NamespaceDefault;
+    Console.WriteLine($"Starting in namespace {namespace_}");
+    replicasService?.SyncDeploymentsAsync(namespace_).Wait();
+
+    var hostname = Environment.GetEnvironmentVariable("HOSTNAME");
+    while (replicasService?.Deployments.SlimFaas.Pods.Select(p => !string.IsNullOrEmpty(p.Ip)).Count() < 2 ||
+           replicasService?.Deployments.SlimFaas.Pods.Any(p => p.Name == hostname) == false)
+    {
+        Console.WriteLine("Waiting for pods to be ready");
+        Thread.Sleep(1000);
+        replicasService?.SyncDeploymentsAsync(namespace_).Wait();
+    }
+
+    if (replicasService?.Deployments?.SlimFaas?.Pods != null)
+    {
+        foreach (string enumerateDirectory in Directory.EnumerateDirectories(slimDataDirectory))
         {
-            AllowAutoRedirect = true
-        });
-}
-serviceCollection.AddSingleton<IMasterService, MasterService>();
+            if (replicasService.Deployments.SlimFaas.Pods.Any(p =>
+                    p.Name == new DirectoryInfo(enumerateDirectory).Name) == false)
+            {
+                try
+                {
+                    Console.WriteLine($"Deleting {enumerateDirectory}");
+                    Directory.Delete(enumerateDirectory, false);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+            }
+        }
 
-serviceCollection.AddScoped<ISendClient, SendClient>();
-serviceCollection.AddHttpClient<ISendClient, SendClient>()
+        foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods
+                     .Where(p => !string.IsNullOrEmpty(p.Ip)).ToList())
+        {
+            string item = $"http://{podInformation.Ip}:{slimDataPort}";
+            Console.WriteLine($"Adding node  {item}");
+            Startup.ClusterMembers.Add(item);
+        }
+
+        var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == hostname);
+        Console.WriteLine($"Starting node {currentPod.Name}");
+        var podDataDirectory = Path.Combine(slimDataDirectory, currentPod.Name);
+        if (Directory.Exists(podDataDirectory) == false)
+            Directory.CreateDirectory(podDataDirectory);
+        Starter.StartNode("http", slimDataPort, currentPod.Ip, podDataDirectory);
+        Console.WriteLine($"Node started {currentPod.Name}");
+    }
+
+    while (Starter.ServiceProvider == null)
+    {
+        Console.WriteLine($"Waiting node to start");
+        Thread.Sleep(500);
+    }
+
+    var raftCluster = Starter.ServiceProvider.GetRequiredService<IRaftCluster>();
+    while (raftCluster.Readiness == Task.CompletedTask)
+    {
+        Console.WriteLine($"Raft cluster is not ready");
+        Thread.Sleep(500);
+    }
+
+    while (raftCluster.Leader == null)
+    {
+        Console.WriteLine($"Raft cluster has no leader");
+        Thread.Sleep(500);
+    }
+
+    serviceCollectionSlimFaas.AddSingleton<IRaftCluster, IRaftCluster>((sp) => raftCluster);
+    serviceCollectionSlimFaas.AddSingleton<SimplePersistentState, SimplePersistentState>((sp) =>
+        Starter.ServiceProvider.GetRequiredService<SimplePersistentState>());
+    serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
+    serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
+    serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
+        .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler() { AllowAutoRedirect = true });
+}
+else
+{
+    serviceCollectionSlimFaas.AddSingleton<IDatabaseService, DatabaseMockService>();
+}
+
+
+serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
+
+serviceCollectionSlimFaas.AddScoped<ISendClient, SendClient>();
+serviceCollectionSlimFaas.AddHttpClient<ISendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
-serviceCollection.AddOpenTelemetry()
+serviceCollectionSlimFaas.AddOpenTelemetry()
     .WithTracing(builder => builder
         .AddHttpClientInstrumentation()
         .AddAspNetCoreInstrumentation());
@@ -211,3 +214,4 @@ static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
     public partial class Program { }
 
 
+#pragma warning restore CA2252

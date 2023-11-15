@@ -2,7 +2,7 @@
 
 namespace SlimFaas;
 
-public class RedisMockService : IRedisService
+public class DatabaseMockService : IDatabaseService
 {
 
     private ConcurrentDictionary<string, string> keys = new();

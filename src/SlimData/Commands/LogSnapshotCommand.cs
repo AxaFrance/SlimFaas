@@ -99,50 +99,51 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
 #pragma warning restore CA2252
         where TReader : notnull, IAsyncBinaryReader
     {
-        var count = await reader.ReadInt32Async(true, token);
-        var keysValues = new Dictionary<string, string>(count);
-        // deserialize entries
-        var context = new DecodingContext(Encoding.UTF8, true);
-        while (count-- > 0)
-        {
-            var key = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
-            var value = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
-            keysValues.Add(key, value);
-        }
-        
-        var countQueues = await reader.ReadInt32Async(true, token);
-        var queues = new Dictionary<string, List<string>>(countQueues);
-        // deserialize entries
-        while (countQueues-- > 0)
-        {
-            var key = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
-            var countQueue = await reader.ReadInt32Async(true, token);
-            var queue = new List<string>(countQueue);
-            while (countQueue-- > 0)
-            {
-                var value = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
-                queue.Add(value);
-            }
-            queues.Add(key, queue);
-        }
-        
-        var countHashsets = await reader.ReadInt32Async(true, token);
-        var hashsets = new Dictionary<string, Dictionary<string, string>>(countHashsets);
-        // deserialize entries
-        while (countHashsets-- > 0)
-        {
-            var key = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
-            var countHashset = await reader.ReadInt32Async(true, token);
-            var hashset = new Dictionary<string, string>(countHashset);
-            while (countHashset-- > 0)
-            {
-                var keyHashset = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
-                var valueHashset = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
-                hashset.Add(keyHashset, valueHashset);
-            }
-            hashsets.Add(key, hashset);
-        }
-        
-        return new LogSnapshotCommand(keysValues, hashsets, queues);
+        throw new NotImplementedException("LogSnapshotCommand.ReadFromAsync");
+        /* var count = await reader.ReadInt32Async(true, token);
+         var keysValues = new Dictionary<string, string>(count);
+         // deserialize entries
+         var context = new DecodingContext(Encoding.UTF8, true);
+         while (count-- > 0)
+         {
+             var key = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
+             var value = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
+             keysValues.Add(key, value);
+         }
+
+         var countQueues = await reader.ReadInt32Async(true, token);
+         var queues = new Dictionary<string, List<string>>(countQueues);
+         // deserialize entries
+         while (countQueues-- > 0)
+         {
+             var key = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
+             var countQueue = await reader.ReadInt32Async(true, token);
+             var queue = new List<string>(countQueue);
+             while (countQueue-- > 0)
+             {
+                 var value = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
+                 queue.Add(value);
+             }
+             queues.Add(key, queue);
+         }
+
+         var countHashsets = await reader.ReadInt32Async(true, token);
+         var hashsets = new Dictionary<string, Dictionary<string, string>>(countHashsets);
+         // deserialize entries
+         while (countHashsets-- > 0)
+         {
+             var key = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
+             var countHashset = await reader.ReadInt32Async(true, token);
+             var hashset = new Dictionary<string, string>(countHashset);
+             while (countHashset-- > 0)
+             {
+                 var keyHashset = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
+                 var valueHashset = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
+                 hashset.Add(keyHashset, valueHashset);
+             }
+             hashsets.Add(key, hashset);
+         }
+
+         return new LogSnapshotCommand(keysValues, hashsets, queues);*/
     }
 }
