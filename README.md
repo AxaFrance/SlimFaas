@@ -152,6 +152,10 @@ spec:
       labels:
         app: slimfaas
     spec:
+      volumes:
+        - name: slimfaas-volume
+          emptyDir:
+            sizeLimit: 10Mi
       serviceAccountName: admin # Use a service account with admin role
       containers:
         - name: slimfaas
@@ -170,6 +174,8 @@ spec:
               value: http://+:5000
             - name: NAMESPACE
               value: "default"
+            - name: SLIMDATA_PATH
+              value: "/database" 
             # If you want to use Redis use this env variable and comment MOCK_REDIS
             #- name: REDIS_CONNECTION_STRING
             #  value: "redis-ha-haproxy:6379"
@@ -206,6 +212,7 @@ spec:
               cpu: "250m"
           ports:
             - containerPort: 5000
+            - containerPort: 3262
 
 ````
 
