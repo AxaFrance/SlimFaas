@@ -174,12 +174,10 @@ spec:
               value: http://+:5000
             - name: NAMESPACE
               value: "default"
-            - name: SLIMDATA_PATH
+            - name: SLIMDATA_DIRECTORY
               value: "/database" 
             # If you want to use Redis use this env variable and comment MOCK_REDIS
-            #- name: REDIS_CONNECTION_STRING
-            #  value: "redis-ha-haproxy:6379"
-            - name: MOCK_REDIS
+            - name: MOCK_SLIMDATA
               value: "true"
             # If your are not on kubernetes for example docker-compose, you can use this env variable, but you will lose auto-scale
             #- name: MOCK_KUBERNETES_FUNCTIONS 
@@ -203,6 +201,9 @@ spec:
             # Optional
             # name : POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED
             # value : "false" # default equivalent to false
+          volumeMounts:
+            - name: slimfaas-volume
+              mountPath: /database
           resources:
             limits:
               memory: "76Mi"
