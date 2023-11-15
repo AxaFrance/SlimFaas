@@ -85,7 +85,7 @@ SlimFaas act as an HTTP proxy with 2 modes:
 - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
   - Tail in memory or using Redis
 
-![async_http_call.PNG](documentation%2Fasync_http_call.PNG)
+![async_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/async_http_call.PNG)
 
 ### Wake HTTP call
 
@@ -257,7 +257,6 @@ Instead of creating many pods, SlimFaas use internally many workers in the same 
 - **SlimWorker**: Manage asynchronous HTTP requests calls to underlying functions
 - **HistorySynchronisationWorker**: Manage history of HTTP requests between the pod and kubernetes
 - **ReplicasSynchronizationWorker**: Manage replicas synchronization between the pod and kubernetes
-- **MasterWorker**: Elect a master pod to manage kubernetes scale up and down
 - **ReplicasScaleWorker**: If master, then scale up and down kubernetes pods
 
 ### Build with .NET
@@ -270,7 +269,6 @@ Why .NET ?
 
 ## What Next ?
 
-1. Public Open Source
-2. Add a build version without any redis dependencies and allow SlimFaas to manage internal queue
-3. Scale up dynamically from SlimFaas
-4. Upgrade to .NET8 using AOT => lighter and faster
+1. Different scale down mode depending from configuration and current hour
+2. Scale up dynamically from SlimFaas
+3. Upgrade to .NET8 using AOT => lighter and faster
