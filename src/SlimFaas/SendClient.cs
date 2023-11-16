@@ -10,17 +10,9 @@ public interface ISendClient
     Task<HttpResponseMessage>  SendHttpRequestSync(HttpContext httpContext, string functionName, string functionPath, string functionQuery);
 }
 
-public class SendClient : ISendClient
+public class SendClient(HttpClient httpClient) : ISendClient
 {
-    private readonly HttpClient _httpClient;
-    private readonly string _baseFunctionUrl;
-
-    public SendClient(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-        _baseFunctionUrl =
-            Environment.GetEnvironmentVariable(EnvironmentVariables.BaseFunctionUrl) ?? EnvironmentVariables.BaseFunctionUrlDefault;
-    }
+    private readonly string _baseFunctionUrl = Environment.GetEnvironmentVariable(EnvironmentVariables.BaseFunctionUrl) ?? EnvironmentVariables.BaseFunctionUrlDefault;
 
     private void CopyFromOriginalRequestContentAndHeaders(CustomRequest context, HttpRequestMessage requestMessage)
     {
@@ -76,11 +68,11 @@ public class SendClient : ISendClient
         var targetRequestMessage = CreateTargetMessage(customRequest, new Uri(targetUrl));
         if (context != null)
         {
-            return await _httpClient.SendAsync(targetRequestMessage,
+            return await httpClient.SendAsync(targetRequestMessage,
                 HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
 
         }
-        return await _httpClient.SendAsync(targetRequestMessage,
+        return await httpClient.SendAsync(targetRequestMessage,
             HttpCompletionOption.ResponseHeadersRead);
     }
 
@@ -96,7 +88,7 @@ public class SendClient : ISendClient
     {
         var targetUri = ComputeTargetUrl(_baseFunctionUrl, functionName, functionPath, functionQuery);
         var targetRequestMessage = CreateTargetMessage(context, new Uri(targetUri));
-        var responseMessage = await _httpClient.SendAsync(targetRequestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
+        var responseMessage = await httpClient.SendAsync(targetRequestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
         return responseMessage;
 
     }

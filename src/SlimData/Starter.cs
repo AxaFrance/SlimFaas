@@ -19,7 +19,8 @@ public class Starter
                     {"publicEndPoint", $"http://{domain}:{port}"},
                     {"coldStart", "false"},
                     {"requestJournal:memoryLimit", "5" },
-                    {"requestJournal:expiration", "00:01:00" }
+                    {"requestJournal:expiration", "00:01:00" },
+                    {"heartbeatThreshold", "0.8" }
                 };
         if (!string.IsNullOrEmpty(persistentStorage))
             configuration[SimplePersistentState.LogLocation] = persistentStorage;

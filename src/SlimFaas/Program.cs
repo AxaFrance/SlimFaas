@@ -106,7 +106,7 @@ if (mockSlimData == false)
         }
 
         foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods
-                     .Where(p => !string.IsNullOrEmpty(p.Ip)).ToList())
+                     .Where(p => !string.IsNullOrEmpty(p.Ip) && p.Started == true).ToList())
         {
             string item = $"http://{podInformation.Ip}:{slimDataPort}";
             Console.WriteLine($"Adding node  {item}");

@@ -24,7 +24,7 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
                 var leadershipToken = cluster.LeadershipToken;
                 if (!leadershipToken.IsCancellationRequested)
                 {
-                    foreach (var slimFaasPod in replicasService.Deployments.SlimFaas.Pods)
+                    foreach (var slimFaasPod in replicasService.Deployments.SlimFaas.Pods.Where(p => p.Started == true))
                     {
                         string url = $"http://{slimFaasPod.Ip}:3262/";
                         if (cluster.Members.ToList().Any(m => m.EndPoint.ToString() == url) != false)

@@ -4,8 +4,7 @@ public static class EnvironmentVariables
 {
 
     public const string SlimWorkerDelayMilliseconds = "SLIM_WORKER_DELAY_MILLISECONDS";
-    public const int SlimWorkerDelayMillisecondsDefault = 10;
-    public const int MasterWorkerDelayMillisecondsDefault = 3000;
+    public const int SlimWorkerDelayMillisecondsDefault = 50;
     public const int SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault = 10000;
     public const string TimeMaximumWaitForAtLeastOnePodStartedForSyncFunction = "TIME_MAXIMUM_WAIT_FOR_AT_LEAST_ONE_POD_STARTED_FOR_SYNC_FUNCTION";
     public const string ReplicasSynchronisationWorkerDelayMilliseconds = "REPLICAS_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS";
