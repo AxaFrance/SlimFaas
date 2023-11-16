@@ -99,8 +99,7 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
 #pragma warning restore CA2252
         where TReader : notnull, IAsyncBinaryReader
     {
-        throw new NotImplementedException("LogSnapshotCommand.ReadFromAsync");
-        /* var count = await reader.ReadInt32Async(true, token);
+        var count = await reader.ReadInt32Async(true, token);
          var keysValues = new Dictionary<string, string>(count);
          // deserialize entries
          var context = new DecodingContext(Encoding.UTF8, true);
@@ -144,6 +143,6 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
              hashsets.Add(key, hashset);
          }
 
-         return new LogSnapshotCommand(keysValues, hashsets, queues);*/
+         return new LogSnapshotCommand(keysValues, hashsets, queues);
     }
 }
