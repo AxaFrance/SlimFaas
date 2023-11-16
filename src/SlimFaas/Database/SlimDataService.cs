@@ -13,9 +13,9 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
 {
     private readonly ISupplier<SupplierPayload> _simplePersistentState = simplePersistentState;
 
-    private IClusterMember GetAndWaitForLeader()
+    private IClusterMember? GetAndWaitForLeader()
     {
-        var numberWaitMaximum = 10;
+       /* var numberWaitMaximum = 10;
         while (cluster.Leader == null && numberWaitMaximum > 0)
         {
             Thread.Sleep(300);
@@ -24,8 +24,8 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
 
         if (cluster.Leader == null)
         {
-            throw new DataException("Not leader found");
-        }
+            throw new DataException("Notleader found");
+        }*/
         return cluster.Leader;
     }
 
@@ -41,7 +41,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
         var multipart = new MultipartFormDataContent();
         multipart.Add(new StringContent(value), key);
 
-        var response = await httpClient.PostAsync(new Uri($"{GetAndWaitForLeader().EndPoint}AddKeyValue"), multipart);
+        var response = await httpClient.PostAsync(new Uri($"{GetAndWaitForLeader()?.EndPoint}AddKeyValue"), multipart);
         if ((int)response.StatusCode >= 500)
         {
             throw new DataException("Error in calling SlimData HTTP Service");
@@ -57,7 +57,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
             multipart.Add(new StringContent(value.Value), value.Key);
         }
 
-        var response = await httpClient.PostAsync(new Uri($"{GetAndWaitForLeader().EndPoint}AddHashset"), multipart);
+        var response = await httpClient.PostAsync(new Uri($"{GetAndWaitForLeader()?.EndPoint}AddHashset"), multipart);
         if ((int)response.StatusCode >= 500)
         {
             throw new DataException("Error in calling SlimData HTTP Service");
@@ -71,7 +71,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
     }
 
     public async Task ListLeftPushAsync(string key, string field) {
-        var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{GetAndWaitForLeader().EndPoint}ListLeftPush"));
+        var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{GetAndWaitForLeader()?.EndPoint}ListLeftPush"));
         var multipart = new MultipartFormDataContent();
         multipart.Add(new StringContent(field), key);
         request.Content = multipart;
@@ -84,7 +84,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
 
     public async Task<IList<string>> ListRightPopAsync(string key, long count = 1)
     {
-            var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{GetAndWaitForLeader().EndPoint}ListRightPop"));
+            var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{GetAndWaitForLeader()?.EndPoint}ListRightPop"));
             var multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent(count.ToString()), key);
 
