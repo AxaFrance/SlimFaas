@@ -78,7 +78,7 @@ if (mockSlimData == false)
     replicasService?.SyncDeploymentsAsync(namespace_).Wait();
 
     var hostname = Environment.GetEnvironmentVariable("HOSTNAME");
-    while (replicasService?.Deployments.SlimFaas.Pods.Select(p => !string.IsNullOrEmpty(p.Ip)).Count() < 2 ||
+    while (replicasService?.Deployments.SlimFaas.Pods.Select(p => !string.IsNullOrEmpty(p.Ip) && p.Started == true).Count() < 3 ||
            replicasService?.Deployments.SlimFaas.Pods.Any(p => p.Name == hostname) == false)
     {
         Console.WriteLine("Waiting for pods to be ready");
