@@ -1,26 +1,14 @@
 ﻿namespace SlimFaas;
 
-public class HistorySynchronizationWorker: BackgroundService
-{
-    private readonly IReplicasService _replicasService;
-    private readonly HistoryHttpMemoryService _historyHttpMemoryService;
-    private readonly HistoryHttpRedisService _historyHttpRedisService;
-    private readonly ILogger<HistorySynchronizationWorker> _logger;
-    private readonly int _delay;
-
-    public HistorySynchronizationWorker(IReplicasService replicasService,
+public class HistorySynchronizationWorker(IReplicasService replicasService,
         HistoryHttpMemoryService historyHttpMemoryService,
         HistoryHttpRedisService historyHttpRedisService,
         ILogger<HistorySynchronizationWorker> logger,
         int delay = EnvironmentVariables.HistorySynchronizationWorkerDelayMillisecondsDefault)
-    {
-        _replicasService = replicasService;
-        _historyHttpMemoryService = historyHttpMemoryService;
-        _historyHttpRedisService = historyHttpRedisService;
-        _logger = logger;
+    : BackgroundService
+{
+    private readonly int _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.HistorySynchronisationWorkerDelayMilliseconds, delay);
 
-        _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.HistorySynchronisationWorkerDelayMilliseconds, delay);
-    }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (stoppingToken.IsCancellationRequested == false)
@@ -29,22 +17,22 @@ public class HistorySynchronizationWorker: BackgroundService
             {
                 await Task.Delay(_delay, stoppingToken);
 
-                foreach (var function in _replicasService.Deployments.Functions)
+                foreach (var function in replicasService.Deployments.Functions)
                 {
-                    var ticksRedis = await _historyHttpRedisService.GetTicksLastCallAsync(function.Deployment);
-                    var ticksMemory = _historyHttpMemoryService.GetTicksLastCall(function.Deployment);
+                    var ticksRedis = await historyHttpRedisService.GetTicksLastCallAsync(function.Deployment);
+                    var ticksMemory = historyHttpMemoryService.GetTicksLastCall(function.Deployment);
                     if(ticksRedis > ticksMemory)
                     {
-                        _historyHttpMemoryService.SetTickLastCall(function.Deployment, ticksRedis);
+                        historyHttpMemoryService.SetTickLastCall(function.Deployment, ticksRedis);
                     } else if(ticksRedis < ticksMemory)
                     {
-                        await _historyHttpRedisService.SetTickLastCallAsync(function.Deployment, ticksMemory);
+                        await historyHttpRedisService.SetTickLastCallAsync(function.Deployment, ticksMemory);
                     }
                 }
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Global Error in ScaleReplicasWorker");
+                logger.LogError(e, "Global Error in ScaleReplicasWorker");
             }
         }
     }
