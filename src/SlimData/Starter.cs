@@ -15,12 +15,12 @@ public class Starter
                     {"partitioning", "false"},
                     {"lowerElectionTimeout", "150" },
                     {"upperElectionTimeout", "300" },
-                    {"requestTimeout", "00:15:00"},
+                    {"requestTimeout", "00:01:00"},
                     {"publicEndPoint", $"http://{domain}:{port}"},
                     {"coldStart", "false"},
                     {"requestJournal:memoryLimit", "5" },
                     {"requestJournal:expiration", "00:01:00" },
-                    {"heartbeatThreshold", "0.8" }
+                    {"heartbeatThreshold", "0.6" }
                 };
         if (!string.IsNullOrEmpty(persistentStorage))
             configuration[SimplePersistentState.LogLocation] = persistentStorage;
