@@ -13,7 +13,7 @@ public class Starter
         var configuration = new Dictionary<string, string>
                 {
                     {"partitioning", "false"},
-                    {"lowerElectionTimeout", "500" },
+                    {"lowerElectionTimeout", "10" },
                     {"upperElectionTimeout", "10000" },
                     {"requestTimeout", "00:15:00"},
                     {"publicEndPoint", $"http://{domain}:{port}"},
