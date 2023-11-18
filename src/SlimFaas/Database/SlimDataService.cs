@@ -31,7 +31,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
     }
 
     public async Task<string> GetAsync(string key) {
-
+        await GetAndWaitForLeader();
         await cluster.ApplyReadBarrierAsync();
         var data = _simplePersistentState.Invoke();
         return data.KeyValues.TryGetValue(key, out var value) ? value: string.Empty;
@@ -68,6 +68,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
     }
 
     public async Task<IDictionary<string, string>> HashGetAllAsync(string key)  {
+await GetAndWaitForLeader();
         await cluster.ApplyReadBarrierAsync();
         var data = _simplePersistentState.Invoke();
         return data.Hashsets.TryGetValue(key, out var value) ? (IDictionary<string, string>)value : new Dictionary<string, string>();
@@ -104,6 +105,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
     }
 
     public async Task<long> ListLengthAsync(string key) {
+await GetAndWaitForLeader();
         await cluster.ApplyReadBarrierAsync();
         var data = _simplePersistentState.Invoke();
         var result = data.Queues.TryGetValue(key, out var value) ? (long)value.Count :0L;
