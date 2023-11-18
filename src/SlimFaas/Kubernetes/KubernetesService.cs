@@ -71,16 +71,10 @@ public class KubernetesService : IKubernetesService
                 await Task.WhenAll(deploymentListTask, podListTask, statefulSetListTask);
                 var deploymentList = deploymentListTask.Result;
                 var podList = MapPodInformations(podListTask.Result);
+                var statefulSetList = statefulSetListTask.Result;
 
-                var slimFaasDeploymentInformation = deploymentList.Items.Where(deploymentListItem => deploymentListItem.Metadata.Name == SlimfaasDeploymentName).Select(deploymentListItem =>
-                    new SlimFaasDeploymentInformation(deploymentListItem.Spec.Replicas ?? 0, podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList())).FirstOrDefault();
-
-                if (slimFaasDeploymentInformation is { Pods.Count: 0 })
-                {
-                    var statefulSetList = statefulSetListTask.Result;
-                    slimFaasDeploymentInformation = statefulSetList.Items.Where(statefulSetListItem => statefulSetListItem.Metadata.Name == SlimfaasDeploymentName).Select(statefulSetListItem =>
-                        new SlimFaasDeploymentInformation(statefulSetListItem.Spec.Replicas ?? 0, podList.Where(p => p.DeploymentName == statefulSetListItem.Metadata.Name).ToList())).FirstOrDefault();
-                }
+                var slimFaasDeploymentInformation = statefulSetList.Items.Where(deploymentListItem => deploymentListItem.Metadata.Name == SlimfaasDeploymentName).Select(deploymentListItem =>
+                    new SlimFaasDeploymentInformation(deploymentListItem.Spec.Replicas ?? 0, podList.Where(p => p.Name.StartsWith(deploymentListItem.Metadata.Name)).ToList())).FirstOrDefault();
 
                 foreach (var deploymentListItem in deploymentList.Items)
                 {
