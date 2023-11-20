@@ -4,6 +4,9 @@ public static class EnvironmentVariables
 {
 
     public const string SlimWorkerDelayMilliseconds = "SLIM_WORKER_DELAY_MILLISECONDS";
+    public const string BaseSlimDataUrl = "BASE_SLIMDATA_URL";
+    public const string BaseSlimDataUrlDefault = "http://{pod_name}:3262.slimfaas.default.svc.cluster.local/";
+
     public const int SlimWorkerDelayMillisecondsDefault = 50;
     public const int SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault = 10000;
     public const string TimeMaximumWaitForAtLeastOnePodStartedForSyncFunction = "TIME_MAXIMUM_WAIT_FOR_AT_LEAST_ONE_POD_STARTED_FOR_SYNC_FUNCTION";

@@ -25,7 +25,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
 
         if (cluster.Leader == null)
         {
-            throw new DataException("Notleader found");
+            throw new DataException("No leader found");
         }
         return cluster.Leader.EndPoint;
     }
@@ -96,11 +96,11 @@ await GetAndWaitForLeader();
 
             request.Content = multipart;
             var response = await httpClient.SendAsync(request);
-            var json = await response.Content.ReadAsStringAsync();
             if ((int)response.StatusCode >= 500)
             {
                 throw new DataException("Error in calling SlimData HTTP Service");
             }
+            string json = await response.Content.ReadAsStringAsync();
             return string.IsNullOrEmpty(json) ? new List<string>() : JsonConvert.DeserializeObject<IList<string>>(json);
     }
 

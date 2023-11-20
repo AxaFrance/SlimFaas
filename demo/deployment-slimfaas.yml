@@ -1,6 +1,6 @@
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: slimfaas
 spec:
@@ -45,7 +45,9 @@ spec:
               cpu: "200m"
           ports:
             - containerPort: 5000
+              name: slimfaas
             - containerPort: 3262
+              name: slimdata
 
 ---
 apiVersion: v1
@@ -55,11 +57,8 @@ metadata:
 spec:
   selector:
     app: slimfaas
-  type: NodePort
   ports:
     - port: 80
       targetPort: 5000
-      nodePort: 30020
     - port: 3262
       targetPort: 3262
-      nodePort: 3262

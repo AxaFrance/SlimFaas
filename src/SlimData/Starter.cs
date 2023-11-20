@@ -8,7 +8,7 @@ public class Starter
     
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
     
-    static Task UseAspNetCoreHost(int port, string domain= "localhost", string? persistentStorage = null)
+    static Task UseAspNetCoreHost(int port, string publicEndPoint, string? persistentStorage = null)
     {
         var configuration = new Dictionary<string, string>
                 {
@@ -16,7 +16,7 @@ public class Starter
                     {"lowerElectionTimeout", "150" },
                     {"upperElectionTimeout", "300" },
                     {"requestTimeout", "00:01:00"},
-                    {"publicEndPoint", $"http://{domain}:{port}"},
+                    {"publicEndPoint", publicEndPoint},
                     {"coldStart", "false"},
                     {"requestJournal:memoryLimit", "5" },
                     {"requestJournal:expiration", "00:01:00" },
@@ -48,17 +48,10 @@ public class Starter
         //builder.AddDebug();
     }
 
-    public static Task StartNode(string protocol = "http", int port = 3262, string domain= "localhost", string? persistentStorage = null)
+    public static Task StartNode(string publicEndPoint ="http://localhost", int port = 3262, string? persistentStorage = null)
     {
-        switch (protocol.ToLowerInvariant())
-        {
-            case "http":
-            case "https":
-                return UseAspNetCoreHost(port, domain, persistentStorage);
-            default:
-                Console.Error.WriteLine("Unsupported protocol type");
-                Environment.ExitCode = 1;
-                return Task.CompletedTask;
-        }
+
+        return UseAspNetCoreHost(port, publicEndPoint, persistentStorage);
+        
     }
 }

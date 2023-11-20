@@ -115,19 +115,19 @@ public class KubernetesService : IKubernetesService
     {
         foreach (var item in v1PodList.Items)
         {
-            var containerStatus = item.Status.ContainerStatuses.FirstOrDefault();
-            if (containerStatus == null)
+            var podIp = item.Status.PodIP;
+            if (!string.IsNullOrEmpty(podIp))
             {
                 continue;
             }
 
-            var ready = containerStatus.Ready;
-            var started = containerStatus.Started;
-            var podIp = item.Status.PodIP;
+            var containerStatus = item.Status.ContainerStatuses.FirstOrDefault();
+            var ready = containerStatus?.Ready ?? false;
+            var started = containerStatus?.Started ?? false;
             var podName = item.Metadata.Name;
             var deploymentName = ExtractPodDeploymentNameFrom(item.Metadata.GenerateName);
-            var podInformation = new PodInformation(podName, started, ready, podIp, deploymentName);
 
+            var podInformation = new PodInformation(podName, started, ready, podIp, deploymentName);
             yield return podInformation;
         }
     }

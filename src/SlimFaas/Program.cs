@@ -105,12 +105,13 @@ if (mockSlimData == false)
             }
         }
 
+
         foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods
                      .Where(p => !string.IsNullOrEmpty(p.Ip) && p.Started == true).ToList())
         {
-            string item = $"http://{podInformation.Ip}:{slimDataPort}";
-            Console.WriteLine($"Adding node  {item}");
-            Startup.ClusterMembers.Add(item);
+            string slimDataEndpoint = SlimDataEndpoint(podInformation);
+            Console.WriteLine($"Adding node  {slimDataEndpoint}");
+            Startup.ClusterMembers.Add(slimDataEndpoint);
         }
 
         var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == hostname);
@@ -118,7 +119,7 @@ if (mockSlimData == false)
         var podDataDirectory = Path.Combine(slimDataDirectory, currentPod.Name);
         if (Directory.Exists(podDataDirectory) == false)
             Directory.CreateDirectory(podDataDirectory);
-        Starter.StartNode("http", slimDataPort, currentPod.Ip, podDataDirectory);
+        Starter.StartNode(SlimDataEndpoint(currentPod),  slimDataPort, podDataDirectory);
         Console.WriteLine($"Node started {currentPod.Name}");
     }
 
@@ -211,7 +212,17 @@ static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
                 retryAttempt)));
     }
 
-    public partial class Program { }
+string SlimDataEndpoint(PodInformation podInformation1)
+{
+    var s = Environment.GetEnvironmentVariable(EnvironmentVariables.BaseSlimDataUrl) ??
+            EnvironmentVariables.BaseFunctionUrlDefault;
+
+    s = s.Replace("{pod_name}", podInformation1.Name);
+    s = s.Replace("{pod_ip}", podInformation1.Ip);
+    return s;
+}
+
+public partial class Program { }
 
 
 #pragma warning restore CA2252
