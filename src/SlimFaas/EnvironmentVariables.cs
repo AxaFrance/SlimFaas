@@ -37,6 +37,7 @@ public static class EnvironmentVariables
 
     public const string MockSlimData = "MOCK_SLIMDATA";
 
+
     public static int ReadInteger<T>(ILogger<T> logger, string environmentVariableName, int defaultInteger)
     {
         string valueString = Environment.GetEnvironmentVariable(environmentVariableName) ?? defaultInteger.ToString();

@@ -1,6 +1,7 @@
 ﻿using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 using RaftNode;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
@@ -10,7 +11,9 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
     : BackgroundService
 {
     private readonly int _delay = EnvironmentVariables.ReadInteger<SlimDataSynchronizationWorker>(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
-    private readonly int _slimDataPort = EnvironmentVariables.ReadInteger<SlimDataSynchronizationWorker>(logger, EnvironmentVariables.SlimDataPort, EnvironmentVariables.SlimDataPortDefault);
+
+    private readonly string _slimDataUrl = Environment.GetEnvironmentVariable(EnvironmentVariables.BaseSlimDataUrl) ??
+                                           EnvironmentVariables.BaseSlimDataUrlDefault;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -37,7 +40,7 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
 
                     foreach (IRaftClusterMember raftClusterMember in cluster.Members)
                     {
-                        if (replicasService.Deployments.SlimFaas.Pods.ToList().Any(slimFaasPod => $"http://{slimFaasPod.Ip}:{_slimDataPort}/" == raftClusterMember.EndPoint.ToString()))
+                        if (replicasService.Deployments.SlimFaas.Pods.ToList().Any(slimFaasPod => SlimDataEndpoint.Get(slimFaasPod) == raftClusterMember.EndPoint.ToString()))
                         {
                             continue;
                         }
@@ -52,5 +55,7 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
                 logger.LogError(e, "Global Error in SlimDataSynchronizationWorker");
             }
         }
+
+
 }
 }

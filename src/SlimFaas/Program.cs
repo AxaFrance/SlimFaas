@@ -108,7 +108,7 @@ if (mockSlimData == false)
         foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods
                      .Where(p => !string.IsNullOrEmpty(p.Ip) && p.Started == true).ToList())
         {
-            string slimDataEndpoint = SlimDataEndpoint(podInformation);
+            string slimDataEndpoint = SlimDataEndpoint.Get(podInformation);
             Console.WriteLine($"Adding node  {slimDataEndpoint}");
             Startup.ClusterMembers.Add(slimDataEndpoint);
         }
@@ -118,7 +118,7 @@ if (mockSlimData == false)
         var podDataDirectory = Path.Combine(slimDataDirectory, currentPod.Name);
         if (Directory.Exists(podDataDirectory) == false)
             Directory.CreateDirectory(podDataDirectory);
-        Starter.StartNode(SlimDataEndpoint(currentPod), podDataDirectory);
+        Starter.StartNode(SlimDataEndpoint.Get(currentPod), podDataDirectory);
         Console.WriteLine($"Node started {currentPod.Name}");
     }
 
@@ -211,15 +211,7 @@ static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
                 retryAttempt)));
     }
 
-string SlimDataEndpoint(PodInformation podInformation1)
-{
-    var s = Environment.GetEnvironmentVariable(EnvironmentVariables.BaseSlimDataUrl) ??
-            EnvironmentVariables.BaseFunctionUrlDefault;
 
-    s = s.Replace("{pod_name}", podInformation1.Name);
-    s = s.Replace("{pod_ip}", podInformation1.Ip);
-    return s;
-}
 
 public partial class Program { }
 
