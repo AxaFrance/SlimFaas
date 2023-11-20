@@ -12,8 +12,6 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
 {
     private readonly int _delay = EnvironmentVariables.ReadInteger<SlimDataSynchronizationWorker>(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
 
-    private readonly string _slimDataUrl = Environment.GetEnvironmentVariable(EnvironmentVariables.BaseSlimDataUrl) ??
-                                           EnvironmentVariables.BaseSlimDataUrlDefault;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -29,8 +27,8 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
                 {
                     foreach (var slimFaasPod in replicasService.Deployments.SlimFaas.Pods.Where(p => p.Started == true))
                     {
-                        string url = $"http://{slimFaasPod.Ip}:3262/";
-                        if (cluster.Members.ToList().Any(m => m.EndPoint.ToString() == url) != false)
+                        string url = SlimDataEndpoint.Get(slimFaasPod);
+                        if (cluster.Members.ToList().Any(m => m.EndPoint.ToString() == url))
                         {
                             continue;
                         }
