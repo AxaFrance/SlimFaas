@@ -116,7 +116,7 @@ public class KubernetesService : IKubernetesService
         foreach (var item in v1PodList.Items)
         {
             var podIp = item.Status.PodIP;
-            if (!string.IsNullOrEmpty(podIp))
+            if (string.IsNullOrEmpty(podIp))
             {
                 continue;
             }

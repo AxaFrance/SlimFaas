@@ -77,7 +77,7 @@ if (mockSlimData == false)
     replicasService?.SyncDeploymentsAsync(namespace_).Wait();
 
     var hostname = Environment.GetEnvironmentVariable("HOSTNAME");
-    while (replicasService?.Deployments.SlimFaas.Pods.Select(p => !string.IsNullOrEmpty(p.Ip) && p.Started == true).Count() < 3 ||
+    while (replicasService?.Deployments.SlimFaas.Pods.Select(p => !string.IsNullOrEmpty(p.Ip) && p.Started == true).Count() < 2 ||
            replicasService?.Deployments.SlimFaas.Pods.Any(p => p.Name == hostname) == false)
     {
         Console.WriteLine("Waiting for pods to be ready");
@@ -103,7 +103,6 @@ if (mockSlimData == false)
                 }
             }
         }
-
 
         foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods
                      .Where(p => !string.IsNullOrEmpty(p.Ip) && p.Started == true).ToList())
