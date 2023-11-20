@@ -6,11 +6,14 @@ public class SlimDataEndpoint
 {
     public static string Get(PodInformation podInformation1)
     {
-        var s = Environment.GetEnvironmentVariable(EnvironmentVariables.BaseSlimDataUrl) ??
+        var baseSlimDataUrl = Environment.GetEnvironmentVariable(EnvironmentVariables.BaseSlimDataUrl) ??
                 EnvironmentVariables.BaseSlimDataUrlDefault;
+        if (!String.IsNullOrEmpty(baseSlimDataUrl))
+        {
+            baseSlimDataUrl = baseSlimDataUrl.Replace("{pod_name}", podInformation1.Name);
+            baseSlimDataUrl = baseSlimDataUrl.Replace("{pod_ip}", podInformation1.Ip);
+        }
 
-        s = s.Replace("{pod_name}", podInformation1.Name);
-        s = s.Replace("{pod_ip}", podInformation1.Ip);
-        return s;
+        return baseSlimDataUrl;
     }
 }

@@ -55,5 +55,5 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
         }
 
 
-}
+    }
 }
