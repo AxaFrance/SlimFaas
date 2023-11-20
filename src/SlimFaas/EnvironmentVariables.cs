@@ -34,8 +34,6 @@ public static class EnvironmentVariables
 
     public const string SlimDataDirectory = "SLIMDATA_DIRECTORY";
     public const string SlimDataDirectoryDefault = "c://SlimData";
-    public const string SlimDataPort = "SLIMDATA_PORT";
-    public const int SlimDataPortDefault = 3262;
 
     public const string MockSlimData = "MOCK_SLIMDATA";
 

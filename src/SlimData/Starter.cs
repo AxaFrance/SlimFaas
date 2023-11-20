@@ -8,8 +8,10 @@ public class Starter
     
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
     
-    static Task UseAspNetCoreHost(int port, string publicEndPoint, string? persistentStorage = null)
+    static Task UseAspNetCoreHost(string publicEndPoint, string? persistentStorage = null)
     {
+        var uri = new Uri(publicEndPoint);
+        
         var configuration = new Dictionary<string, string>
                 {
                     {"partitioning", "false"},
@@ -30,7 +32,7 @@ public class Starter
                 webHost.UseKestrel(options =>
                     {
                         ServiceProvider = options.ApplicationServices; 
-                        options.ListenAnyIP(port);
+                        options.ListenAnyIP(uri.Port);
                     })
                     .UseStartup<Startup>();
             })
@@ -48,10 +50,8 @@ public class Starter
         //builder.AddDebug();
     }
 
-    public static Task StartNode(string publicEndPoint ="http://localhost", int port = 3262, string? persistentStorage = null)
+    public static Task StartNode(string publicEndPoint ="http://localhost:3262", string? persistentStorage = null)
     {
-
-        return UseAspNetCoreHost(port, publicEndPoint, persistentStorage);
-        
+        return UseAspNetCoreHost(publicEndPoint, persistentStorage);
     }
 }

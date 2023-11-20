@@ -10,7 +10,6 @@ using SlimFaas.Kubernetes;
 
 #pragma warning disable CA2252
 
-var slimDataPort = int.Parse( Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataPort) ?? EnvironmentVariables.SlimDataPort);
 var slimDataDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataDirectory) ?? EnvironmentVariables.SlimDataDirectoryDefault;
 var mockSlimData = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(EnvironmentVariables.MockSlimData));
 
@@ -119,7 +118,7 @@ if (mockSlimData == false)
         var podDataDirectory = Path.Combine(slimDataDirectory, currentPod.Name);
         if (Directory.Exists(podDataDirectory) == false)
             Directory.CreateDirectory(podDataDirectory);
-        Starter.StartNode(SlimDataEndpoint(currentPod),  slimDataPort, podDataDirectory);
+        Starter.StartNode(SlimDataEndpoint(currentPod), podDataDirectory);
         Console.WriteLine($"Node started {currentPod.Name}");
     }
 
