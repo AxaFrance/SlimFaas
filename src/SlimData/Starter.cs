@@ -15,9 +15,8 @@ public class Starter
         var configuration = new Dictionary<string, string>
                 {
                     {"partitioning", "false"},
-                    {"lowerElectionTimeout", "150" },
-                    {"upperElectionTimeout", "300" },
-                    {"requestTimeout", "00:01:00"},
+                    {"lowerElectionTimeout", "300" },
+                    {"upperElectionTimeout", "600" },
                     {"publicEndPoint", publicEndPoint},
                     {"coldStart", "false"},
                     {"requestJournal:memoryLimit", "5" },
