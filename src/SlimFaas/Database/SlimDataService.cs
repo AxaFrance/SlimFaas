@@ -15,7 +15,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
     private  ISupplier<SupplierPayload> SimplePersistentState
     {
       get {
-         return serviceProvider.GetRequiredService<ISupplier<SupplierPayload>>();
+         return serviceProvider.GetRequiredService<SlimPersistentState>();
       }
     }
 
