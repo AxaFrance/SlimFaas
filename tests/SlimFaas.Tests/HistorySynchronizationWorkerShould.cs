@@ -27,7 +27,7 @@ public class HistorySynchronizationWorkerShould
 
         var firstTicks = 1L;
         await historyHttpRedisService.SetTickLastCallAsync("fibonacci1", firstTicks);
-        var service = new HistorySynchronizationWorker(replicasService, historyHttpMemoryService, historyHttpRedisService, logger.Object, 100);
+        var service = new HistorySynchronizationWorker(replicasService, historyHttpMemoryService, historyHttpRedisService, logger.Object ,null, 100);
 
         var task = service.StartAsync(CancellationToken.None);
         await Task.Delay(200);
@@ -52,7 +52,7 @@ public class HistorySynchronizationWorkerShould
         var historyHttpMemoryService = new HistoryHttpMemoryService();
         var replicasService = new Mock<IReplicasService>();
         replicasService.Setup(r => r.Deployments).Throws(new Exception());
-        var service = new HistorySynchronizationWorker(replicasService.Object, historyHttpMemoryService, historyHttpRedisService, logger.Object, 10);
+        var service = new HistorySynchronizationWorker(replicasService.Object, historyHttpMemoryService, historyHttpRedisService, logger.Object, null, 10);
 
         var task = service.StartAsync(CancellationToken.None);
         await Task.Delay(100);

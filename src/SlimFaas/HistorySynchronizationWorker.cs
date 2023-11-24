@@ -1,9 +1,10 @@
 ﻿namespace SlimFaas;
 
 public class HistorySynchronizationWorker(IReplicasService replicasService,
-        HistoryHttpMemoryService historyHttpMemoryService,
-        HistoryHttpRedisService historyHttpRedisService,
-        ILogger<HistorySynchronizationWorker> logger,
+    HistoryHttpMemoryService historyHttpMemoryService,
+    HistoryHttpRedisService historyHttpRedisService,
+    ILogger<HistorySynchronizationWorker> logger,
+    SlimDataStatus slimDataStatus,
         int delay = EnvironmentVariables.HistorySynchronizationWorkerDelayMillisecondsDefault)
     : BackgroundService
 {
@@ -11,6 +12,7 @@ public class HistorySynchronizationWorker(IReplicasService replicasService,
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await slimDataStatus.WaitForReadyAsync();
         while (stoppingToken.IsCancellationRequested == false)
         {
             try

@@ -6,15 +6,16 @@ using SlimFaas.Kubernetes;
 namespace SlimFaas;
 
 public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRaftCluster cluster,
-        ILogger<SlimDataSynchronizationWorker> logger,
+        ILogger<SlimDataSynchronizationWorker> logger,SlimDataStatus slimDataStatus,
         int delay = EnvironmentVariables.ReplicasSynchronizationWorkerDelayMillisecondsDefault)
     : BackgroundService
 {
-    private readonly int _delay = EnvironmentVariables.ReadInteger<SlimDataSynchronizationWorker>(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
+    private readonly int _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
 
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await slimDataStatus.WaitForReadyAsync();
         while (stoppingToken.IsCancellationRequested == false)
         {
             try

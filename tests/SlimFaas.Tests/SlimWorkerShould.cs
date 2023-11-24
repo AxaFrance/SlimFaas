@@ -74,7 +74,7 @@ public class SlimWorkerShould
             replicasService.Object,
             historyHttpService,
             logger.Object,
-            serviceProvider.Object);
+            serviceProvider.Object, null);
 
         var task = service.StartAsync(CancellationToken.None);
 
@@ -98,7 +98,7 @@ public class SlimWorkerShould
             replicasService.Object,
             historyHttpService,
             logger.Object,
-            serviceProvider.Object);
+            serviceProvider.Object, null);
 
         var task = service.StartAsync(CancellationToken.None);
 

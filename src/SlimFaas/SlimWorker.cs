@@ -6,7 +6,7 @@ namespace SlimFaas;
 record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest);
 
 public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasService,
-        HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider,
+        HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider, SlimDataStatus slimDataStatus,
         int delay = EnvironmentVariables.SlimWorkerDelayMillisecondsDefault)
     : BackgroundService
 {
@@ -14,6 +14,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await slimDataStatus.WaitForReadyAsync();
         var processingTasks = new Dictionary<string, IList<RequestToWait>>();
         var setTickLastCallCounterDictionary = new Dictionary<string, int>();
         while (stoppingToken.IsCancellationRequested == false)

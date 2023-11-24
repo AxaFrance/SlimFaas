@@ -12,11 +12,10 @@ namespace SlimFaas;
 public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProvider, IRaftCluster cluster)
     : IDatabaseService
 {
-    private  ISupplier<SupplierPayload> _simplePersistentState
+    private  ISupplier<SupplierPayload> SimplePersistentState
     {
       get {
-       return serviceProvider.GetRequiredService<ISupplier<SupplierPayload>>();
-
+         return serviceProvider.GetRequiredService<ISupplier<SupplierPayload>>();
       }
     }
 
@@ -39,7 +38,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
     public async Task<string> GetAsync(string key) {
         await GetAndWaitForLeader();
         await cluster.ApplyReadBarrierAsync();
-        var data = _simplePersistentState.Invoke();
+        var data = SimplePersistentState.Invoke();
         return data.KeyValues.TryGetValue(key, out var value) ? value: string.Empty;
     }
 
@@ -76,7 +75,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
     public async Task<IDictionary<string, string>> HashGetAllAsync(string key)  {
 await GetAndWaitForLeader();
         await cluster.ApplyReadBarrierAsync();
-        var data = _simplePersistentState.Invoke();
+        var data = SimplePersistentState.Invoke();
         return data.Hashsets.TryGetValue(key, out var value) ? (IDictionary<string, string>)value : new Dictionary<string, string>();
     }
 
@@ -113,7 +112,7 @@ await GetAndWaitForLeader();
     public async Task<long> ListLengthAsync(string key) {
 await GetAndWaitForLeader();
         await cluster.ApplyReadBarrierAsync();
-        var data = _simplePersistentState.Invoke();
+        var data = SimplePersistentState.Invoke();
         var result = data.Queues.TryGetValue(key, out var value) ? (long)value.Count :0L;
         return result;
     }
