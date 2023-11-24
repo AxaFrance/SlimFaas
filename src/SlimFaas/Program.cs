@@ -168,7 +168,10 @@ serviceCollectionSlimFaas.AddOpenTelemetry()
         .AddHttpClientInstrumentation()
         .AddAspNetCoreInstrumentation());
 
+if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
+    builder.Configuration[SlimPersistentState.LogLocation] = podDataDirectoryPersistantStorage;
 Startup startup = new(builder.Configuration);
+
 startup.ConfigureServices(serviceCollectionSlimFaas);
 
 var slimDataConfiguration = new Dictionary<string, string>
@@ -182,8 +185,7 @@ var slimDataConfiguration = new Dictionary<string, string>
     {"requestJournal:expiration", "00:01:00" },
     {"heartbeatThreshold", "0.6" }
 };
-if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
-    configuration[SlimPersistentState.LogLocation] = podDataDirectoryPersistantStorage;
+
 builder.Host
     .ConfigureAppConfiguration(builder => builder.AddInMemoryCollection(slimDataConfiguration!))
     .JoinCluster();
