@@ -15,11 +15,6 @@ public class SlimDataStatus
     public async Task WaitForReadyAsync()
     {
         var raftCluster = _cluster;
-        while (raftCluster.Readiness != Task.CompletedTask)
-        {
-            Console.WriteLine($"Raft cluster is not ready");
-            await Task.Delay(500);
-        }
 
         while (raftCluster.Leader == null)
         {
