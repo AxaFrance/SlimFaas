@@ -4,6 +4,9 @@ public static class EnvironmentVariables
 {
 
     public const string SlimWorkerDelayMilliseconds = "SLIM_WORKER_DELAY_MILLISECONDS";
+
+    public const string SlimFaasPort = "SLIMFAAS_PORT";
+    public const int SlimFaasPortDefault = 5000;
     public const string BaseSlimDataUrl = "BASE_SLIMDATA_URL";
     public const string BaseSlimDataUrlDefault = "http://{pod_name}.slimfaas.default.svc.cluster.local:3262/";
 

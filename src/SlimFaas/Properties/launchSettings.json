@@ -9,10 +9,11 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "NAMESPACE" : "slimfaas-demo",
         "HOSTNAME" : "slimfaas1",
-        "MOCK_KUBERNETES_FUNCTIONS_OLD": "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}]}",
+        "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}]}",
         "MOCK_REDIS": "True",
-        "SLIMDATA_PORT": "3262",
-        "SLIMDATA_DIRECTORY": "C:\\Demo4"
+        "SLIMFAAS_PORT": "5002",
+        "SLIMDATA_DIRECTORY": "C:\\Demo4",
+        "BASE_SLIMDATA_URL": "http://localhost:3262/"
       }
     },
     "http_2": {
@@ -26,8 +27,9 @@
               "HOSTNAME" : "slimfaas2",
               "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}]}",
               "MOCK_REDIS": "True",
-              "SLIMDATA_PORT": "3263",
-              "SLIMDATA_DIRECTORY": "C:\\Demo4"
+              "SLIMFAAS_PORT": "5001",
+              "SLIMDATA_DIRECTORY": "C:\\Demo4",
+              "BASE_SLIMDATA_URL": "http://localhost:3263/"
           }
       }
   }

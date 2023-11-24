@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using SlimFaas.Kubernetes;
+﻿using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
@@ -11,32 +10,20 @@ public enum FunctionType
     NotAFunction
 }
 
-public class SlimProxyMiddleware
+public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue, ILogger<SlimProxyMiddleware> logger, int timeoutWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault)
 {
-    private readonly RequestDelegate _next;
-    private readonly ISlimFaasQueue _slimFaasQueue;
-    private readonly ILogger<SlimProxyMiddleware> _logger;
-    private readonly int _timeoutMaximumWaitWakeSyncFunctionMilliSecond;
-
-    public SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue, ILogger<SlimProxyMiddleware> logger, int timeoutWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault)
-    {
-        _next = next;
-        _slimFaasQueue = slimFaasQueue;
-        _logger = logger;
-
-        _timeoutMaximumWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.TimeMaximumWaitForAtLeastOnePodStartedForSyncFunction, timeoutWaitWakeSyncFunctionMilliSecond);
-    }
+    private readonly int _timeoutMaximumWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.ReadInteger<SlimProxyMiddleware>(logger, EnvironmentVariables.TimeMaximumWaitForAtLeastOnePodStartedForSyncFunction, timeoutWaitWakeSyncFunctionMilliSecond);
 
     public async Task InvokeAsync(HttpContext context,
         HistoryHttpMemoryService historyHttpService, ISendClient sendClient, IReplicasService replicasService)
     {
         var contextRequest = context.Request;
-        var (functionPath, functionName, functionType) = GetFunctionInfo(_logger, contextRequest);
+        var (functionPath, functionName, functionType) = GetFunctionInfo(logger, contextRequest);
         var contextResponse = context.Response;
         switch (functionType)
         {
             case FunctionType.NotAFunction:
-                await _next(context);
+                await next(context);
                 return;
             case FunctionType.Wake:
                 BuildWakeResponse(historyHttpService, replicasService, functionName, contextResponse);
@@ -83,8 +70,10 @@ public class SlimProxyMiddleware
             contextResponse.StatusCode = 404;
             return;
         }
-        await _slimFaasQueue.EnqueueAsync(functionName,
-            JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest));
+
+        var dataString = SlimfaasSerializer.Serialize(customRequest);
+        await slimFaasQueue.EnqueueAsync(functionName, dataString);
+
         contextResponse.StatusCode = 202;
     }
 

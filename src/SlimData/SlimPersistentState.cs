@@ -8,11 +8,11 @@ namespace RaftNode;
 
 
 
-public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<SupplierPayload>
+public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<SupplierPayload>
 {
-    internal const string LogLocation = "logLocation";
+    public const string LogLocation = "logLocation";
     
-    public SlimDataInterpreter interpreter = new("SimplePersistentState");
+    public SlimDataInterpreter interpreter = new("SlimPersistentState");
     private sealed class SimpleSnapshotBuilder : IncrementalSnapshotBuilder
     {
 
@@ -74,12 +74,12 @@ public sealed class SimplePersistentState : MemoryBasedStateMachine, ISupplier<S
     }
     
    
-    public SimplePersistentState(string path)
+    public SlimPersistentState(string path)
         : base(path, 50, new Options { InitialPartitionSize = 50 * 8, UseCaching = true })
     {
     }
 
-    public SimplePersistentState(IConfiguration configuration)
+    public SlimPersistentState(IConfiguration configuration)
         : this(configuration[LogLocation])
     {
     }

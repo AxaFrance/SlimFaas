@@ -1,5 +1,7 @@
 using System.Net;
+using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
+using DotNext.Net.Cluster.Consensus.Raft.Http;
 using OpenTelemetry.Trace;
 using SlimFaas;
 using Polly;
@@ -68,7 +70,8 @@ else
     serviceCollectionSlimFaas.AddSingleton<IKubernetesService, KubernetesService>((sp) => (KubernetesService)serviceProviderStarter.GetService<IKubernetesService>()!);
 }
 
-
+var publicEndPoint = string.Empty;
+var podDataDirectoryPersistantStorage = string.Empty;
 if (mockSlimData == false)
 {
     string namespace_ = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ??
@@ -114,14 +117,14 @@ if (mockSlimData == false)
 
         var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == hostname);
         Console.WriteLine($"Starting node {currentPod.Name}");
-        var podDataDirectory = Path.Combine(slimDataDirectory, currentPod.Name);
-        if (Directory.Exists(podDataDirectory) == false)
-            Directory.CreateDirectory(podDataDirectory);
-        Starter.StartNode(SlimDataEndpoint.Get(currentPod), podDataDirectory);
+        podDataDirectoryPersistantStorage = Path.Combine(slimDataDirectory, currentPod.Name);
+        if (Directory.Exists(podDataDirectoryPersistantStorage) == false)
+            Directory.CreateDirectory(podDataDirectoryPersistantStorage);
+        publicEndPoint = SlimDataEndpoint.Get(currentPod);
         Console.WriteLine($"Node started {currentPod.Name}");
     }
 
-    while (Starter.ServiceProvider == null)
+   /* while (Starter.ServiceProvider == null)
     {
         Console.WriteLine($"Waiting node to start");
         Thread.Sleep(500);
@@ -140,9 +143,7 @@ if (mockSlimData == false)
         Thread.Sleep(500);
     }
 
-    serviceCollectionSlimFaas.AddSingleton<IRaftCluster, IRaftCluster>((sp) => raftCluster);
-    serviceCollectionSlimFaas.AddSingleton<SimplePersistentState, SimplePersistentState>((sp) =>
-        Starter.ServiceProvider.GetRequiredService<SimplePersistentState>());
+    serviceCollectionSlimFaas.AddSingleton<IRaftCluster, IRaftCluster>((sp) => raftCluster);*/
     serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
     serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
     serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
@@ -153,7 +154,7 @@ else
 {
     serviceCollectionSlimFaas.AddSingleton<IDatabaseService, DatabaseMockService>();
 }
-
+//serviceCollectionSlimFaas.AddSingleton<IRaftCluster, IRaftCluster>((sp) => raftCluster);
 
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
 
@@ -166,7 +167,40 @@ serviceCollectionSlimFaas.AddOpenTelemetry()
         .AddHttpClientInstrumentation()
         .AddAspNetCoreInstrumentation());
 
+Startup startup = new(builder.Configuration);
+startup.ConfigureServices(serviceCollectionSlimFaas);
+
+var slimDataConfiguration = new Dictionary<string, string>
+{
+    {"partitioning", "false"},
+    {"lowerElectionTimeout", "300" },
+    {"upperElectionTimeout", "600" },
+    {"publicEndPoint", publicEndPoint},
+    {"coldStart", "false"},
+    {"requestJournal:memoryLimit", "5" },
+    {"requestJournal:expiration", "00:01:00" },
+    {"heartbeatThreshold", "0.6" }
+};
+if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
+    configuration[SlimPersistentState.LogLocation] = podDataDirectoryPersistantStorage;
+builder.Host
+    .ConfigureAppConfiguration(builder => builder.AddInMemoryCollection(slimDataConfiguration!))
+    .JoinCluster();
+
+var uri = new Uri(publicEndPoint);
+
+
+
+builder.WebHost.ConfigureKestrel((context, serverOptions) =>
+{
+    serverOptions.Listen(IPAddress.Loopback, uri.Port);
+    serverOptions.Listen(IPAddress.Loopback, 5000);
+});
+
+
 var app = builder.Build();
+
+startup.Configure(app);
 
 app.Use(async (context, next) =>
 {
@@ -187,6 +221,10 @@ app.Run(context =>
     context.Response.StatusCode = 404;
     return Task.CompletedTask;
 });
+
+
+
+
 
 app.Run();
 
@@ -209,7 +247,6 @@ static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
             .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
                 retryAttempt)));
     }
-
 
 
 public partial class Program { }

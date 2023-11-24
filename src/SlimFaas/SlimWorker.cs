@@ -1,30 +1,16 @@
 ﻿
-using System.Text.Json;
 using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
 record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest);
 
-public class SlimWorker : BackgroundService
+public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasService,
+        HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider,
+        int delay = EnvironmentVariables.SlimWorkerDelayMillisecondsDefault)
+    : BackgroundService
 {
-    private readonly HistoryHttpMemoryService _historyHttpService;
-    private readonly ILogger<SlimWorker> _logger;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly int _delay;
-    private readonly ISlimFaasQueue _slimFaasQueue;
-    private readonly IReplicasService _replicasService;
-
-    public SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasService, HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider, int delay = EnvironmentVariables.SlimWorkerDelayMillisecondsDefault)
-    {
-        _historyHttpService = historyHttpService;
-        _logger = logger;
-        _serviceProvider = serviceProvider;
-
-        _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.SlimWorkerDelayMilliseconds, delay);
-        _slimFaasQueue = slimFaasQueue;
-        _replicasService = replicasService;
-    }
+    private readonly int _delay = EnvironmentVariables.ReadInteger<SlimWorker>(logger, EnvironmentVariables.SlimWorkerDelayMilliseconds, delay);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -42,7 +28,7 @@ public class SlimWorker : BackgroundService
         try
         {
             await Task.Delay(_delay, stoppingToken);
-            var deployments = _replicasService.Deployments;
+            var deployments = replicasService.Deployments;
             var functions = deployments.Functions;
             var slimFaas = deployments.SlimFaas;
             foreach (var function in functions)
@@ -65,7 +51,7 @@ public class SlimWorker : BackgroundService
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Global Error in SlimFaas Worker");
+            logger.LogError(e, "Global Error in SlimFaas Worker");
         }
     }
 
@@ -73,17 +59,16 @@ public class SlimWorker : BackgroundService
         string functionDeployment)
     {
         var numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
-        var jsons = await _slimFaasQueue.DequeueAsync(functionDeployment,
+        var jsons = await slimFaasQueue.DequeueAsync(functionDeployment,
             numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue : 1);
         foreach (var requestJson in jsons)
         {
-            var customRequest =
-                JsonSerializer.Deserialize(requestJson, CustomRequestSerializerContext.Default.CustomRequest);
-            _logger.LogDebug("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
+            var customRequest = SlimfaasSerializer.Deserialize(requestJson);
+            logger.LogDebug("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
                 customRequest.Method, customRequest.Path, customRequest.Query);
-            _logger.LogDebug("{RequestJson}", requestJson);
-            _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
-            using var scope = _serviceProvider.CreateScope();
+            logger.LogDebug("{RequestJson}", requestJson);
+            historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
+            using var scope = serviceProvider.CreateScope();
             var taskResponse = scope.ServiceProvider.GetRequiredService<ISendClient>()
                 .SendHttpRequestAsync(customRequest);
             processingTasks[functionDeployment].Add(new RequestToWait(taskResponse, customRequest));
@@ -94,14 +79,14 @@ public class SlimWorker : BackgroundService
         Dictionary<string, int> setTickLastCallCounterDictionnary, string functionDeployment, int numberProcessingTasks)
     {
         var counterLimit = functionReplicas == 0 ? 10 : 300;
-        var queueLenght = await _slimFaasQueue.CountAsync(functionDeployment);
+        var queueLenght = await slimFaasQueue.CountAsync(functionDeployment);
         if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
         {
             setTickLastCallCounterDictionnary[functionDeployment] = 0;
 
             if (queueLenght > 0 || numberProcessingTasks > 0)
             {
-                _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
+                historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
             }
         }
         return queueLenght;
@@ -140,18 +125,18 @@ public class SlimWorker : BackgroundService
                 if (!processing.Task.IsCompleted) continue;
                 var httpResponseMessage = processing.Task.Result;
                 httpResponseMessage.Dispose();
-                _logger.LogDebug(
+                logger.LogDebug(
                     "{CustomRequestMethod}: /async-function/{CustomRequestPath}{CustomRequestQuery} {StatusCode}",
                     processing.CustomRequest.Method, processing.CustomRequest.Path, processing.CustomRequest.Query,
                     httpResponseMessage.StatusCode);
                 httpResponseMessagesToDelete.Add(processing);
-                _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
+                historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
             }
             catch (Exception e)
             {
                 httpResponseMessagesToDelete.Add(processing);
-                _logger.LogWarning("Request Error: {Message} {StackTrace}", e.Message, e.StackTrace);
-                _historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
+                logger.LogWarning("Request Error: {Message} {StackTrace}", e.Message, e.StackTrace);
+                historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
             }
         }
 

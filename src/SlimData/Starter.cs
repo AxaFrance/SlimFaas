@@ -1,12 +1,18 @@
-﻿using DotNext.Net.Cluster.Consensus.Raft.Http;
+﻿using System.Net;
+using DotNext.Net.Cluster.Consensus.Raft.Http;
 
 namespace RaftNode;
 
 
 public class Starter
 {
+
+    public static void JoinCluster(WebApplicationBuilder builder)
+    {
+        builder.JoinCluster();
+    }
     
-    public static IServiceProvider ServiceProvider { get; private set; } = null!;
+    private static IServiceProvider ServiceProvider { get; set; } = null!;
     
     static Task UseAspNetCoreHost(string publicEndPoint, string? persistentStorage = null)
     {
@@ -24,14 +30,15 @@ public class Starter
                     {"heartbeatThreshold", "0.6" }
                 };
         if (!string.IsNullOrEmpty(persistentStorage))
-            configuration[SimplePersistentState.LogLocation] = persistentStorage;
+            configuration[SlimPersistentState.LogLocation] = persistentStorage;
 
         var host = new HostBuilder().ConfigureWebHost(webHost =>
             {
                 webHost.UseKestrel(options =>
                     {
                         ServiceProvider = options.ApplicationServices; 
-                        options.ListenAnyIP(uri.Port);
+                        options.Listen(IPAddress.Loopback, uri.Port);
+                        //options.Listen(IPAddress.Loopback,5000);
                     })
                     .UseStartup<Startup>();
             })

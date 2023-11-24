@@ -25,13 +25,13 @@ public sealed class Startup(IConfiguration configuration)
 
     public void Configure(IApplicationBuilder app)
     {
-        const string LeaderResource = "/leader";
-        const string ValueResource = "/value";
-        const string AddHashSetResource = "/AddHashset";
-        const string ListRightPopResource = "/ListRightPop";
-        const string ListLeftPushResource = "/ListLeftPush";
-        const string AddKeyValueResource = "/AddKeyValue";
-        const string ListLengthResource = "/ListLength";
+        const string LeaderResource = "/SlimData/leader";
+        const string ValueResource = "/SlimData/value";
+        const string AddHashSetResource = "/SlimData/AddHashset";
+        const string ListRightPopResource = "/SlimData/ListRightPop";
+        const string ListLeftPushResource = "/SlimData/ListLeftPush";
+        const string AddKeyValueResource = "/SlimData/AddKeyValue";
+        const string ListLengthResource = "/SlimData/ListLength";
 
         app.UseConsensusProtocolHandler()
             .RedirectToLeader(LeaderResource)
@@ -44,7 +44,7 @@ public sealed class Startup(IConfiguration configuration)
             .UseEndpoints(static endpoints =>
             {
                 endpoints.MapGet(LeaderResource, RedirectToLeaderAsync);
-                endpoints.MapGet("/health", (async context =>
+                endpoints.MapGet("/SlimData/health", (async context =>
                 {
                     await context.Response.WriteAsync("OK");
                 }));
@@ -52,7 +52,7 @@ public sealed class Startup(IConfiguration configuration)
                 endpoints.MapPost(ListLeftPushResource, async context =>
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
-                    var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
+                    var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
                         CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
                             cluster.LeadershipToken);
@@ -97,7 +97,7 @@ public sealed class Startup(IConfiguration configuration)
                 endpoints.MapPost(ListRightPopResource, async context =>
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
-                    var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
+                    var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
                         CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
                             cluster.LeadershipToken);
@@ -160,7 +160,7 @@ public sealed class Startup(IConfiguration configuration)
                 endpoints.MapPost(AddHashSetResource, async context =>
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
-                    var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
+                    var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
                         CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
                             cluster.LeadershipToken);
@@ -208,7 +208,7 @@ public sealed class Startup(IConfiguration configuration)
                 endpoints.MapPost(AddKeyValueResource, async context =>
                 {
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
-                    var provider = context.RequestServices.GetRequiredService<SimplePersistentState>();
+                    var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
                         CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
                             cluster.LeadershipToken);
@@ -260,10 +260,12 @@ public sealed class Startup(IConfiguration configuration)
             .AddOptions()
             .AddRouting();
         
-        var path = configuration[SimplePersistentState.LogLocation];
+        var path = configuration[SlimPersistentState.LogLocation];
         if (!string.IsNullOrWhiteSpace(path))
         {
-            services.UsePersistenceEngine<ISupplier<SupplierPayload>, SimplePersistentState>();
+            services.UsePersistenceEngine<ISupplier<SupplierPayload>, SlimPersistentState>();
+            services.AddSingleton<SlimPersistentState, SlimPersistentState>((sp) => (SlimPersistentState)sp.GetRequiredService<ISupplier<SupplierPayload>>());
+
         }
     }
 

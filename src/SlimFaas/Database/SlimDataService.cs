@@ -9,10 +9,16 @@ using RaftNode;
 namespace SlimFaas;
 #pragma warning disable CA2252
 
-public class SlimDataService(HttpClient httpClient, SimplePersistentState simplePersistentState, IRaftCluster cluster)
+public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProvider, IRaftCluster cluster)
     : IDatabaseService
 {
-    private readonly ISupplier<SupplierPayload> _simplePersistentState = simplePersistentState;
+    private  ISupplier<SupplierPayload> _simplePersistentState
+    {
+      get {
+       return serviceProvider.GetRequiredService<ISupplier<SupplierPayload>>();
+
+      }
+    }
 
     private async Task<EndPoint> GetAndWaitForLeader()
     {
@@ -43,7 +49,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
         multipart.Add(new StringContent(value), key);
 
         var endpoint = await GetAndWaitForLeader();
-        var response = await httpClient.PostAsync(new Uri($"{endpoint}AddKeyValue"), multipart);
+        var response = await httpClient.PostAsync(new Uri($"{endpoint}SlimData/AddKeyValue"), multipart);
         if ((int)response.StatusCode >= 500)
         {
             throw new DataException("Error in calling SlimData HTTP Service");
@@ -60,7 +66,7 @@ public class SlimDataService(HttpClient httpClient, SimplePersistentState simple
         }
 
         var endpoint = await GetAndWaitForLeader();
-        var response = await httpClient.PostAsync(new Uri($"{endpoint}AddHashset"), multipart);
+        var response = await httpClient.PostAsync(new Uri($"{endpoint}SlimData/AddHashset"), multipart);
         if ((int)response.StatusCode >= 500)
         {
             throw new DataException("Error in calling SlimData HTTP Service");
@@ -76,7 +82,7 @@ await GetAndWaitForLeader();
 
     public async Task ListLeftPushAsync(string key, string field) {
         var endpoint = await GetAndWaitForLeader();
-        var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{endpoint}ListLeftPush"));
+        var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListLeftPush"));
         var multipart = new MultipartFormDataContent();
         multipart.Add(new StringContent(field), key);
         request.Content = multipart;
@@ -90,7 +96,7 @@ await GetAndWaitForLeader();
     public async Task<IList<string>> ListRightPopAsync(string key, long count = 1)
     {
         var endpoint = await GetAndWaitForLeader();
-            var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{endpoint}ListRightPop"));
+            var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListRightPop"));
             var multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent(count.ToString()), key);
 

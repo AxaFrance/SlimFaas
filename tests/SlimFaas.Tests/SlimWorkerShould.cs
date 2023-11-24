@@ -59,18 +59,15 @@ public class SlimWorkerShould
 
         var redisQueue = new SlimFaasSlimFaasQueue(new DatabaseMockService());
         var customRequest = new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new []{"value1"}}}, new byte[1], "fibonacci", "/download", "GET", "");
-        var jsonCustomRequest =
-            JsonSerializer.Serialize(customRequest, CustomRequestSerializerContext.Default.CustomRequest);
+        var jsonCustomRequest = SlimfaasSerializer.Serialize(customRequest);
         await redisQueue.EnqueueAsync("fibonacci", jsonCustomRequest);
 
         var customRequestNoPodStarted = new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new []{"value1"}}}, new byte[1], "no-pod-started", "/download", "GET", "");
-        var jsonCustomNoPodStarted =
-            JsonSerializer.Serialize(customRequestNoPodStarted, CustomRequestSerializerContext.Default.CustomRequest);
+        var jsonCustomNoPodStarted = SlimfaasSerializer.Serialize(customRequestNoPodStarted);
         await redisQueue.EnqueueAsync("no-pod-started", jsonCustomNoPodStarted);
 
         var customRequestReplicas = new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new []{"value1"}}}, new byte[1], "no-replicas", "/download", "GET", "");
-        var jsonCustomNoReplicas =
-            JsonSerializer.Serialize(customRequestReplicas, CustomRequestSerializerContext.Default.CustomRequest);
+        var jsonCustomNoReplicas = SlimfaasSerializer.Serialize(customRequestReplicas);
         await redisQueue.EnqueueAsync("no-replicas", jsonCustomNoReplicas);
 
         var service = new SlimWorker(redisQueue,
