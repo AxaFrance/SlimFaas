@@ -196,8 +196,8 @@ var uri = new Uri(publicEndPoint);
 
 builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 {
-    serverOptions.ListenLocalhost(uri.Port);
-    serverOptions.ListenLocalhost(5000);
+    serverOptions.ListenAnyIP(uri.Port);
+    serverOptions.ListenAnyIP(5000);
 });
 
 
