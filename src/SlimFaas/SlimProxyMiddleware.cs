@@ -7,8 +7,11 @@ public enum FunctionType
     Sync,
     Async,
     Wake,
+    Status,
     NotAFunction
 }
+
+public record FunctionStatus(int NumberReady);
 
 public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue, ILogger<SlimProxyMiddleware> logger, int timeoutWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault)
 {
@@ -34,6 +37,9 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             case FunctionType.Wake:
                 BuildWakeResponse(historyHttpService, replicasService, functionName, contextResponse);
                 return;
+               case FunctionType.Status:
+                   BuildStatusResponse(replicasService, functionName, contextResponse);
+                   return;
             case FunctionType.Sync:
                 await BuildSyncResponseAsync(context, historyHttpService, sendClient, replicasService, functionName, functionPath);
                 return;
@@ -44,6 +50,23 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 await BuildAsyncResponseAsync(replicasService ,functionName, customRequest, contextResponse);
                 break;
             }
+        }
+    }
+
+    private static void BuildStatusResponse(IReplicasService replicasService,
+        string functionName, HttpResponse contextResponse)
+    {
+        var function = SearchFunction(replicasService, functionName);
+        if (function != null)
+        {
+            var functionDeploymentInformation = replicasService.Deployments.Functions.FirstOrDefault(f => f.Deployment == functionName);
+            var numberReady = functionDeploymentInformation == null ? 0 : functionDeploymentInformation.Pods.Count(p => p.Ready.HasValue && p.Ready.Value);
+            contextResponse.StatusCode = 200;
+            contextResponse.WriteAsJsonAsync(new FunctionStatus(numberReady));
+        }
+        else
+        {
+            contextResponse.StatusCode = 404;
         }
     }
 
@@ -190,6 +213,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     private record FunctionInfo(string FunctionPath, string FunctionName, FunctionType FunctionType = FunctionType.NotAFunction);
 
     private const string AsyncFunction = "/async-function";
+    private const string StatusFunction = "/status-function";
     private const string WakeFunction = "/wake-function";
     private const string Function = "/function";
 

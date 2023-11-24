@@ -150,8 +150,9 @@ serviceCollectionSlimFaas.AddOpenTelemetry()
 if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
     builder.Configuration[SlimPersistentState.LogLocation] = podDataDirectoryPersistantStorage;
 Startup startup = new(builder.Configuration);
+var slimFaasPort = int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariables.SlimFaasPort) ?? EnvironmentVariables.SlimFaasPortDefault.ToString());
 
-startup.ConfigureServices(serviceCollectionSlimFaas);
+startup.ConfigureServices(serviceCollectionSlimFaas, slimFaasPort);
 
 var slimDataConfiguration = new Dictionary<string, string>
 {
@@ -171,7 +172,6 @@ builder.Host
 
 var uri = new Uri(publicEndPoint);
 
-var slimFaasPort = int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariables.SlimFaasPort) ?? EnvironmentVariables.SlimFaasPortDefault.ToString());
 
 builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 {
