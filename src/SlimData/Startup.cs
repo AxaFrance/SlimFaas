@@ -264,8 +264,6 @@ public sealed class Startup(IConfiguration configuration)
         if (!string.IsNullOrWhiteSpace(path))
         {
             services.UsePersistenceEngine<ISupplier<SupplierPayload>, SlimPersistentState>();
-           services.AddSingleton<SlimPersistentState, SlimPersistentState>((sp) => (SlimPersistentState)sp.GetRequiredService<ISupplier<SupplierPayload>>());
-
         }
     }
 

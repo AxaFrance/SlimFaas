@@ -196,15 +196,13 @@ var uri = new Uri(publicEndPoint);
 
 builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 {
-    serverOptions.ListenAnyIP(uri.Port);
-    serverOptions.ListenAnyIP(5000);
+    serverOptions.ListenLocalhost(uri.Port);
+    serverOptions.ListenLocalhost(5000);
 });
 
 
 var app = builder.Build();
-
-startup.Configure(app);
-
+app.UseMiddleware<SlimProxyMiddleware>();
 app.Use(async (context, next) =>
 {
     if (context.Request.Path == "/health")
@@ -214,19 +212,19 @@ app.Use(async (context, next) =>
     }
     await next.Invoke();
 });
+startup.Configure(app);
+
+
 
 app.UseMetricServer();
 app.UseHttpMetrics();
-app.UseMiddleware<SlimProxyMiddleware>();
 
-app.Run(context =>
+
+app.Run(async context =>
 {
     context.Response.StatusCode = 404;
-    return Task.CompletedTask;
+    await context.Response.WriteAsync("404");
 });
-
-
-
 
 
 app.Run();
