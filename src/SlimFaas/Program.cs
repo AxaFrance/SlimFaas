@@ -125,26 +125,6 @@ if (mockSlimData == false)
         Console.WriteLine($"Node started {currentPod.Name}");
     }
 
-   /* while (Starter.ServiceProvider == null)
-    {
-        Console.WriteLine($"Waiting node to start");
-        Thread.Sleep(500);
-    }
-
-    var raftCluster = Starter.ServiceProvider.GetRequiredService<IRaftCluster>();
-    while (raftCluster.Readiness == Task.CompletedTask)
-    {
-        Console.WriteLine($"Raft cluster is not ready");
-        Thread.Sleep(500);
-    }
-
-    while (raftCluster.Leader == null)
-    {
-        Console.WriteLine($"Raft cluster has no leader");
-        Thread.Sleep(500);
-    }
-
-    serviceCollectionSlimFaas.AddSingleton<IRaftCluster, IRaftCluster>((sp) => raftCluster);*/
     serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
     serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
     serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
@@ -155,7 +135,6 @@ else
 {
     serviceCollectionSlimFaas.AddSingleton<IDatabaseService, DatabaseMockService>();
 }
-//serviceCollectionSlimFaas.AddSingleton<IRaftCluster, IRaftCluster>((sp) => raftCluster);
 
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
 
@@ -192,33 +171,32 @@ builder.Host
 
 var uri = new Uri(publicEndPoint);
 
-
+var slimFaasPort = int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariables.SlimFaasPort) ?? EnvironmentVariables.SlimFaasPortDefault.ToString());
 
 builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 {
     serverOptions.ListenAnyIP(uri.Port);
-    serverOptions.ListenAnyIP(5000);
+    serverOptions.ListenAnyIP(slimFaasPort);
 });
-
 
 var app = builder.Build();
 app.UseMiddleware<SlimProxyMiddleware>();
 app.Use(async (context, next) =>
 {
+    if(context.Request.Host.Port != slimFaasPort)
+    {
+        await next.Invoke();
+        return;
+    }
     if (context.Request.Path == "/health")
     {
         await context.Response.WriteAsync("OK");
-        return;
     }
-    await next.Invoke();
 });
 startup.Configure(app);
 
-
-
 app.UseMetricServer();
 app.UseHttpMetrics();
-
 
 app.Run(async context =>
 {

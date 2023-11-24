@@ -13,10 +13,16 @@ public enum FunctionType
 public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue, ILogger<SlimProxyMiddleware> logger, int timeoutWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault)
 {
     private readonly int _timeoutMaximumWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.TimeMaximumWaitForAtLeastOnePodStartedForSyncFunction, timeoutWaitWakeSyncFunctionMilliSecond);
+    private readonly int _slimFaasPort = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.SlimFaasPort, EnvironmentVariables.SlimFaasPortDefault);
 
     public async Task InvokeAsync(HttpContext context,
         HistoryHttpMemoryService historyHttpService, ISendClient sendClient, IReplicasService replicasService)
     {
+        if(context.Request.Host.Port != _slimFaasPort)
+        {
+            await next(context);
+            return;
+        }
         var contextRequest = context.Request;
         var (functionPath, functionName, functionType) = GetFunctionInfo(logger, contextRequest);
         var contextResponse = context.Response;

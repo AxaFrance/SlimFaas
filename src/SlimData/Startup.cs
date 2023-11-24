@@ -23,7 +23,7 @@ public sealed class Startup(IConfiguration configuration)
         await context.Response.WriteAsync(  JsonConvert.SerializeObject(provider.Invoke()), context.RequestAborted);
     }
 
-    public void Configure(IApplicationBuilder app)
+    public void Configure(IApplicationBuilder app, int slimdataPort=3262)
     {
         const string LeaderResource = "/SlimData/leader";
         const string ValueResource = "/SlimData/value";
@@ -51,6 +51,12 @@ public sealed class Startup(IConfiguration configuration)
                 endpoints.MapGet(ValueResource, GetValueAsync);
                 endpoints.MapPost(ListLeftPushResource, async context =>
                 {
+                    var slimDataInfo = context.RequestServices.GetRequiredService<SlimDataInfo>();
+                    if(context.Request.Host.Port != slimDataInfo.Port)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status404NotFound;
+                        return;
+                    }
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
@@ -96,6 +102,12 @@ public sealed class Startup(IConfiguration configuration)
                 
                 endpoints.MapPost(ListRightPopResource, async context =>
                 {
+                    var slimDataInfo = context.RequestServices.GetRequiredService<SlimDataInfo>();
+                    if(context.Request.Host.Port != slimDataInfo.Port)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status404NotFound;
+                        return;
+                    }
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
@@ -159,6 +171,12 @@ public sealed class Startup(IConfiguration configuration)
                 });
                 endpoints.MapPost(AddHashSetResource, async context =>
                 {
+                    var slimDataInfo = context.RequestServices.GetRequiredService<SlimDataInfo>();
+                    if(context.Request.Host.Port != slimDataInfo.Port)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status404NotFound;
+                        return;
+                    }
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
@@ -207,6 +225,12 @@ public sealed class Startup(IConfiguration configuration)
                 });
                 endpoints.MapPost(AddKeyValueResource, async context =>
                 {
+                    var slimDataInfo = context.RequestServices.GetRequiredService<SlimDataInfo>();
+                    if(context.Request.Host.Port != slimDataInfo.Port)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status404NotFound;
+                        return;
+                    }
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
@@ -252,14 +276,14 @@ public sealed class Startup(IConfiguration configuration)
             });
     }
 
-    public void ConfigureServices(IServiceCollection services)
+    public void ConfigureServices(IServiceCollection services, int slimDataPort=3262)
     {
         services.UseInMemoryConfigurationStorage(AddClusterMembers)
             .ConfigureCluster<ClusterConfigurator>()
             .AddSingleton<IHttpMessageHandlerFactory, RaftClientHandlerFactory>()
             .AddOptions()
             .AddRouting();
-        
+        services.AddSingleton<SlimDataInfo>(sp => new SlimDataInfo(slimDataPort));
         var path = configuration[SlimPersistentState.LogLocation];
         if (!string.IsNullOrWhiteSpace(path))
         {
