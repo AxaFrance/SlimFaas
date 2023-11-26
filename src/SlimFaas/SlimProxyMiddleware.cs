@@ -1,4 +1,5 @@
-﻿using SlimFaas.Kubernetes;
+﻿using System.Text.Json.Serialization;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
@@ -12,6 +13,14 @@ public enum FunctionType
 }
 
 public record FunctionStatus(int NumberReady);
+
+[JsonSerializable(typeof(FunctionStatus))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class FunctionStatusSerializerContext : JsonSerializerContext
+{
+
+}
+
 
 public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue, ILogger<SlimProxyMiddleware> logger, int timeoutWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault)
 {
@@ -62,7 +71,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             var functionDeploymentInformation = replicasService.Deployments.Functions.FirstOrDefault(f => f.Deployment == functionName);
             var numberReady = functionDeploymentInformation == null ? 0 : functionDeploymentInformation.Pods.Count(p => p.Ready.HasValue && p.Ready.Value);
             contextResponse.StatusCode = 200;
-            contextResponse.WriteAsJsonAsync(new FunctionStatus(numberReady));
+            contextResponse.WriteAsJsonAsync(new FunctionStatus(numberReady), FunctionStatusSerializerContext.Default.FunctionStatus);
         }
         else
         {
