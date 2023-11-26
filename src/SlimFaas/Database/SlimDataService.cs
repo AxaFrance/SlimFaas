@@ -1,9 +1,9 @@
 ﻿using System.Data;
 using System.Net;
+using System.Text.Json;
 using DotNext;
 using DotNext.Net.Cluster;
 using DotNext.Net.Cluster.Consensus.Raft;
-using Newtonsoft.Json;
 using RaftNode;
 
 namespace SlimFaas;
@@ -107,7 +107,7 @@ await GetAndWaitForLeader();
                 throw new DataException("Error in calling SlimData HTTP Service");
             }
             string json = await response.Content.ReadAsStringAsync();
-            return string.IsNullOrEmpty(json) ? new List<string>() : JsonConvert.DeserializeObject<IList<string>>(json);
+            return (string.IsNullOrEmpty(json) ? new List<string>() : JsonSerializer.Deserialize<IList<string>>(json))!;
     }
 
     public async Task<long> ListLengthAsync(string key) {

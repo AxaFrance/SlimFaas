@@ -1,8 +1,8 @@
-﻿using DotNext;
+﻿using System.Text.Json;
+using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 using Microsoft.AspNetCore.Connections;
-using Newtonsoft.Json;
 
 namespace RaftNode;
 
@@ -20,7 +20,7 @@ public sealed class Startup(IConfiguration configuration)
         var provider = context.RequestServices.GetRequiredService<ISupplier<SupplierPayload>>();
 
         await cluster.ApplyReadBarrierAsync(context.RequestAborted);
-        await context.Response.WriteAsync(  JsonConvert.SerializeObject(provider.Invoke()), context.RequestAborted);
+        await context.Response.WriteAsync(  JsonSerializer.Serialize(provider.Invoke()), context.RequestAborted);
     }
 
     public void Configure(IApplicationBuilder app, int slimdataPort=3262)
@@ -151,7 +151,7 @@ public sealed class Startup(IConfiguration configuration)
                                 values.Add(queue[i]);
                             }
 
-                            await context.Response.WriteAsync(JsonConvert.SerializeObject(values), context.RequestAborted);
+                            await context.Response.WriteAsync(JsonSerializer.Serialize(values), context.RequestAborted);
                             var logEntry =
                                 provider.interpreter.CreateLogEntry(new ListRightPopCommand() { Key = key, Count = count },
                                     cluster.Term);

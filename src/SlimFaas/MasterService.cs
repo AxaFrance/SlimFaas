@@ -1,5 +1,4 @@
 ﻿using DotNext.Net.Cluster.Consensus.Raft;
-using Newtonsoft.Json;
 
 namespace SlimFaas;
 
