@@ -3,6 +3,7 @@ using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 using Microsoft.AspNetCore.Connections;
+using SlimData;
 
 namespace RaftNode;
 
@@ -14,14 +15,14 @@ public sealed class Startup(IConfiguration configuration)
         return context.Response.WriteAsync($"Leader address is {cluster.Leader?.EndPoint}. Current address is {context.Connection.LocalIpAddress}:{context.Connection.LocalPort}", context.RequestAborted);
     }
 
-    private static async Task GetValueAsync(HttpContext context)
+   /* private static async Task GetValueAsync(HttpContext context)
     {
         var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
         var provider = context.RequestServices.GetRequiredService<ISupplier<SupplierPayload>>();
 
         await cluster.ApplyReadBarrierAsync(context.RequestAborted);
         await context.Response.WriteAsync(  JsonSerializer.Serialize(provider.Invoke()), context.RequestAborted);
-    }
+    }*/
 
     public void Configure(IApplicationBuilder app, int slimdataPort=3262)
     {
@@ -48,7 +49,7 @@ public sealed class Startup(IConfiguration configuration)
                 {
                     await context.Response.WriteAsync("OK");
                 }));
-                endpoints.MapGet(ValueResource, GetValueAsync);
+                //endpoints.MapGet(ValueResource, GetValueAsync);
                 endpoints.MapPost(ListLeftPushResource, async context =>
                 {
                     var slimDataInfo = context.RequestServices.GetRequiredService<SlimDataInfo>();
@@ -136,7 +137,7 @@ public sealed class Startup(IConfiguration configuration)
 
                         await cluster.ApplyReadBarrierAsync(context.RequestAborted);
 
-                        var values = new List<string>();
+                        var values = new ListString();
                         var queues = ((ISupplier<SupplierPayload>)provider).Invoke().Queues;
                         if (queues.ContainsKey(key))
                         {
@@ -151,7 +152,7 @@ public sealed class Startup(IConfiguration configuration)
                                 values.Add(queue[i]);
                             }
 
-                            await context.Response.WriteAsync(JsonSerializer.Serialize(values), context.RequestAborted);
+                            await context.Response.WriteAsync(JsonSerializer.Serialize(values, ListStringSerializerContext.Default.ListString), context.RequestAborted);
                             var logEntry =
                                 provider.interpreter.CreateLogEntry(new ListRightPopCommand() { Key = key, Count = count },
                                     cluster.Term);

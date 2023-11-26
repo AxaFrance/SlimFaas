@@ -1,10 +1,11 @@
 ﻿using System.Data;
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using DotNext;
-using DotNext.Net.Cluster;
 using DotNext.Net.Cluster.Consensus.Raft;
 using RaftNode;
+using SlimData;
 
 namespace SlimFaas;
 #pragma warning disable CA2252
@@ -107,7 +108,12 @@ await GetAndWaitForLeader();
                 throw new DataException("Error in calling SlimData HTTP Service");
             }
             string json = await response.Content.ReadAsStringAsync();
-            return (string.IsNullOrEmpty(json) ? new List<string>() : JsonSerializer.Deserialize<IList<string>>(json))!;
+            var result = !string.IsNullOrEmpty(json)
+                ? JsonSerializer.Deserialize<ListString>(json,
+                    ListStringSerializerContext.Default.ListString)
+                : new List<string>();
+
+            return result ?? new List<string>();
     }
 
     public async Task<long> ListLengthAsync(string key) {
@@ -119,3 +125,6 @@ await GetAndWaitForLeader();
     }
 }
 #pragma warning restore CA2252
+
+
+
