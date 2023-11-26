@@ -16,7 +16,7 @@ public class SlimDataInterpreter(string prefix) : CommandInterpreter
     public IDictionary<string, Dictionary<string,string>> hashsets = new Dictionary<string, Dictionary<string, string>>();
 
     [CommandHandler]
-    public async ValueTask ListRightPopAsync(ListRightPopCommand addHashSetCommand, CancellationToken token)
+    public ValueTask ListRightPopAsync(ListRightPopCommand addHashSetCommand, CancellationToken token)
     {
         if (queues.TryGetValue(addHashSetCommand.Key, out var queue))
         {
@@ -33,10 +33,12 @@ public class SlimDataInterpreter(string prefix) : CommandInterpreter
             }
            
         }
+
+        return default;
     }
     
     [CommandHandler]
-    public async ValueTask ListLeftPushAsync(ListLeftPushCommand addHashSetCommand, CancellationToken token)
+    public  ValueTask ListLeftPushAsync(ListLeftPushCommand addHashSetCommand, CancellationToken token)
     {
         if (queues.ContainsKey(addHashSetCommand.Key))
         {
@@ -46,26 +48,31 @@ public class SlimDataInterpreter(string prefix) : CommandInterpreter
         {
             queues.Add(addHashSetCommand.Key, new List<string> {addHashSetCommand.Value}); 
         }
+
+        return default;
     }
     
     [CommandHandler]
-    public async ValueTask AddHashSetAsync(AddHashSetCommand addHashSetCommand, CancellationToken token)
+    public ValueTask AddHashSetAsync(AddHashSetCommand addHashSetCommand, CancellationToken token)
     {
         hashsets[addHashSetCommand.Key] = addHashSetCommand.Value;
+        return default;
     }
     
     [CommandHandler]
-    public async ValueTask AddKeyValueAsync(AddKeyValueCommand valueCommand, CancellationToken token)
+    public ValueTask AddKeyValueAsync(AddKeyValueCommand valueCommand, CancellationToken token)
     {
         keyValues[valueCommand.Key] = valueCommand.Value;
+        return default;
     }
     
     [CommandHandler(IsSnapshotHandler = true)]
-    public async ValueTask HandleSnapshotAsync(LogSnapshotCommand command, CancellationToken token)
+    public ValueTask HandleSnapshotAsync(LogSnapshotCommand command, CancellationToken token)
     {
         keyValues = command.keysValues;
         queues = command.queues;
         hashsets = command.hashsets;
+        return default;
     }
     
 }
