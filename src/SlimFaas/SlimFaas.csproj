@@ -6,7 +6,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>SlimFaas</RootNamespace>
         <WarningsAsErrors>Nullable</WarningsAsErrors>
-      <PublishTrimmed>true</PublishTrimmed>
+        <PublishTrimmed>true</PublishTrimmed>
+        <TrimMode>partial</TrimMode>
     </PropertyGroup>
 
     <ItemGroup>
