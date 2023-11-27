@@ -7,8 +7,12 @@
         <RootNamespace>SlimFaas</RootNamespace>
         <WarningsAsErrors>Nullable</WarningsAsErrors>
         <PublishTrimmed>true</PublishTrimmed>
-        <TrimMode>partial</TrimMode>
+        <TrimMode>full</TrimMode>
     </PropertyGroup>
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="KubernetesClient" />
+  </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="KubernetesClient" Version="12.1.1" />
