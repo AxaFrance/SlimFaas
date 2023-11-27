@@ -11,11 +11,14 @@
     </PropertyGroup>
 
   <ItemGroup>
-    <TrimmerRootAssembly Include="KubernetesClient" />
+
   </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="KubernetesClient" Version="12.1.1" />
+      <TrimmerRootAssembly Include="KubernetesClient" />
+      <PackageReference Include="KubernetesClient" Version="12.1.1" >
+        <IsTrimmable>false</IsTrimmable>
+      </PackageReference>
       <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0" />
       <PackageReference Include="OpenTelemetry" Version="1.5.0-alpha.2" />
       <PackageReference Include="OpenTelemetry.Api" Version="1.5.0-alpha.2" />
