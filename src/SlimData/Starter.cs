@@ -6,12 +6,6 @@ namespace RaftNode;
 
 public class Starter
 {
-
-    public static void JoinCluster(WebApplicationBuilder builder)
-    {
-        builder.JoinCluster();
-    }
-    
     private static IServiceProvider ServiceProvider { get; set; } = null!;
     
     static Task UseAspNetCoreHost(string publicEndPoint, string? persistentStorage = null)
@@ -38,7 +32,6 @@ public class Starter
                     {
                         ServiceProvider = options.ApplicationServices; 
                         options.Listen(IPAddress.Loopback, uri.Port);
-                        //options.Listen(IPAddress.Loopback,5000);
                     })
                     .UseStartup<Startup>();
             })
@@ -53,7 +46,6 @@ public class Starter
     static void ConfigureLogging(ILoggingBuilder builder)
     {
         builder.AddConsole().SetMinimumLevel(LogLevel.Warning);
-        //builder.AddDebug();
     }
 
     public static Task StartNode(string publicEndPoint ="http://localhost:3262", string? persistentStorage = null)

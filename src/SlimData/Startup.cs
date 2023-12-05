@@ -7,7 +7,7 @@ using SlimData;
 
 namespace RaftNode;
 
-public sealed class Startup(IConfiguration configuration)
+public class Startup(IConfiguration configuration)
 {
     private static Task RedirectToLeaderAsync(HttpContext context)
     {
@@ -15,19 +15,9 @@ public sealed class Startup(IConfiguration configuration)
         return context.Response.WriteAsync($"Leader address is {cluster.Leader?.EndPoint}. Current address is {context.Connection.LocalIpAddress}:{context.Connection.LocalPort}", context.RequestAborted);
     }
 
-   /* private static async Task GetValueAsync(HttpContext context)
-    {
-        var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
-        var provider = context.RequestServices.GetRequiredService<ISupplier<SupplierPayload>>();
-
-        await cluster.ApplyReadBarrierAsync(context.RequestAborted);
-        await context.Response.WriteAsync(  JsonSerializer.Serialize(provider.Invoke()), context.RequestAborted);
-    }*/
-
-    public void Configure(IApplicationBuilder app, int slimdataPort=3262)
+    public void Configure(IApplicationBuilder app)
     {
         const string LeaderResource = "/SlimData/leader";
-        const string ValueResource = "/SlimData/value";
         const string AddHashSetResource = "/SlimData/AddHashset";
         const string ListRightPopResource = "/SlimData/ListRightPop";
         const string ListLeftPushResource = "/SlimData/ListLeftPush";
@@ -49,7 +39,6 @@ public sealed class Startup(IConfiguration configuration)
                 {
                     await context.Response.WriteAsync("OK");
                 }));
-                //endpoints.MapGet(ValueResource, GetValueAsync);
                 endpoints.MapPost(ListLeftPushResource, async context =>
                 {
                     var slimDataInfo = context.RequestServices.GetRequiredService<SlimDataInfo>();
@@ -277,32 +266,34 @@ public sealed class Startup(IConfiguration configuration)
             });
     }
 
-    public void ConfigureServices(IServiceCollection services, int slimDataPort=3262)
+    public void ConfigureServices(IServiceCollection services)
     {
         services.UseInMemoryConfigurationStorage(AddClusterMembers)
             .ConfigureCluster<ClusterConfigurator>()
             .AddSingleton<IHttpMessageHandlerFactory, RaftClientHandlerFactory>()
             .AddOptions()
             .AddRouting();
-        services.AddSingleton<SlimDataInfo>(sp => new SlimDataInfo(slimDataPort));
         var path = configuration[SlimPersistentState.LogLocation];
         if (!string.IsNullOrWhiteSpace(path))
         {
             services.UsePersistenceEngine<ISupplier<SupplierPayload>, SlimPersistentState>();
         }
+        var endpoint = configuration["publicEndPoint"];
+        if (!string.IsNullOrWhiteSpace(endpoint))
+        {
+            var uri = new Uri(endpoint);
+            services.AddSingleton<SlimDataInfo>(sp => new SlimDataInfo(uri.Port));
+        }
     }
 
     public static readonly IList<string> ClusterMembers = new List<string>(2); 
     
-    // NOTE: this way of adding members to the cluster is not recommended in production code
     private static void AddClusterMembers(ICollection<UriEndPoint> members)
     {
         foreach (var clusterMember in ClusterMembers)
         {
             members.Add(new UriEndPoint(new(clusterMember, UriKind.Absolute)));
         }
-        //members.Add(new UriEndPoint(new("http://localhost:3262", UriKind.Absolute)));
-        //members.Add(new UriEndPoint(new("http://localhost:3263", UriKind.Absolute)));
-        //members.Add(new UriEndPoint(new("http://localhost:3264", UriKind.Absolute)));
     }
 }
+

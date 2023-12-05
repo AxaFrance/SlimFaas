@@ -1,6 +1,4 @@
 using System.Net;
-using DotNext;
-using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 using OpenTelemetry.Trace;
 using SlimFaas;
@@ -152,7 +150,7 @@ if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
 Startup startup = new(builder.Configuration);
 var slimFaasPort = int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariables.SlimFaasPort) ?? EnvironmentVariables.SlimFaasPortDefault.ToString());
 
-startup.ConfigureServices(serviceCollectionSlimFaas, slimFaasPort);
+startup.ConfigureServices(serviceCollectionSlimFaas);
 
 var slimDataConfiguration = new Dictionary<string, string>
 {

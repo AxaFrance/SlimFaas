@@ -1,11 +1,6 @@
 ﻿namespace RaftNode;
 
-public class SlimDataInfo
+public class SlimDataInfo(int port)
 {
-    public int Port { get; }
-
-    public SlimDataInfo(int port)
-    {
-        Port = port;
-    }
+    public int Port { get; } = port;
 }
