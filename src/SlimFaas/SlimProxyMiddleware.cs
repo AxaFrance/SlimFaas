@@ -12,7 +12,7 @@ public enum FunctionType
     NotAFunction
 }
 
-public record FunctionStatus(int NumberReady);
+public record FunctionStatus(int NumberReady, int numberRequested);
 
 [JsonSerializable(typeof(FunctionStatus))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
@@ -46,9 +46,9 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             case FunctionType.Wake:
                 BuildWakeResponse(historyHttpService, replicasService, functionName, contextResponse);
                 return;
-               case FunctionType.Status:
-                   BuildStatusResponse(replicasService, functionName, contextResponse);
-                   return;
+            case FunctionType.Status:
+                 BuildStatusResponse(replicasService, functionName, contextResponse);
+                 return;
             case FunctionType.Sync:
                 await BuildSyncResponseAsync(context, historyHttpService, sendClient, replicasService, functionName, functionPath);
                 return;
@@ -70,8 +70,9 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         {
             var functionDeploymentInformation = replicasService.Deployments.Functions.FirstOrDefault(f => f.Deployment == functionName);
             var numberReady = functionDeploymentInformation == null ? 0 : functionDeploymentInformation.Pods.Count(p => p.Ready.HasValue && p.Ready.Value);
+            var numberRequested = functionDeploymentInformation == null ? 0 : functionDeploymentInformation.Pods.Count();
             contextResponse.StatusCode = 200;
-            contextResponse.WriteAsJsonAsync(new FunctionStatus(numberReady), FunctionStatusSerializerContext.Default.FunctionStatus);
+            contextResponse.WriteAsJsonAsync(new FunctionStatus(numberReady, numberRequested), FunctionStatusSerializerContext.Default.FunctionStatus);
         }
         else
         {
@@ -267,6 +268,8 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             functionBeginPath = $"{Function}";
         } else if (path.StartsWithSegments(WakeFunction)) {
             functionBeginPath = $"{WakeFunction}";
+        }else if (path.StartsWithSegments(StatusFunction)) {
+            functionBeginPath = $"{StatusFunction}";
         }
 
         return functionBeginPath;

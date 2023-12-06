@@ -10,7 +10,6 @@
         "NAMESPACE" : "slimfaas-demo",
         "HOSTNAME" : "slimfaas-1",
         "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}]}",
-        "MOCK_REDIS": "True",
         "SLIMFAAS_PORT": "5002",
         "SLIMDATA_DIRECTORY": "C:\\Demo4",
         "BASE_SLIMDATA_URL": "http://localhost:3262/"
@@ -26,7 +25,6 @@
               "NAMESPACE" : "slimfaas-demo",
               "HOSTNAME" : "slimfaas-2",
               "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}]}",
-              "MOCK_REDIS": "True",
               "SLIMFAAS_PORT": "5001",
               "SLIMDATA_DIRECTORY": "C:\\Demo4",
               "BASE_SLIMDATA_URL": "http://localhost:3263/"

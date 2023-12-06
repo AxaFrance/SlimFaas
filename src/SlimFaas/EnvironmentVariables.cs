@@ -36,8 +36,6 @@ public static class EnvironmentVariables
     public const string MockKubernetesFunctionsDefault = "";
 
     public const string SlimDataDirectory = "SLIMDATA_DIRECTORY";
-
-    public const string MockSlimData = "MOCK_SLIMDATA";
     public static string HostnameDefault = "slimfaas-1";
 
     public static string GetTemporaryDirectory()

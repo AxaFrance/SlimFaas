@@ -1,22 +1,19 @@
 ﻿version: '3.7'
 
 services:
-  redis:
-    image: docker.io/redislabs/rejson:latest
-    ports:
-      - 6379:6379
   slimfaas:
     #image: docker.io/axaguildev/slimfaas:latest
     build:
-      context: src/SlimFaas
+      context: .
       dockerfile: ./Dockerfile
     ports:
-      - 5020:80
+      - 5020:5000
     environment:
       - BASE_FUNCTION_URL=http://{function_name}:5000
-      - MOCK_KUBERNETES_FUNCTIONS={"Functions":[{"Name":"fibonacci","NumberParallelRequest":1}]}
-      - REDIS_CONNECTION_STRING=redis:6379
+      - MOCK_KUBERNETES_FUNCTIONS={"Functions":[{"Name":"fibonacci","NumberParallelRequest":1}],"Slimfaas":[{"Name":"slimfaas-1"}]}
       - Logging:LogLevel:Default=DEBUG
+      - BASE_SLIMDATA_URL=http://localhost:3262/
+      - HOSTNAME=slimfaas-1
   fibonacci:
     #image: docker.io/axaguildev/fibonacci:latest
     build:

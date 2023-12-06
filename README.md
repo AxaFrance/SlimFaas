@@ -8,9 +8,11 @@ Why use SlimFaas ?
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
 - Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
+- REST API that show the status of your functions and allow to wake up your infrastructure
+  - Very useful to inform end users that your infrastructure is starting
 - Simple to install: just deploy a standard pod
   - No impact on your current kubernetes manifests: just add an annotation to the pod you want to auto-scale
-- Very Slim and very Fast
+- Very **Slim** and very **Fast**
 
 ![slim-faas-ram-cpu.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/slim-faas-ram-cpu.png)
 
@@ -51,9 +53,9 @@ Just wake up function:
 - http://localhost:30020/wake-function/fibonacci3
 
 Get function status:
-- http://localhost:30020/status-function/fibonacci1
-- http://localhost:30020/status-function/fibonacci2
-- http://localhost:30020/status-function/fibonacci3
+- http://localhost:30020/status-function/fibonacci1 => {"NumberReady":1,"numberRequested":1}
+- http://localhost:30020/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1}
+- http://localhost:30020/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1}
 
 Enjoy slimfaas !!!!
 
@@ -259,6 +261,7 @@ Now we have a solution not **coupled** to anything. **SlimFaas** is **simple**, 
 Instead of creating many pods, SlimFaas use internally many workers in the same pod:
 
 - **SlimWorker**: Manage asynchronous HTTP requests calls to underlying functions
+- **SlimDataSynchronizationWorker**: Allow to make possible scale up and down SlimData Raft nodes
 - **HistorySynchronisationWorker**: Manage history of HTTP requests between the pod and kubernetes
 - **ReplicasSynchronizationWorker**: Manage replicas synchronization between the pod and kubernetes
 - **ReplicasScaleWorker**: If master, then scale up and down kubernetes pods
@@ -277,5 +280,5 @@ Why .NET ?
 ## What Next ?
 
 1. Different scale down mode depending from configuration and current hour
-2. Scale up dynamically from SlimFaas
-3. Upgrade to .NET8 using AOT => lighter and faster
+2. Allow to scale down also statefulset pods
+3. Scale up dynamically from SlimFaas

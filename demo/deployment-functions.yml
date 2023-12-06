@@ -121,7 +121,7 @@ spec:
   ports:
     - port: 5000
       targetPort: 5000
-      nodePort: 30012
+      nodePort: 30015
 ---
 apiVersion: v1
 kind: Service
@@ -134,7 +134,7 @@ spec:
   ports:
     - port: 5000
       targetPort: 5000
-      nodePort: 30013
+      nodePort: 30016
 ---
 apiVersion: v1
 kind: Service
@@ -147,4 +147,4 @@ spec:
   ports:
     - port: 5000
       targetPort: 5000
-      nodePort: 30014
+      nodePort: 30017

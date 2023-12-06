@@ -4,6 +4,8 @@ kind: StatefulSet
 metadata:
   name: slimfaas
 spec:
+  podManagementPolicy: Parallel
+  serviceName: slimfaas
   selector:
     matchLabels:
       app: slimfaas
@@ -19,26 +21,29 @@ spec:
       serviceAccountName: slimfaas
       containers:
         - name: slimfaas
-          image: axaguildev/slimfaas:latest
+          image: axaguildev/slimfaas:pr-24-231
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 8
           env:
             - name: BASE_FUNCTION_URL
               value: "http://{function_name}.slimfaas-demo.svc.cluster.local:5000"
-            - name: ASPNETCORE_URLS
-              value: http://+:5000
+            - name: BASE_SLIMDATA_URL
+              value: "http://{pod_name}.slimfaas-demo.svc.cluster.local:3262/"
             - name: NAMESPACE
               value: "slimfaas-demo"
-            - name: MOCK_REDIS
-              value: "true"
             - name: SLIMDATA_DIRECTORY
               value: "/database"
-            #- name: REDIS_CONNECTION_STRING
-            #  value: "redis-ha-haproxy:6379"
           volumeMounts:
             - name: slimfaas-volume
               mountPath: /database
           resources:
             limits:
-              memory: "76Mi"
+              memory: "160Mi"
               cpu: "4000m"
             requests:
               memory: "76Mi"
@@ -58,7 +63,9 @@ spec:
   selector:
     app: slimfaas
   ports:
-    - port: 80
+    - name: "http"
+      port: 30020
       targetPort: 5000
-    - port: 3262
+    - name: "slimdata"
+      port: 3262
       targetPort: 3262

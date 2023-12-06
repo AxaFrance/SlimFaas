@@ -167,4 +167,34 @@ public class ProxyMiddlewareTests
         Assert.Equal(expectedHttpStatusCode, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("/status-function/fibonacci", HttpStatusCode.OK, "{\"NumberReady\":1,\"numberRequested\":1}")]
+    [InlineData("/status-function/wrong", HttpStatusCode.NotFound, "")]
+    public async Task GetStatusFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode, string expectedBody)
+    {
+        using var host = await new HostBuilder()
+            .ConfigureWebHost(webBuilder =>
+            {
+                webBuilder
+                    .UseTestServer()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
+                        services.AddSingleton<ISendClient, SendClientMock>();
+                        services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
+                        services.AddSingleton<IReplicasService, MemoryReplicasService>();
+                    })
+                    .Configure(app =>
+                    {
+                        app.UseMiddleware<SlimProxyMiddleware>();
+                    });
+            })
+            .StartAsync();
+
+        var response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(expectedBody, body);
+        Assert.Equal(expectedHttpStatusCode, response.StatusCode);
+    }
+
 }
