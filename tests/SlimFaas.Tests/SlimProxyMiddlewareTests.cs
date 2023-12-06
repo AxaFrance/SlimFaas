@@ -101,7 +101,7 @@ public class ProxyMiddlewareTests
             })
             .StartAsync();
 
-        var response = await host.GetTestClient().GetAsync(path);
+        var response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
 
         Assert.Equal(expected, response.StatusCode);
     }
@@ -130,7 +130,7 @@ public class ProxyMiddlewareTests
             })
             .StartAsync();
 
-        var response = await host.GetTestClient().GetAsync(path);
+        var response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
 
         Assert.Equal(expected, response.StatusCode);
     }
@@ -159,7 +159,7 @@ public class ProxyMiddlewareTests
             })
             .StartAsync();
 
-        var response = await host.GetTestClient().GetAsync(path);
+        var response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
         var historyHttpMemoryService = host.Services.GetRequiredService<HistoryHttpMemoryService>();
         var ticksLastCall = historyHttpMemoryService.GetTicksLastCall("fibonacci");
 

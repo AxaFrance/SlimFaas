@@ -3,12 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using DotNext;
 using DotNext.Buffers;
 using DotNext.Diagnostics;
-using DotNext.Net;
 using DotNext.Net.Cluster;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
-using DotNext.Net.Cluster.Messaging;
-using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -171,7 +168,7 @@ public class RaftClusterTests
                 {"lowerElectionTimeout", "600" },
                 {"upperElectionTimeout", "900" },
                 {"publicEndPoint", "http://localhost:3262/" },
-                {"coldStart", "false"},
+                {"coldStart", "true"},
                 {"requestTimeout", "00:01:00"},
                 {SlimPersistentState.LogLocation, GetTemporaryDirectory()}
             };
@@ -183,29 +180,64 @@ public class RaftClusterTests
                 {"upperElectionTimeout", "900" },
                 {"publicEndPoint", "http://localhost:3263/" },
                 {"coldStart", "false"},
-                {"standby", "true"},
                 {"requestTimeout", "00:01:00"},
                 {SlimPersistentState.LogLocation, GetTemporaryDirectory()}
             };
 
+        var config3 = new Dictionary<string, string>
+        {
+            {"partitioning", "false"},
+            {"lowerElectionTimeout", "600" },
+            {"upperElectionTimeout", "900" },
+            {"publicEndPoint", "http://localhost:3264/" },
+            {"coldStart", "false"},
+            {"requestTimeout", "00:01:00"},
+            {SlimPersistentState.LogLocation, GetTemporaryDirectory()}
+        };
+
         var listener = new LeaderTracker();
-        Startup.ClusterMembers.Add("http://localhost:3262/");
-        Startup.ClusterMembers.Add("http://localhost:3263/");
         using var host1 = CreateHost<Startup>(3262, config1, listener);
         await host1.StartAsync();
+        Assert.True(GetLocalClusterView(host1).Readiness.IsCompletedSuccessfully);
 
         using var host2 = CreateHost<Startup>(3263, config2);
         await host2.StartAsync();
 
-        await listener.Task.WaitAsync(DefaultTimeout);
-        Assert.Equal(new UriEndPoint(GetLocalClusterView(host1).LocalMemberAddress), listener.Task.Result.EndPoint, EndPointFormatter.UriEndPointComparer);
+        using var host3 = CreateHost<Startup>(3264, config3);
+        await host3.StartAsync();
+
+        while (GetLocalClusterView(host1).Leader == null)
+        {
+            await Task.Delay(200);
+        }
 
         Assert.True(await GetLocalClusterView(host1).AddMemberAsync(GetLocalClusterView(host2).LocalMemberAddress));
         await GetLocalClusterView(host2).Readiness.WaitAsync(DefaultTimeout);
 
-        var client = GetLocalClusterView(host1).As<IMessageBus>().Members.First(static s => s.EndPoint is UriEndPoint { Uri: { Port: 3263 } });
+        Assert.True(await GetLocalClusterView(host1).AddMemberAsync(GetLocalClusterView(host3).LocalMemberAddress));
+        await GetLocalClusterView(host3).Readiness.WaitAsync(DefaultTimeout);
+
+        var databaseService = host3.Services.GetRequiredService<IDatabaseService>();
+
+        await databaseService.SetAsync("key1", "value1");
+        Assert.Equal("value1", await databaseService.GetAsync("key1"));
+
+        await databaseService.HashSetAsync("hashsetKey1", new Dictionary<string, string> {{"field1", "value1"}, {"field2", "value2"}});
+        var hashGet = await databaseService.HashGetAllAsync("hashsetKey1");
+
+        Assert.Equal("value1", hashGet["field1"]);
+        Assert.Equal("value2", hashGet["field2"]);
+
+        await databaseService.ListLeftPushAsync("listKey1", "value1");
+
+        var listLength = await databaseService.ListLengthAsync("listKey1");
+        Assert.Equal(1, listLength);
+
+        var listRightPop = await databaseService.ListRightPopAsync("listKey1");
+        Assert.Equal("value1", listRightPop[0]);
 
         await host1.StopAsync();
         await host2.StopAsync();
+        await host3.StopAsync();
     }
 }

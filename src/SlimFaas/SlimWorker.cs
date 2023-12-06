@@ -6,7 +6,7 @@ namespace SlimFaas;
 record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest);
 
 public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasService,
-        HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider, SlimDataStatus slimDataStatus,
+        HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider, ISlimDataStatus slimDataStatus,
         int delay = EnvironmentVariables.SlimWorkerDelayMillisecondsDefault)
     : BackgroundService
 {

@@ -13,7 +13,7 @@ public class ProgramShould
     [Fact]
     public async Task TestRootEndpoint()
     {
-        Environment.SetEnvironmentVariable("MOCK_REDIS", "true");
+        Environment.SetEnvironmentVariable("MOCK_SLIMDATA", "true");
         Environment.SetEnvironmentVariable("MOCK_KUBERNETES_FUNCTIONS", "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}]}");
 #pragma warning disable CA2252
         await using var application = new WebApplicationFactory<Program>();

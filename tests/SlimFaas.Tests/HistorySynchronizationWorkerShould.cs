@@ -23,11 +23,15 @@ public class HistorySynchronizationWorkerShould
         var historyHttpMemoryService = new HistoryHttpMemoryService();
         var loggerReplicasService = new Mock<ILogger<ReplicasService>>();
         var replicasService = new ReplicasService(kubernetesService.Object, historyHttpMemoryService, loggerReplicasService.Object);
+
+        var slimDataStatus = new Mock<ISlimDataStatus>();
+        slimDataStatus.Setup(s => s.WaitForReadyAsync()).Returns(Task.CompletedTask);
+
         await replicasService.SyncDeploymentsAsync("default");
 
         var firstTicks = 1L;
         await historyHttpRedisService.SetTickLastCallAsync("fibonacci1", firstTicks);
-        var service = new HistorySynchronizationWorker(replicasService, historyHttpMemoryService, historyHttpRedisService, logger.Object ,null, 100);
+        var service = new HistorySynchronizationWorker(replicasService, historyHttpMemoryService, historyHttpRedisService, logger.Object ,slimDataStatus.Object, 100);
 
         var task = service.StartAsync(CancellationToken.None);
         await Task.Delay(200);
@@ -52,7 +56,10 @@ public class HistorySynchronizationWorkerShould
         var historyHttpMemoryService = new HistoryHttpMemoryService();
         var replicasService = new Mock<IReplicasService>();
         replicasService.Setup(r => r.Deployments).Throws(new Exception());
-        var service = new HistorySynchronizationWorker(replicasService.Object, historyHttpMemoryService, historyHttpRedisService, logger.Object, null, 10);
+        var slimDataStatus = new Mock<ISlimDataStatus>();
+        slimDataStatus.Setup(s => s.WaitForReadyAsync()).Returns(Task.CompletedTask);
+
+        var service = new HistorySynchronizationWorker(replicasService.Object, historyHttpMemoryService, historyHttpRedisService, logger.Object, slimDataStatus.Object, 10);
 
         var task = service.StartAsync(CancellationToken.None);
         await Task.Delay(100);

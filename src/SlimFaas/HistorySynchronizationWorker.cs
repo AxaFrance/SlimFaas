@@ -4,7 +4,7 @@ public class HistorySynchronizationWorker(IReplicasService replicasService,
     HistoryHttpMemoryService historyHttpMemoryService,
     HistoryHttpRedisService historyHttpRedisService,
     ILogger<HistorySynchronizationWorker> logger,
-    SlimDataStatus slimDataStatus,
+    ISlimDataStatus slimDataStatus,
         int delay = EnvironmentVariables.HistorySynchronizationWorkerDelayMillisecondsDefault)
     : BackgroundService
 {

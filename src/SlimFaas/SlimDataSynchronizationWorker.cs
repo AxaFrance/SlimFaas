@@ -6,7 +6,7 @@ using SlimFaas.Kubernetes;
 namespace SlimFaas;
 
 public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRaftCluster cluster,
-        ILogger<SlimDataSynchronizationWorker> logger,SlimDataStatus slimDataStatus,
+        ILogger<SlimDataSynchronizationWorker> logger, ISlimDataStatus slimDataStatus,
         int delay = EnvironmentVariables.ReplicasSynchronizationWorkerDelayMillisecondsDefault)
     : BackgroundService
 {

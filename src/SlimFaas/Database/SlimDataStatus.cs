@@ -3,18 +3,24 @@ using k8s.KubeConfigModels;
 
 namespace SlimFaas;
 
-public class SlimDataStatus
+public interface ISlimDataStatus
 {
-    private readonly IRaftCluster _cluster;
+    Task WaitForReadyAsync();
+}
 
-    public SlimDataStatus(IRaftCluster cluster)
-    {
-        _cluster = cluster;
-    }
-
+public class SlimDataMock() : ISlimDataStatus
+{
     public async Task WaitForReadyAsync()
     {
-        var raftCluster = _cluster;
+        await Task.CompletedTask;
+    }
+}
+
+public class SlimDataStatus(IRaftCluster cluster) : ISlimDataStatus
+{
+    public async Task WaitForReadyAsync()
+    {
+        var raftCluster = cluster;
 
         while (raftCluster.Leader == null)
         {

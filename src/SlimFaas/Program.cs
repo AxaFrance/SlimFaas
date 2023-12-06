@@ -55,7 +55,15 @@ serviceCollectionSlimFaas.AddHostedService<ReplicasSynchronizationWorker>();
 serviceCollectionSlimFaas.AddHostedService<HistorySynchronizationWorker>();
 serviceCollectionSlimFaas.AddHttpClient();
 serviceCollectionSlimFaas.AddSingleton<ISlimFaasQueue, SlimFaasSlimFaasQueue>();
-serviceCollectionSlimFaas.AddSingleton<SlimDataStatus, SlimDataStatus>();
+if (mockSlimData == false)
+{
+    serviceCollectionSlimFaas.AddSingleton<ISlimDataStatus, SlimDataStatus>();
+}
+else
+{
+    serviceCollectionSlimFaas.AddSingleton<ISlimDataStatus, SlimDataMock>();
+}
+
 serviceCollectionSlimFaas.AddSingleton<IReplicasService, ReplicasService>((sp) => (ReplicasService)serviceProviderStarter.GetService<IReplicasService>()!);
 serviceCollectionSlimFaas.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
 serviceCollectionSlimFaas.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>((sp) => serviceProviderStarter.GetService<HistoryHttpMemoryService>()!);
@@ -132,6 +140,7 @@ if (mockSlimData == false)
 else
 {
     serviceCollectionSlimFaas.AddSingleton<IDatabaseService, DatabaseMockService>();
+
 }
 
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();

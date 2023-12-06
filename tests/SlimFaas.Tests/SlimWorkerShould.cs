@@ -37,6 +37,9 @@ public class SlimWorkerShould
             .Setup(x => x.GetService(typeof(IServiceScopeFactory)))
             .Returns(serviceScopeFactory.Object);
 
+        var slimDataStatus = new Mock<ISlimDataStatus>();
+        slimDataStatus.Setup(s => s.WaitForReadyAsync()).Returns(Task.CompletedTask);
+
         var replicasService = new Mock<IReplicasService>();
         replicasService.Setup(rs => rs.Deployments).Returns(new DeploymentsInformations(
             SlimFaas: new SlimFaasDeploymentInformation(Replicas: 2, new List<PodInformation>()),
@@ -74,7 +77,7 @@ public class SlimWorkerShould
             replicasService.Object,
             historyHttpService,
             logger.Object,
-            serviceProvider.Object, null);
+            serviceProvider.Object, slimDataStatus.Object);
 
         var task = service.StartAsync(CancellationToken.None);
 
@@ -93,12 +96,15 @@ public class SlimWorkerShould
         var historyHttpService = new HistoryHttpMemoryService();
         var logger = new Mock<ILogger<SlimWorker>>();
         var redisQueue = new SlimFaasSlimFaasQueue(new DatabaseMockService());
+        var slimDataStatus = new Mock<ISlimDataStatus>();
+        slimDataStatus.Setup(s => s.WaitForReadyAsync()).Returns(Task.CompletedTask);
 
         var service = new SlimWorker(redisQueue,
             replicasService.Object,
             historyHttpService,
             logger.Object,
-            serviceProvider.Object, null);
+            serviceProvider.Object,
+            slimDataStatus.Object);
 
         var task = service.StartAsync(CancellationToken.None);
 
