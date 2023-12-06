@@ -34,11 +34,13 @@ spec:
             - name: BASE_FUNCTION_URL
               value: "http://{function_name}.slimfaas-demo.svc.cluster.local:5000"
             - name: BASE_SLIMDATA_URL
-              value: "http://{pod_name}.slimfaas-demo.svc.cluster.local:3262/"
+              value: "http://{pod_ip}:3262/"
             - name: NAMESPACE
               value: "slimfaas-demo"
             - name: SLIMDATA_DIRECTORY
               value: "/database"
+            - name: SLIMFAAS_PORT
+              value: "5000"
           volumeMounts:
             - name: slimfaas-volume
               mountPath: /database
