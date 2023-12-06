@@ -2,7 +2,7 @@
 
 public class HistorySynchronizationWorker(IReplicasService replicasService,
     HistoryHttpMemoryService historyHttpMemoryService,
-    HistoryHttpRedisService historyHttpRedisService,
+    HistoryHttpDatabaseService historyHttpDatabaseService,
     ILogger<HistorySynchronizationWorker> logger,
     ISlimDataStatus slimDataStatus,
         int delay = EnvironmentVariables.HistorySynchronizationWorkerDelayMillisecondsDefault)
@@ -21,14 +21,14 @@ public class HistorySynchronizationWorker(IReplicasService replicasService,
 
                 foreach (var function in replicasService.Deployments.Functions)
                 {
-                    var ticksRedis = await historyHttpRedisService.GetTicksLastCallAsync(function.Deployment);
+                    var ticksInDatabase = await historyHttpDatabaseService.GetTicksLastCallAsync(function.Deployment);
                     var ticksMemory = historyHttpMemoryService.GetTicksLastCall(function.Deployment);
-                    if(ticksRedis > ticksMemory)
+                    if(ticksInDatabase > ticksMemory)
                     {
-                        historyHttpMemoryService.SetTickLastCall(function.Deployment, ticksRedis);
-                    } else if(ticksRedis < ticksMemory)
+                        historyHttpMemoryService.SetTickLastCall(function.Deployment, ticksInDatabase);
+                    } else if(ticksInDatabase < ticksMemory)
                     {
-                        await historyHttpRedisService.SetTickLastCallAsync(function.Deployment, ticksMemory);
+                        await historyHttpDatabaseService.SetTickLastCallAsync(function.Deployment, ticksMemory);
                     }
                 }
             }

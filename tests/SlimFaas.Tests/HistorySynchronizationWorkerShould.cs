@@ -11,7 +11,7 @@ public class HistorySynchronizationWorkerShould
     {
         var logger = new Mock<ILogger<HistorySynchronizationWorker>>();
         var redisMockService = new DatabaseMockService();
-        var historyHttpRedisService = new HistoryHttpRedisService(redisMockService);
+        var historyHttpRedisService = new HistoryHttpDatabaseService(redisMockService);
         var kubernetesService = new Mock<IKubernetesService>();
         var deploymentsInformations = new DeploymentsInformations(Functions: new List<DeploymentInformation>()
         {
@@ -52,7 +52,7 @@ public class HistorySynchronizationWorkerShould
     {
         var logger = new Mock<ILogger<HistorySynchronizationWorker>>();
         var redisMockService = new DatabaseMockService();
-        var historyHttpRedisService = new HistoryHttpRedisService(redisMockService);
+        var historyHttpRedisService = new HistoryHttpDatabaseService(redisMockService);
         var historyHttpMemoryService = new HistoryHttpMemoryService();
         var replicasService = new Mock<IReplicasService>();
         replicasService.Setup(r => r.Deployments).Throws(new Exception());

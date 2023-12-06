@@ -10,8 +10,7 @@ using SlimFaas.Kubernetes;
 
 #pragma warning disable CA2252
 
-var slimDataDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataDirectory) ?? EnvironmentVariables.SlimDataDirectoryDefault;
-var mockSlimData = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(EnvironmentVariables.MockSlimData));
+var slimDataDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataDirectory) ?? EnvironmentVariables.GetTemporaryDirectory();
 
 var serviceCollectionStarter = new ServiceCollection();
 serviceCollectionStarter.AddSingleton<IReplicasService, ReplicasService>();
@@ -55,93 +54,71 @@ serviceCollectionSlimFaas.AddHostedService<ReplicasSynchronizationWorker>();
 serviceCollectionSlimFaas.AddHostedService<HistorySynchronizationWorker>();
 serviceCollectionSlimFaas.AddHttpClient();
 serviceCollectionSlimFaas.AddSingleton<ISlimFaasQueue, SlimFaasSlimFaasQueue>();
-if (mockSlimData == false)
-{
-    serviceCollectionSlimFaas.AddSingleton<ISlimDataStatus, SlimDataStatus>();
-}
-else
-{
-    serviceCollectionSlimFaas.AddSingleton<ISlimDataStatus, SlimDataMock>();
-}
-
+serviceCollectionSlimFaas.AddSingleton<ISlimDataStatus, SlimDataStatus>();
 serviceCollectionSlimFaas.AddSingleton<IReplicasService, ReplicasService>((sp) => (ReplicasService)serviceProviderStarter.GetService<IReplicasService>()!);
-serviceCollectionSlimFaas.AddSingleton<HistoryHttpRedisService, HistoryHttpRedisService>();
+serviceCollectionSlimFaas.AddSingleton<HistoryHttpDatabaseService>();
 serviceCollectionSlimFaas.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>((sp) => serviceProviderStarter.GetService<HistoryHttpMemoryService>()!);
+serviceCollectionSlimFaas.AddSingleton<IKubernetesService>((sp) => serviceProviderStarter.GetService<IKubernetesService>()!);
 
-if (!string.IsNullOrEmpty(mockKubernetesFunction))
-{
-    serviceCollectionSlimFaas.AddSingleton<IKubernetesService, MockKubernetesService>((sp) => (MockKubernetesService)serviceProviderStarter.GetService<IKubernetesService>()!);
-}
-else
-{
-    serviceCollectionSlimFaas.AddSingleton<IKubernetesService, KubernetesService>((sp) => (KubernetesService)serviceProviderStarter.GetService<IKubernetesService>()!);
-}
 
 var publicEndPoint = string.Empty;
 var podDataDirectoryPersistantStorage = string.Empty;
-if (mockSlimData == false)
+
+string namespace_ = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ??
+                    EnvironmentVariables.NamespaceDefault;
+Console.WriteLine($"Starting in namespace {namespace_}");
+replicasService?.SyncDeploymentsAsync(namespace_).Wait();
+
+var hostname = Environment.GetEnvironmentVariable("HOSTNAME") ?? EnvironmentVariables.HostnameDefault;
+while (replicasService?.Deployments.SlimFaas.Pods.Any(p => p.Name == hostname) == false)
 {
-    string namespace_ = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ??
-                        EnvironmentVariables.NamespaceDefault;
-    Console.WriteLine($"Starting in namespace {namespace_}");
+    Console.WriteLine("Waiting for pods to be ready");
+    Thread.Sleep(1000);
     replicasService?.SyncDeploymentsAsync(namespace_).Wait();
+}
 
-    var hostname = Environment.GetEnvironmentVariable("HOSTNAME");
-    while (replicasService?.Deployments.SlimFaas.Pods.Select(p => !string.IsNullOrEmpty(p.Ip) && p.Started == true).Count() < 2 ||
-           replicasService?.Deployments.SlimFaas.Pods.Any(p => p.Name == hostname) == false)
+if (replicasService?.Deployments.SlimFaas.Pods != null)
+{
+    foreach (string enumerateDirectory in Directory.EnumerateDirectories(slimDataDirectory))
     {
-        Console.WriteLine("Waiting for pods to be ready");
-        Thread.Sleep(1000);
-        replicasService?.SyncDeploymentsAsync(namespace_).Wait();
-    }
-
-    if (replicasService?.Deployments?.SlimFaas?.Pods != null)
-    {
-        foreach (string enumerateDirectory in Directory.EnumerateDirectories(slimDataDirectory))
+        if (replicasService.Deployments.SlimFaas.Pods.Any(p =>
+                p.Name == new DirectoryInfo(enumerateDirectory).Name) == false)
         {
-            if (replicasService.Deployments.SlimFaas.Pods.Any(p =>
-                    p.Name == new DirectoryInfo(enumerateDirectory).Name) == false)
+            try
             {
-                try
-                {
-                    Console.WriteLine($"Deleting {enumerateDirectory}");
-                    Directory.Delete(enumerateDirectory, false);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
+                Console.WriteLine($"Deleting {enumerateDirectory}");
+                Directory.Delete(enumerateDirectory, false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
         }
-
-        foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods
-                     .Where(p => !string.IsNullOrEmpty(p.Ip) && p.Started == true).ToList())
-        {
-            string slimDataEndpoint = SlimDataEndpoint.Get(podInformation);
-            Console.WriteLine($"Adding node  {slimDataEndpoint}");
-            Startup.ClusterMembers.Add(slimDataEndpoint);
-        }
-
-        var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == hostname);
-        Console.WriteLine($"Starting node {currentPod.Name}");
-        podDataDirectoryPersistantStorage = Path.Combine(slimDataDirectory, currentPod.Name);
-        if (Directory.Exists(podDataDirectoryPersistantStorage) == false)
-            Directory.CreateDirectory(podDataDirectoryPersistantStorage);
-        publicEndPoint = SlimDataEndpoint.Get(currentPod);
-        Console.WriteLine($"Node started {currentPod.Name}");
     }
 
-    serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
-    serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
-    serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
-        .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler() { AllowAutoRedirect = true });
-}
-else
-{
-    serviceCollectionSlimFaas.AddSingleton<IDatabaseService, DatabaseMockService>();
+    foreach (PodInformation podInformation in replicasService.Deployments.SlimFaas.Pods
+                 .Where(p => !string.IsNullOrEmpty(p.Ip) && p.Started == true).ToList())
+    {
+        string slimDataEndpoint = SlimDataEndpoint.Get(podInformation);
+        Console.WriteLine($"Adding node  {slimDataEndpoint}");
+        Startup.ClusterMembers.Add(slimDataEndpoint);
+    }
 
+    var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == hostname);
+    Console.WriteLine($"Starting node {currentPod.Name}");
+    podDataDirectoryPersistantStorage = Path.Combine(slimDataDirectory, currentPod.Name);
+    if (Directory.Exists(podDataDirectoryPersistantStorage) == false)
+        Directory.CreateDirectory(podDataDirectoryPersistantStorage);
+    publicEndPoint = SlimDataEndpoint.Get(currentPod);
+    Console.WriteLine($"Node started {currentPod.Name}");
 }
+
+serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
+serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
+serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler() { AllowAutoRedirect = true });
+
 
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
 
@@ -161,13 +138,15 @@ var slimFaasPort = int.Parse(Environment.GetEnvironmentVariable(EnvironmentVaria
 
 startup.ConfigureServices(serviceCollectionSlimFaas);
 
+// Node start as master if it is alone in the cluster
+var coldStart = replicasService != null && replicasService.Deployments.SlimFaas.Pods.Count == 1 ? "true" : "false";
 var slimDataConfiguration = new Dictionary<string, string>
 {
     {"partitioning", "false"},
     {"lowerElectionTimeout", "300" },
     {"upperElectionTimeout", "600" },
     {"publicEndPoint", publicEndPoint},
-    {"coldStart", "false"},
+    {"coldStart",  coldStart},
     {"requestJournal:memoryLimit", "5" },
     {"requestJournal:expiration", "00:01:00" },
     {"heartbeatThreshold", "0.6" }
@@ -179,7 +158,6 @@ builder.Host
 
 var uri = new Uri(publicEndPoint);
 
-
 builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 {
     serverOptions.ListenAnyIP(uri.Port);
@@ -190,7 +168,7 @@ var app = builder.Build();
 app.UseMiddleware<SlimProxyMiddleware>();
 app.Use(async (context, next) =>
 {
-    if(context.Request.Host.Port != slimFaasPort)
+    if(context.Request.Host.Port != slimFaasPort || (!context.Request.Host.Port.HasValue && slimFaasPort != 80))
     {
         await next.Invoke();
         return;
@@ -200,6 +178,7 @@ app.Use(async (context, next) =>
         await context.Response.WriteAsync("OK");
     }
 });
+
 startup.Configure(app);
 
 app.UseMetricServer();

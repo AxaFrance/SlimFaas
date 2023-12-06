@@ -44,8 +44,7 @@ public class MockKubernetesService : IKubernetesService
         _deploymentInformations = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
             SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()
             {
-                new("slimfaas1", true, false, "localhost", "slimfaas"   ),
-                new("slimfaas2", true, false, "localhost", "slimfaas" )
+                new("slimfaas-1", true, false, "localhost", "slimfaas"),
             }));
         var functions = JsonSerializer.Deserialize(functionsJson, FunctionsMockSerializerContext.Default.FunctionsMock);
         foreach (var function in functions.Functions)

@@ -1,19 +1,4 @@
-﻿/*using System.Text.Json.Serialization;
-using MemoryPack;
-using MessagePack;
-
-namespace SlimFaas;
-
-[MemoryPackable]
-public partial record struct CustomRequest(IList<CustomHeader> Headers, byte[]? Body, string FunctionName, string Path,
-    string Method, string Query);
-
-[MemoryPackable]
-public partial record struct CustomHeader(string Key, string?[] Values);
-
-*/
-
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace SlimFaas;
 
