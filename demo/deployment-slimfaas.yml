@@ -4,6 +4,7 @@ kind: StatefulSet
 metadata:
   name: slimfaas
 spec:
+  replicas: 3
   podManagementPolicy: Parallel
   serviceName: slimfaas
   selector:
@@ -21,7 +22,7 @@ spec:
       serviceAccountName: slimfaas
       containers:
         - name: slimfaas
-          image: axaguildev/slimfaas:pr-24-231
+          image: axaguildev/slimfaas:pr-24-232
           livenessProbe:
             httpGet:
               path: /health
@@ -44,7 +45,7 @@ spec:
           resources:
             limits:
               memory: "160Mi"
-              cpu: "4000m"
+              cpu: "1000m"
             requests:
               memory: "76Mi"
               cpu: "200m"

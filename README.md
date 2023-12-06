@@ -266,7 +266,7 @@ Instead of creating many pods, SlimFaas use internally many workers in the same 
 - **ReplicasSynchronizationWorker**: Manage replicas synchronization between the pod and kubernetes
 - **ReplicasScaleWorker**: If master, then scale up and down kubernetes pods
 
-**SlimData** is a simple database included inside SlimFaas pod. It is based on **Raft** algorithm offered by awesome https://github.com/dotnet/dotNext library.
+**SlimData** is a simple redis like database included inside SlimFaas executable. It is based on **Raft** algorithm offered by awesome https://github.com/dotnet/dotNext library.
 By default **SlimData** use a second HTTP port 3262 to expose its API. Don't expose it and keep it internal.
 
 ### Build with .NET
