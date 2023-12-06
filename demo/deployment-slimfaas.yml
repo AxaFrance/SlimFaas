@@ -63,6 +63,7 @@ kind: Service
 metadata:
   name: slimfaas
 spec:
+  type: NodePort
   selector:
     app: slimfaas
   ports:
