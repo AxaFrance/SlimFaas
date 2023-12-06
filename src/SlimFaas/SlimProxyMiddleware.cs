@@ -30,6 +30,9 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     public async Task InvokeAsync(HttpContext context,
         HistoryHttpMemoryService historyHttpService, ISendClient sendClient, IReplicasService replicasService)
     {
+
+        Console.WriteLine($"Request {context.Request.Host.Port} {_slimFaasPort}");
+        Console.WriteLine($"Path {context.Request.Path}");
         if(context.Request.Host.Port != _slimFaasPort || (!context.Request.Host.Port.HasValue && _slimFaasPort != 80))
         {
             await next(context);

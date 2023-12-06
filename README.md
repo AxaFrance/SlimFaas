@@ -38,24 +38,24 @@ kubectl apply -f deployment-functions.yml
 Now, you can access your pod via SlimFaas proxy:
 
 Synchronous way:
-- http://localhost:30020/function/fibonacci1/hello/guillaume
-- http://localhost:30020/function/fibonacci2/hello/elodie
-- http://localhost:30020/function/fibonacci3/hello/julie
+- http://localhost:30021/function/fibonacci1/hello/guillaume
+- http://localhost:30021/function/fibonacci2/hello/elodie
+- http://localhost:30021/function/fibonacci3/hello/julie
 
 Asynchronous way:
-- http://localhost:30020/async-function/fibonacci1/hello/guillaume
-- http://localhost:30020/async-function/fibonacci2/hello/elodie
-- http://localhost:30020/async-function/fibonacci3/hello/julie
+- http://localhost:30021/async-function/fibonacci1/hello/guillaume
+- http://localhost:30021/async-function/fibonacci2/hello/elodie
+- http://localhost:30021/async-function/fibonacci3/hello/julie
 
 Just wake up function:
-- http://localhost:30020/wake-function/fibonacci1
-- http://localhost:30020/wake-function/fibonacci2
-- http://localhost:30020/wake-function/fibonacci3
+- http://localhost:30021/wake-function/fibonacci1
+- http://localhost:30021/wake-function/fibonacci2
+- http://localhost:30021/wake-function/fibonacci3
 
 Get function status:
-- http://localhost:30020/status-function/fibonacci1 => {"NumberReady":1,"numberRequested":1}
-- http://localhost:30020/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1}
-- http://localhost:30020/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1}
+- http://localhost:30021/status-function/fibonacci1 => {"NumberReady":1,"numberRequested":1}
+- http://localhost:30021/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1}
+- http://localhost:30021/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1}
 
 Enjoy slimfaas !!!!
 
@@ -89,7 +89,7 @@ SlimFaas act as an HTTP proxy with 2 modes:
 ### Asynchrounous HTTP call
 
 - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
-  - Tail in memory or using SlimData database included in SlimFaas pod
+  - Tail using SlimData database included in SlimFaas pod
 
 ![async_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/async_http_call.PNG)
 

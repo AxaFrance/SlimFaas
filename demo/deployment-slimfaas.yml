@@ -22,7 +22,7 @@ spec:
       serviceAccountName: slimfaas
       containers:
         - name: slimfaas
-          image: axaguildev/slimfaas:pr-24-232
+          image: axaguildev/slimfaas:pr-24-237
           livenessProbe:
             httpGet:
               path: /health
@@ -70,7 +70,8 @@ spec:
     - name: "http"
       port: 5000
       targetPort: 5000
-      nodePort: 30020
+      nodePort: 30021
     - name: "slimdata"
       port: 3262
       targetPort: 3262
+  externalTrafficPolicy: Local  # Preserve source IP
