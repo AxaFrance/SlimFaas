@@ -50,6 +50,10 @@ Just wake up function:
 - http://localhost:30020/wake-function/fibonacci2
 - http://localhost:30020/wake-function/fibonacci3
 
+Get function status:
+- http://localhost:30020/status-function/fibonacci1
+- http://localhost:30020/status-function/fibonacci2
+- http://localhost:30020/status-function/fibonacci3
 
 Enjoy slimfaas !!!!
 

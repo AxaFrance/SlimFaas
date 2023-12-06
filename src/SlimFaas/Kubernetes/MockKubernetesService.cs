@@ -9,6 +9,7 @@ namespace SlimFaas;
 public record struct FunctionsMock
 {
     public List<FunctionMock> Functions { get; set; }
+    public List<SlimfaasMock> Slimfaas { get; set; }
 }
 
 [ExcludeFromCodeCoverage]
@@ -16,6 +17,12 @@ public record struct FunctionMock
 {
     public int NumberParallelRequest { get; set; }
 
+    public string Name { get; set; }
+}
+
+[ExcludeFromCodeCoverage]
+public record struct SlimfaasMock
+{
     public string Name { get; set; }
 }
 
@@ -40,13 +47,16 @@ public class MockKubernetesService : IKubernetesService
     {
 
         var functionsJson = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions) ?? EnvironmentVariables.MockKubernetesFunctionsDefault;
+        var functions = JsonSerializer.Deserialize(functionsJson, FunctionsMockSerializerContext.Default.FunctionsMock);
+        var slimfaasPods = new List<PodInformation>();
+        foreach (var pod in functions.Slimfaas)
+        {
+            slimfaasPods.Add(new PodInformation(pod.Name, true, true, "localhost", "slimfaas"));
+        }
 
         _deploymentInformations = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
-            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()
-            {
-                new("slimfaas-1", true, false, "localhost", "slimfaas"),
-            }));
-        var functions = JsonSerializer.Deserialize(functionsJson, FunctionsMockSerializerContext.Default.FunctionsMock);
+            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, slimfaasPods));
+
         foreach (var function in functions.Functions)
         {
             var deploymentInformation = new DeploymentInformation(Deployment: function.Name, Replicas: 1,

@@ -251,6 +251,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         {
             AsyncFunction => FunctionType.Async,
             Function => FunctionType.Sync,
+            StatusFunction => FunctionType.Status,
             WakeFunction => FunctionType.Wake,
             _ => FunctionType.NotAFunction
         };
