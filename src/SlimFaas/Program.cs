@@ -110,7 +110,7 @@ if (replicasService?.Deployments.SlimFaas.Pods != null)
     if (Directory.Exists(podDataDirectoryPersistantStorage) == false)
         Directory.CreateDirectory(podDataDirectoryPersistantStorage);
     publicEndPoint = SlimDataEndpoint.Get(currentPod);
-    Console.WriteLine($"Node started {currentPod.Name}");
+    Console.WriteLine($"Node started {currentPod.Name} {publicEndPoint}");
 }
 
 serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
