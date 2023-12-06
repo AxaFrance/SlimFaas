@@ -67,8 +67,9 @@ spec:
     app: slimfaas
   ports:
     - name: "http"
-      port: 30020
+      port: 5000
       targetPort: 5000
+      nodePort: 30020
     - name: "slimdata"
       port: 3262
       targetPort: 3262
