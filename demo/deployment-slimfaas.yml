@@ -39,8 +39,8 @@ spec:
               value: "slimfaas-demo"
             - name: SLIMDATA_DIRECTORY
               value: "/database"
-            - name: SLIMFAAS_PORT
-              value: "5000"
+            - name: SLIMFAAS_PORTS
+              value: "5000,30021"
           volumeMounts:
             - name: slimfaas-volume
               mountPath: /database
