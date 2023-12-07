@@ -25,15 +25,13 @@ public partial class FunctionStatusSerializerContext : JsonSerializerContext
 public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue, ILogger<SlimProxyMiddleware> logger, int timeoutWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault)
 {
     private readonly int _timeoutMaximumWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.TimeMaximumWaitForAtLeastOnePodStartedForSyncFunction, timeoutWaitWakeSyncFunctionMilliSecond);
-    private readonly int _slimFaasPort = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.SlimFaasPort, EnvironmentVariables.SlimFaasPortDefault);
+    private readonly int[] _slimFaasPorts = EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts, EnvironmentVariables.SlimFaasPortsDefault);
 
     public async Task InvokeAsync(HttpContext context,
         HistoryHttpMemoryService historyHttpService, ISendClient sendClient, IReplicasService replicasService)
     {
 
-        Console.WriteLine($"Request {context.Request.Host.Port} {_slimFaasPort}");
-        Console.WriteLine($"Path {context.Request.Path}");
-        if(context.Request.Host.Port != _slimFaasPort || (!context.Request.Host.Port.HasValue && _slimFaasPort != 80))
+        if(!HostPort.IsSamePort(context.Request.Host.Port, _slimFaasPorts))
         {
             await next(context);
             return;

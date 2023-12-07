@@ -119,7 +119,6 @@ serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler() { AllowAutoRedirect = true });
 
-
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
 
 serviceCollectionSlimFaas.AddScoped<ISendClient, SendClient>();
@@ -134,7 +133,7 @@ serviceCollectionSlimFaas.AddOpenTelemetry()
 if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
     builder.Configuration[SlimPersistentState.LogLocation] = podDataDirectoryPersistantStorage;
 Startup startup = new(builder.Configuration);
-var slimFaasPort = int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariables.SlimFaasPort) ?? EnvironmentVariables.SlimFaasPortDefault.ToString());
+var slimFaasPorts = EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts, EnvironmentVariables.SlimFaasPortsDefault);
 
 startup.ConfigureServices(serviceCollectionSlimFaas);
 
@@ -161,14 +160,19 @@ var uri = new Uri(publicEndPoint);
 builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 {
     serverOptions.ListenAnyIP(uri.Port);
-    serverOptions.ListenAnyIP(slimFaasPort);
+    foreach (int slimFaasPort in slimFaasPorts)
+    {
+        serverOptions.ListenAnyIP(slimFaasPort);
+    }
 });
+
+
 
 var app = builder.Build();
 app.UseMiddleware<SlimProxyMiddleware>();
 app.Use(async (context, next) =>
 {
-    if(context.Request.Host.Port != slimFaasPort || (!context.Request.Host.Port.HasValue && slimFaasPort != 80))
+    if(!HostPort.IsSamePort(context.Request.Host.Port, slimFaasPorts))
     {
         await next.Invoke();
         return;

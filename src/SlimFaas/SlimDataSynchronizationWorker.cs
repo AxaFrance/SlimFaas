@@ -1,7 +1,5 @@
 ﻿using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
-using RaftNode;
-using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 

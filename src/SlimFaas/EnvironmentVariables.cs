@@ -5,8 +5,8 @@ public static class EnvironmentVariables
 
     public const string SlimWorkerDelayMilliseconds = "SLIM_WORKER_DELAY_MILLISECONDS";
 
-    public const string SlimFaasPort = "SLIMFAAS_PORT";
-    public const int SlimFaasPortDefault = 5000;
+    public const string SlimFaasPorts = "SLIMFAAS_PORTS";
+    public static readonly int[] SlimFaasPortsDefault = new[] {5000};
     public const string BaseSlimDataUrl = "BASE_SLIMDATA_URL";
     public const string BaseSlimDataUrlDefault = "http://{pod_name}.slimfaas.default.svc.cluster.local:3262/";
 
@@ -71,5 +71,25 @@ public static class EnvironmentVariables
         }
         logger.LogWarning("Cannot parse to boolean the environment variable {EnvironmentVariableName} with value {EnvironmentVariableValue}. Using default value {DefaultDelay}", environmentVariableName, valueString, defaultBoolean);
         return defaultBoolean;
+    }
+
+    public static int[] ReadIntegers(string name, int[] defaultNames)
+    {
+        var ports = new List<int>();
+        var slimFaasPorts = Environment.GetEnvironmentVariable(name);
+        if (string.IsNullOrEmpty(slimFaasPorts))
+        {
+            return defaultNames;
+        }
+
+        var splits = slimFaasPorts.Split(",");
+        foreach (var split in splits)
+        {
+            if (int.TryParse(split, out int value))
+            {
+                ports.Add(value);
+            }
+        }
+        return ports.ToArray();
     }
 }
