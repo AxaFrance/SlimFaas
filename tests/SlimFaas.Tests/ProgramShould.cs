@@ -1,10 +1,4 @@
-﻿using System.Net;
-using Microsoft.Extensions.Logging;
-using Moq;
-using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace SlimFaas.Tests;
 
