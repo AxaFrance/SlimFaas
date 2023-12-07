@@ -11,6 +11,7 @@ using SlimFaas.Kubernetes;
 #pragma warning disable CA2252
 
 var slimDataDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataDirectory) ?? EnvironmentVariables.GetTemporaryDirectory();
+var slimDataAllowColdStart = bool.Parse(Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataAllowColdStart) ?? EnvironmentVariables.SlimDataAllowColdStartDefault.ToString());
 
 var serviceCollectionStarter = new ServiceCollection();
 serviceCollectionStarter.AddSingleton<IReplicasService, ReplicasService>();
@@ -72,7 +73,14 @@ replicasService?.SyncDeploymentsAsync(namespace_).Wait();
 var hostname = Environment.GetEnvironmentVariable("HOSTNAME") ?? EnvironmentVariables.HostnameDefault;
 while (replicasService?.Deployments.SlimFaas.Pods.Any(p => p.Name == hostname) == false)
 {
-    Console.WriteLine("Waiting for pods to be ready");
+    Console.WriteLine("Waiting current pod to be ready");
+    Thread.Sleep(1000);
+    replicasService?.SyncDeploymentsAsync(namespace_).Wait();
+}
+
+while (!slimDataAllowColdStart || replicasService?.Deployments.SlimFaas.Pods.Count(p => !string.IsNullOrEmpty(p.Ip)) > 1)
+{
+    Console.WriteLine("Waiting for at least 2 pods to be ready");
     Thread.Sleep(1000);
     replicasService?.SyncDeploymentsAsync(namespace_).Wait();
 }

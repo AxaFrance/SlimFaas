@@ -36,7 +36,10 @@ public static class EnvironmentVariables
     public const string MockKubernetesFunctionsDefault = "";
 
     public const string SlimDataDirectory = "SLIMDATA_DIRECTORY";
+
     public static string HostnameDefault = "slimfaas-1";
+    public const string SlimDataAllowColdStart = "SLIMDATA_ALLOW_COLD_START";
+    public const bool SlimDataAllowColdStartDefault = false;
 
     public static string GetTemporaryDirectory()
     {
