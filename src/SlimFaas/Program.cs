@@ -143,8 +143,6 @@ if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
 Startup startup = new(builder.Configuration);
 var slimFaasPorts = EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts, EnvironmentVariables.SlimFaasPortsDefault);
 
-startup.ConfigureServices(serviceCollectionSlimFaas);
-
 // Node start as master if it is alone in the cluster
 var coldStart = replicasService != null && replicasService.Deployments.SlimFaas.Pods.Count == 1 ? "true" : "false";
 var slimDataConfiguration = new Dictionary<string, string>
@@ -158,6 +156,7 @@ var slimDataConfiguration = new Dictionary<string, string>
     {"requestJournal:expiration", "00:01:00" },
     {"heartbeatThreshold", "0.6" }
 };
+startup.ConfigureServices(serviceCollectionSlimFaas);
 
 builder.Host
     .ConfigureAppConfiguration(builder => builder.AddInMemoryCollection(slimDataConfiguration!))
