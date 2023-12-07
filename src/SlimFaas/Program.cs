@@ -140,6 +140,9 @@ serviceCollectionSlimFaas.AddOpenTelemetry()
 
 if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
     builder.Configuration[SlimPersistentState.LogLocation] = podDataDirectoryPersistantStorage;
+
+
+
 Startup startup = new(builder.Configuration);
 var slimFaasPorts = EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts, EnvironmentVariables.SlimFaasPortsDefault);
 
@@ -156,13 +159,8 @@ var slimDataConfiguration = new Dictionary<string, string>
     {"requestJournal:expiration", "00:01:00" },
     {"heartbeatThreshold", "0.6" }
 };
+builder.Configuration["publicEndPoint"] = slimDataConfiguration["publicEndPoint"];
 startup.ConfigureServices(serviceCollectionSlimFaas);
-var endpoint = configuration["publicEndPoint"];
-Console.WriteLine("register SlimDataInfo publicEndPoint {0}", endpoint);
-if (!string.IsNullOrEmpty(endpoint))
-{
-    serviceCollectionSlimFaas.AddSingleton<SlimDataInfo>(sp => new SlimDataInfo(new Uri(endpoint).Port));
-}
 
 builder.Host
     .ConfigureAppConfiguration(builder => builder.AddInMemoryCollection(slimDataConfiguration!))
