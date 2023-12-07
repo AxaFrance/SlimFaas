@@ -15,7 +15,7 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
@@ -52,7 +52,7 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
@@ -89,7 +89,7 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
