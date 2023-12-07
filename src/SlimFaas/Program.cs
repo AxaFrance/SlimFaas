@@ -78,7 +78,7 @@ while (replicasService?.Deployments.SlimFaas.Pods.Any(p => p.Name == hostname) =
     replicasService?.SyncDeploymentsAsync(namespace_).Wait();
 }
 
-while (!slimDataAllowColdStart || replicasService?.Deployments.SlimFaas.Pods.Count(p => !string.IsNullOrEmpty(p.Ip)) < 2)
+while (!slimDataAllowColdStart && replicasService?.Deployments.SlimFaas.Pods.Count(p => !string.IsNullOrEmpty(p.Ip)) < 2)
 {
     Console.WriteLine("Waiting for at least 2 pods to be ready");
     Thread.Sleep(1000);
