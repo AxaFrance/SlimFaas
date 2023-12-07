@@ -5,7 +5,7 @@ using DotNext.Text;
 
 namespace RaftNode;
 
-public struct ListRightPopCommand: ISerializable<ListRightPopCommand>
+public struct ListRightPopCommand : ISerializable<ListRightPopCommand>
 {
     public const int Id = 4;
 
@@ -18,7 +18,8 @@ public struct ListRightPopCommand: ISerializable<ListRightPopCommand>
         where TWriter : notnull, IAsyncBinaryWriter
     {
         var command = this;
-        await writer.WriteStringAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.Plain, token);
+        await writer.WriteStringAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false),
+            LengthFormat.Plain, token);
         await writer.WriteInt32Async(Count, true, token);
     }
 
@@ -30,7 +31,7 @@ public struct ListRightPopCommand: ISerializable<ListRightPopCommand>
         return new ListRightPopCommand
         {
             Key = await reader.ReadStringAsync(LengthFormat.Plain, new DecodingContext(Encoding.UTF8, false), token),
-            Count = await reader.ReadInt32Async(true, token),
+            Count = await reader.ReadInt32Async(true, token)
         };
     }
 }

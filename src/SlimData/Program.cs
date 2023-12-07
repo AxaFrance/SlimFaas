@@ -1,6 +1,5 @@
 ﻿using RaftNode;
 
-
 switch (args.LongLength)
 {
     case 0:

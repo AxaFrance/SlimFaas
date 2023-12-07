@@ -5,13 +5,17 @@ namespace RaftNode;
 
 internal sealed class RaftClientHandlerFactory : IHttpMessageHandlerFactory
 {
-    internal static bool AllowCertificate(object sender, X509Certificate? certificate, X509Chain? chain, SslPolicyErrors sslPolicyErrors) => true;
-
     public HttpMessageHandler CreateHandler(string name)
     {
-        var handler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromMilliseconds(300)};
+        var handler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromMilliseconds(300) };
         handler.SslOptions.RemoteCertificateValidationCallback = AllowCertificate;
         handler.UseProxy = false;
         return handler;
+    }
+
+    internal static bool AllowCertificate(object sender, X509Certificate? certificate, X509Chain? chain,
+        SslPolicyErrors sslPolicyErrors)
+    {
+        return true;
     }
 }

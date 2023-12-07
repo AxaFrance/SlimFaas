@@ -9,10 +9,14 @@ namespace RaftNode;
 
 public class Startup(IConfiguration configuration)
 {
+    public static readonly IList<string> ClusterMembers = new List<string>(2);
+
     private static Task RedirectToLeaderAsync(HttpContext context)
     {
         var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
-        return context.Response.WriteAsync($"Leader address is {cluster.Leader?.EndPoint}. Current address is {context.Connection.LocalIpAddress}:{context.Connection.LocalPort}", context.RequestAborted);
+        return context.Response.WriteAsync(
+            $"Leader address is {cluster.Leader?.EndPoint}. Current address is {context.Connection.LocalIpAddress}:{context.Connection.LocalPort}",
+            context.RequestAborted);
     }
 
     public void Configure(IApplicationBuilder app)
@@ -35,18 +39,16 @@ public class Startup(IConfiguration configuration)
             .UseEndpoints(static endpoints =>
             {
                 endpoints.MapGet(LeaderResource, RedirectToLeaderAsync);
-                endpoints.MapGet("/SlimData/health", (async context =>
-                {
-                    await context.Response.WriteAsync("OK");
-                }));
+                endpoints.MapGet("/SlimData/health", async context => { await context.Response.WriteAsync("OK"); });
                 endpoints.MapPost(ListLeftPushResource, async context =>
                 {
                     var slimDataInfo = context.RequestServices.GetRequiredService<SlimDataInfo>();
-                    if(context.Request.Host.Port != slimDataInfo.Port)
+                    if (context.Request.Host.Port != slimDataInfo.Port)
                     {
                         context.Response.StatusCode = StatusCodes.Status404NotFound;
                         return;
                     }
+
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
@@ -74,7 +76,7 @@ public class Startup(IConfiguration configuration)
                         }
 
                         var logEntry =
-                            provider.interpreter.CreateLogEntry(new ListLeftPushCommand() { Key = key, Value = value },
+                            provider.interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
                                 cluster.Term);
                         await provider.AppendAsync(logEntry, source.Token);
                         await provider.CommitAsync(source.Token);
@@ -89,15 +91,16 @@ public class Startup(IConfiguration configuration)
                         source?.Dispose();
                     }
                 });
-                
+
                 endpoints.MapPost(ListRightPopResource, async context =>
                 {
                     var slimDataInfo = context.RequestServices.GetRequiredService<SlimDataInfo>();
-                    if(context.Request.Host.Port != slimDataInfo.Port)
+                    if (context.Request.Host.Port != slimDataInfo.Port)
                     {
                         context.Response.StatusCode = StatusCodes.Status404NotFound;
                         return;
                     }
+
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
@@ -116,7 +119,7 @@ public class Startup(IConfiguration configuration)
                             break;
                         }
 
-                        if (string.IsNullOrEmpty(key) || !int.TryParse(value, out int count))
+                        if (string.IsNullOrEmpty(key) || !int.TryParse(value, out var count))
                         {
                             context.Response.StatusCode = StatusCodes.Status400BadRequest;
                             await context.Response.WriteAsync("Key key is empty or value is not a number",
@@ -133,17 +136,17 @@ public class Startup(IConfiguration configuration)
                             var queue = ((ISupplier<SupplierPayload>)provider).Invoke().Queues[key];
                             for (var i = 0; i < count; i++)
                             {
-                                if (queue.Count <= i)
-                                {
-                                    break;
-                                }
+                                if (queue.Count <= i) break;
 
                                 values.Add(queue[i]);
                             }
 
-                            await context.Response.WriteAsync(JsonSerializer.Serialize(values, ListStringSerializerContext.Default.ListString), context.RequestAborted);
+                            await context.Response.WriteAsync(
+                                JsonSerializer.Serialize(values, ListStringSerializerContext.Default.ListString),
+                                context.RequestAborted);
                             var logEntry =
-                                provider.interpreter.CreateLogEntry(new ListRightPopCommand() { Key = key, Count = count },
+                                provider.interpreter.CreateLogEntry(
+                                    new ListRightPopCommand { Key = key, Count = count },
                                     cluster.Term);
                             await provider.AppendAsync(logEntry, source.Token);
                             await provider.CommitAsync(source.Token);
@@ -162,11 +165,12 @@ public class Startup(IConfiguration configuration)
                 endpoints.MapPost(AddHashSetResource, async context =>
                 {
                     var slimDataInfo = context.RequestServices.GetRequiredService<SlimDataInfo>();
-                    if(context.Request.Host.Port != slimDataInfo.Port)
+                    if (context.Request.Host.Port != slimDataInfo.Port)
                     {
                         context.Response.StatusCode = StatusCodes.Status404NotFound;
                         return;
                     }
+
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
@@ -179,16 +183,10 @@ public class Startup(IConfiguration configuration)
                         var key = string.Empty;
                         var dictionary = new Dictionary<string, string>();
                         foreach (var formData in form)
-                        {
                             if (formData.Key == "______key_____")
-                            {
                                 key = formData.Value.ToString();
-                            }
                             else
-                            {
                                 dictionary[formData.Key] = formData.Value.ToString();
-                            }
-                        }
 
                         if (string.IsNullOrEmpty(key))
                         {
@@ -199,7 +197,7 @@ public class Startup(IConfiguration configuration)
 
                         var logEntry =
                             provider.interpreter.CreateLogEntry(
-                                new AddHashSetCommand() { Key = key, Value = dictionary }, cluster.Term);
+                                new AddHashSetCommand { Key = key, Value = dictionary }, cluster.Term);
                         await provider.AppendAsync(logEntry, source.Token);
                         await provider.CommitAsync(source.Token);
                     }
@@ -216,11 +214,12 @@ public class Startup(IConfiguration configuration)
                 endpoints.MapPost(AddKeyValueResource, async context =>
                 {
                     var slimDataInfo = context.RequestServices.GetRequiredService<SlimDataInfo>();
-                    if(context.Request.Host.Port != slimDataInfo.Port)
+                    if (context.Request.Host.Port != slimDataInfo.Port)
                     {
                         context.Response.StatusCode = StatusCodes.Status404NotFound;
                         return;
                     }
+
                     var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
                     var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
                     var source =
@@ -248,7 +247,7 @@ public class Startup(IConfiguration configuration)
                         }
 
                         var logEntry =
-                            provider.interpreter.CreateLogEntry(new AddKeyValueCommand() { Key = key, Value = value },
+                            provider.interpreter.CreateLogEntry(new AddKeyValueCommand { Key = key, Value = value },
                                 cluster.Term);
                         await provider.AppendAsync(logEntry, source.Token);
                         await provider.CommitAsync(source.Token);
@@ -275,9 +274,7 @@ public class Startup(IConfiguration configuration)
             .AddRouting();
         var path = configuration[SlimPersistentState.LogLocation];
         if (!string.IsNullOrWhiteSpace(path))
-        {
             services.UsePersistenceEngine<ISupplier<SupplierPayload>, SlimPersistentState>();
-        }
         var endpoint = configuration["publicEndPoint"];
         if (!string.IsNullOrEmpty(endpoint))
         {
@@ -286,14 +283,9 @@ public class Startup(IConfiguration configuration)
         }
     }
 
-    public static readonly IList<string> ClusterMembers = new List<string>(2); 
-    
     private static void AddClusterMembers(ICollection<UriEndPoint> members)
     {
         foreach (var clusterMember in ClusterMembers)
-        {
-            members.Add(new UriEndPoint(new(clusterMember, UriKind.Absolute)));
-        }
+            members.Add(new UriEndPoint(new Uri(clusterMember, UriKind.Absolute)));
     }
 }
-

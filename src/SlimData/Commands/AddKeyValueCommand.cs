@@ -18,8 +18,10 @@ public struct AddKeyValueCommand : ISerializable<AddKeyValueCommand>
         where TWriter : notnull, IAsyncBinaryWriter
     {
         var command = this;
-        await writer.WriteStringAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.Plain, token);
-        await writer.WriteStringAsync(command.Value.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.Plain, token);
+        await writer.WriteStringAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false),
+            LengthFormat.Plain, token);
+        await writer.WriteStringAsync(command.Value.AsMemory(), new EncodingContext(Encoding.UTF8, false),
+            LengthFormat.Plain, token);
     }
 
 #pragma warning disable CA2252
@@ -30,7 +32,7 @@ public struct AddKeyValueCommand : ISerializable<AddKeyValueCommand>
         return new AddKeyValueCommand
         {
             Key = await reader.ReadStringAsync(LengthFormat.Plain, new DecodingContext(Encoding.UTF8, false), token),
-            Value = await reader.ReadStringAsync(LengthFormat.Plain, new DecodingContext(Encoding.UTF8, false), token),
+            Value = await reader.ReadStringAsync(LengthFormat.Plain, new DecodingContext(Encoding.UTF8, false), token)
         };
     }
 }

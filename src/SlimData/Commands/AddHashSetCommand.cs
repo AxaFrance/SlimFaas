@@ -17,12 +17,10 @@ public struct AddHashSetCommand : ISerializable<AddHashSetCommand>
         get
         {
             // compute length of the serialized data, in bytes
-            long result = Encoding.UTF8.GetByteCount(Key); 
+            long result = Encoding.UTF8.GetByteCount(Key);
             result += sizeof(int); // 4 bytes for count
             foreach (var keyValuePair in Value)
-            {
-                result +=  Encoding.UTF8.GetByteCount(keyValuePair.Key) + Encoding.UTF8.GetByteCount(keyValuePair.Value);
-            }
+                result += Encoding.UTF8.GetByteCount(keyValuePair.Key) + Encoding.UTF8.GetByteCount(keyValuePair.Value);
             return result;
         }
     }
@@ -31,7 +29,8 @@ public struct AddHashSetCommand : ISerializable<AddHashSetCommand>
         where TWriter : notnull, IAsyncBinaryWriter
     {
         var command = this;
-        await writer.WriteStringAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.Plain, token);
+        await writer.WriteStringAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false),
+            LengthFormat.Plain, token);
         // write the number of entries
         await writer.WriteInt32Async(Value.Count, true, token);
         // write the entries
@@ -49,7 +48,7 @@ public struct AddHashSetCommand : ISerializable<AddHashSetCommand>
         where TReader : notnull, IAsyncBinaryReader
     {
         var key = await reader.ReadStringAsync(LengthFormat.Plain, new DecodingContext(Encoding.UTF8, false), token);
-        
+
         var count = await reader.ReadInt32Async(true, token);
         var keysValues = new Dictionary<string, string>(count);
         // deserialize entries
@@ -60,7 +59,7 @@ public struct AddHashSetCommand : ISerializable<AddHashSetCommand>
             var value = await reader.ReadStringAsync(LengthFormat.Plain, context, token);
             keysValues.Add(key_, value);
         }
-        
+
         return new AddHashSetCommand
         {
             Key = key,

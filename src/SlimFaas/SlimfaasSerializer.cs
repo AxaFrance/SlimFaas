@@ -19,14 +19,9 @@ public class SlimfaasSerializer
         return new string(chars);
     }
 
-    public static CustomRequest  Deserialize(string data)
-    {
-        return JsonSerializer.Deserialize(data, CustomRequestSerializerContext.Default.CustomRequest);
-    }
+    public static CustomRequest Deserialize(string data) =>
+        JsonSerializer.Deserialize(data, CustomRequestSerializerContext.Default.CustomRequest);
 
-    public static string Serialize(CustomRequest data)
-    {
-        return JsonSerializer.Serialize(data, CustomRequestSerializerContext.Default.CustomRequest);
-    }
-
+    public static string Serialize(CustomRequest data) =>
+        JsonSerializer.Serialize(data, CustomRequestSerializerContext.Default.CustomRequest);
 }

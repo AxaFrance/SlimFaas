@@ -5,8 +5,11 @@ public class ReplicasSynchronizationWorker(IReplicasService replicasService,
         int delay = EnvironmentVariables.ReplicasSynchronizationWorkerDelayMillisecondsDefault)
     : BackgroundService
 {
-    private readonly int _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
-    private readonly string _namespace = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
+    private readonly int _delay = EnvironmentVariables.ReadInteger(logger,
+        EnvironmentVariables.ReplicasSynchronisationWorkerDelayMilliseconds, delay);
+
+    private readonly string _namespace = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ??
+                                         EnvironmentVariables.NamespaceDefault;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

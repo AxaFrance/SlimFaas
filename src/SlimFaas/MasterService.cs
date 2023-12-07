@@ -9,16 +9,14 @@ public interface IMasterService
 
 public class MasterSlimDataService(IRaftCluster cluster) : IMasterService
 {
-    public bool IsMaster { get
-        {
-
-            var leadershipToken = cluster.LeadershipToken;
-            return !leadershipToken.IsCancellationRequested;
-        }}
-
-    public Task CheckAsync()
+    public bool IsMaster
     {
-        return Task.CompletedTask;
+        get
+        {
+            CancellationToken leadershipToken = cluster.LeadershipToken;
+            return !leadershipToken.IsCancellationRequested;
+        }
     }
 
+    public Task CheckAsync() => Task.CompletedTask;
 }

@@ -1,14 +1,17 @@
-﻿namespace SlimFaas;
+﻿using SlimFaas.Kubernetes;
+
+namespace SlimFaas;
 
 public class HistorySynchronizationWorker(IReplicasService replicasService,
-    HistoryHttpMemoryService historyHttpMemoryService,
-    HistoryHttpDatabaseService historyHttpDatabaseService,
-    ILogger<HistorySynchronizationWorker> logger,
-    ISlimDataStatus slimDataStatus,
+        HistoryHttpMemoryService historyHttpMemoryService,
+        HistoryHttpDatabaseService historyHttpDatabaseService,
+        ILogger<HistorySynchronizationWorker> logger,
+        ISlimDataStatus slimDataStatus,
         int delay = EnvironmentVariables.HistorySynchronizationWorkerDelayMillisecondsDefault)
     : BackgroundService
 {
-    private readonly int _delay = EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.HistorySynchronisationWorkerDelayMilliseconds, delay);
+    private readonly int _delay = EnvironmentVariables.ReadInteger(logger,
+        EnvironmentVariables.HistorySynchronisationWorkerDelayMilliseconds, delay);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -19,14 +22,15 @@ public class HistorySynchronizationWorker(IReplicasService replicasService,
             {
                 await Task.Delay(_delay, stoppingToken);
 
-                foreach (var function in replicasService.Deployments.Functions)
+                foreach (DeploymentInformation function in replicasService.Deployments.Functions)
                 {
-                    var ticksInDatabase = await historyHttpDatabaseService.GetTicksLastCallAsync(function.Deployment);
-                    var ticksMemory = historyHttpMemoryService.GetTicksLastCall(function.Deployment);
-                    if(ticksInDatabase > ticksMemory)
+                    long ticksInDatabase = await historyHttpDatabaseService.GetTicksLastCallAsync(function.Deployment);
+                    long ticksMemory = historyHttpMemoryService.GetTicksLastCall(function.Deployment);
+                    if (ticksInDatabase > ticksMemory)
                     {
                         historyHttpMemoryService.SetTickLastCall(function.Deployment, ticksInDatabase);
-                    } else if(ticksInDatabase < ticksMemory)
+                    }
+                    else if (ticksInDatabase < ticksMemory)
                     {
                         await historyHttpDatabaseService.SetTickLastCallAsync(function.Deployment, ticksMemory);
                     }

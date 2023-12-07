@@ -17,10 +17,10 @@ public class SendClientShould
     public async Task CallFunctionAsync(string httpMethod)
     {
         HttpRequestMessage? sendedRequest = null;
-        
-        var httpClient = new HttpClient(new HttpMessageHandlerStub(async (request, cancellationToken) =>
+
+        HttpClient httpClient = new HttpClient(new HttpMessageHandlerStub(async (request, cancellationToken) =>
         {
-            var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+            HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("This is a reply")
             };
@@ -28,17 +28,19 @@ public class SendClientShould
             return await Task.FromResult(responseMessage);
         }));
 
-        var sendClient = new SendClient(httpClient);
-        var customRequest = new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new []{"value1"}}}, new byte[1], "fibonacci", "health", httpMethod, "");
-        var response = await sendClient.SendHttpRequestAsync(customRequest);
-        
-        var expectedUri = new Uri("http://fibonacci:8080/health");
+        SendClient sendClient = new SendClient(httpClient);
+        CustomRequest customRequest =
+            new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new[] { "value1" } } },
+                new byte[1], "fibonacci", "health", httpMethod, "");
+        HttpResponseMessage response = await sendClient.SendHttpRequestAsync(customRequest);
+
+        Uri expectedUri = new Uri("http://fibonacci:8080/health");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(sendedRequest);
         Assert.Equal(sendedRequest.RequestUri, expectedUri);
     }
-    
-    
+
+
     [Theory]
     [InlineData("GET")]
     [InlineData("POST")]
@@ -51,9 +53,9 @@ public class SendClientShould
     public async Task CallFunctionSync(string httpMethod)
     {
         HttpRequestMessage? sendedRequest = null;
-        var httpClient = new HttpClient(new HttpMessageHandlerStub(async (request, cancellationToken) =>
+        HttpClient httpClient = new HttpClient(new HttpMessageHandlerStub(async (request, cancellationToken) =>
         {
-            var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+            HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("This is a reply")
             };
@@ -61,11 +63,11 @@ public class SendClientShould
             return await Task.FromResult(responseMessage);
         }));
 
-        var sendClient = new SendClient(httpClient);
-        
-        var httpContext = new DefaultHttpContext();
-        var httpContextRequest = httpContext.Request;
-        var authorization = "bearer value1";
+        SendClient sendClient = new SendClient(httpClient);
+
+        DefaultHttpContext httpContext = new DefaultHttpContext();
+        HttpRequest httpContextRequest = httpContext.Request;
+        string authorization = "bearer value1";
         httpContextRequest.Headers.Add("Authorization", authorization);
         httpContextRequest.Method = httpMethod;
         httpContextRequest.Path = "/fibonacci/health";
@@ -76,13 +78,13 @@ public class SendClientShould
         httpContextRequest.Body.Position = 0;
         httpContextRequest.ContentLength = 1;
         httpContextRequest.ContentType = "application/json";
-        
-        var response = await sendClient.SendHttpRequestSync(httpContext, "fibonacci", "health", "");
-        
-        var expectedUri = new Uri("http://fibonacci:8080/health");
+
+        HttpResponseMessage response = await sendClient.SendHttpRequestSync(httpContext, "fibonacci", "health", "");
+
+        Uri expectedUri = new Uri("http://fibonacci:8080/health");
         Assert.NotNull(sendedRequest);
         Assert.Equal(sendedRequest.RequestUri, expectedUri);
-        Assert.Equal(authorization , sendedRequest?.Headers?.Authorization?.ToString());
+        Assert.Equal(authorization, sendedRequest?.Headers?.Authorization?.ToString());
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 }
@@ -91,13 +93,9 @@ public class HttpMessageHandlerStub : HttpMessageHandler
 {
     private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _sendAsync;
 
-    public HttpMessageHandlerStub(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendAsync)
-    {
+    public HttpMessageHandlerStub(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendAsync) =>
         _sendAsync = sendAsync;
-    }
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        return await _sendAsync(request, cancellationToken);
-    }
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+        CancellationToken cancellationToken) => await _sendAsync(request, cancellationToken);
 }

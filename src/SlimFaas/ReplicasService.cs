@@ -13,12 +13,15 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
         ILogger<ReplicasService> logger)
     : IReplicasService
 {
-    private readonly ILogger<ReplicasService> _logger = logger;
+    private readonly bool _isTurnOnByDefault = EnvironmentVariables.ReadBoolean(logger,
+        EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalled,
+        EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalledDefault);
 
-    private DeploymentsInformations _deployments = new(Functions: new List<DeploymentInformation>(),
-        SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()));
+    private readonly ILogger<ReplicasService> _logger = logger;
     private readonly object Lock = new();
-    private readonly bool _isTurnOnByDefault = EnvironmentVariables.ReadBoolean(logger, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalled, EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalledDefault);
+
+    private DeploymentsInformations _deployments = new(new List<DeploymentInformation>(),
+        new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
 
     public DeploymentsInformations Deployments
     {
@@ -26,15 +29,16 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
         {
             lock (Lock)
             {
-                return new DeploymentsInformations(Functions: _deployments.Functions.ToArray(),
-                    SlimFaas: new SlimFaasDeploymentInformation(Replicas: _deployments?.SlimFaas?.Replicas ?? 1, _deployments?.SlimFaas?.Pods ?? new List<PodInformation>()));
+                return new DeploymentsInformations(_deployments.Functions.ToArray(),
+                    new SlimFaasDeploymentInformation(_deployments?.SlimFaas?.Replicas ?? 1,
+                        _deployments?.SlimFaas?.Pods ?? new List<PodInformation>()));
             }
         }
     }
 
     public async Task SyncDeploymentsAsync(string kubeNamespace)
     {
-        var deployments = await kubernetesService.ListFunctionsAsync(kubeNamespace);
+        DeploymentsInformations deployments = await kubernetesService.ListFunctionsAsync(kubeNamespace);
         lock (Lock)
         {
             _deployments = deployments;
@@ -43,65 +47,73 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
 
     public async Task CheckScaleAsync(string kubeNamespace)
     {
-        var maximumTicks = 0L;
+        long maximumTicks = 0L;
         IDictionary<string, long> ticksLastCall = new Dictionary<string, long>();
-        foreach (var deploymentInformation in Deployments.Functions)
+        foreach (DeploymentInformation deploymentInformation in Deployments.Functions)
         {
-            var tickLastCall = historyHttpService.GetTicksLastCall(deploymentInformation.Deployment);
+            long tickLastCall = historyHttpService.GetTicksLastCall(deploymentInformation.Deployment);
             ticksLastCall.Add(deploymentInformation.Deployment, tickLastCall);
             maximumTicks = Math.Max(maximumTicks, tickLastCall);
         }
 
-        var tasks = new List<Task<ReplicaRequest?>>();
-        foreach (var deploymentInformation in Deployments.Functions)
+        List<Task<ReplicaRequest?>> tasks = new List<Task<ReplicaRequest?>>();
+        foreach (DeploymentInformation deploymentInformation in Deployments.Functions)
         {
-            var tickLastCall = deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest
+            long tickLastCall = deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest
                 ? maximumTicks
                 : ticksLastCall[deploymentInformation.Deployment];
 
-            if(_isTurnOnByDefault && tickLastCall == 0)
+            if (_isTurnOnByDefault && tickLastCall == 0)
             {
                 tickLastCall = DateTime.Now.Ticks;
             }
 
-            var timeElapsedWhithoutRequest = TimeSpan.FromTicks(tickLastCall) +
-                                             TimeSpan.FromSeconds(deploymentInformation
-                                                 .TimeoutSecondBeforeSetReplicasMin) <
-                                             TimeSpan.FromTicks(DateTime.Now.Ticks);
-            var currentScale = deploymentInformation.Replicas;
+            bool timeElapsedWhithoutRequest = TimeSpan.FromTicks(tickLastCall) +
+                                              TimeSpan.FromSeconds(deploymentInformation
+                                                  .TimeoutSecondBeforeSetReplicasMin) <
+                                              TimeSpan.FromTicks(DateTime.Now.Ticks);
+            int currentScale = deploymentInformation.Replicas;
 
             if (timeElapsedWhithoutRequest)
             {
-                if (currentScale <= deploymentInformation.ReplicasMin) continue;
-                var task = kubernetesService.ScaleAsync(new ReplicaRequest(
-                Replicas : deploymentInformation.ReplicasMin,
-                    Deployment : deploymentInformation.Deployment,
-                    Namespace : kubeNamespace
+                if (currentScale <= deploymentInformation.ReplicasMin)
+                {
+                    continue;
+                }
+
+                Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
+                    Replicas: deploymentInformation.ReplicasMin,
+                    Deployment: deploymentInformation.Deployment,
+                    Namespace: kubeNamespace
                 ));
 
                 tasks.Add(task);
             }
             else if (currentScale is 0)
             {
-                var task = kubernetesService.ScaleAsync(new ReplicaRequest(
-                    Replicas : deploymentInformation.ReplicasAtStart,
-                    Deployment : deploymentInformation.Deployment,
-                    Namespace : kubeNamespace
+                Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
+                    Replicas: deploymentInformation.ReplicasAtStart,
+                    Deployment: deploymentInformation.Deployment,
+                    Namespace: kubeNamespace
                 ));
 
                 tasks.Add(task);
             }
         }
 
-        if (tasks.Count <= 0) return;
-
-        var updatedFunctions = new List<DeploymentInformation>();
-        ReplicaRequest?[] replicaRequests = await Task.WhenAll(tasks);
-        foreach (var function in Deployments.Functions)
+        if (tasks.Count <= 0)
         {
-            var updatedFunction = replicaRequests.ToList().Find(t => t?.Deployment == function.Deployment);
+            return;
+        }
+
+        List<DeploymentInformation> updatedFunctions = new List<DeploymentInformation>();
+        ReplicaRequest?[] replicaRequests = await Task.WhenAll(tasks);
+        foreach (DeploymentInformation function in Deployments.Functions)
+        {
+            ReplicaRequest? updatedFunction = replicaRequests.ToList().Find(t => t?.Deployment == function.Deployment);
             updatedFunctions.Add(function with { Replicas = updatedFunction?.Replicas ?? function.Replicas });
         }
+
         lock (Lock)
         {
             _deployments = Deployments with { Functions = updatedFunctions };

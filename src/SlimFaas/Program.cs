@@ -1,28 +1,31 @@
 using System.Net;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 using OpenTelemetry.Trace;
-using SlimFaas;
 using Polly;
 using Polly.Extensions.Http;
 using Prometheus;
 using RaftNode;
+using SlimFaas;
 using SlimFaas.Kubernetes;
 
 #pragma warning disable CA2252
 
-var slimDataDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataDirectory) ?? EnvironmentVariables.GetTemporaryDirectory();
-var slimDataAllowColdStart = bool.Parse(Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataAllowColdStart) ?? EnvironmentVariables.SlimDataAllowColdStartDefault.ToString());
+string slimDataDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataDirectory) ??
+                           EnvironmentVariables.GetTemporaryDirectory();
+bool slimDataAllowColdStart =
+    bool.Parse(Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataAllowColdStart) ??
+               EnvironmentVariables.SlimDataAllowColdStartDefault.ToString());
 
-var serviceCollectionStarter = new ServiceCollection();
+ServiceCollection serviceCollectionStarter = new();
 serviceCollectionStarter.AddSingleton<IReplicasService, ReplicasService>();
 serviceCollectionStarter.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
 
-var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json")
+string? environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+IConfigurationRoot configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json")
     .AddJsonFile($"appsettings.{environment} .json", true)
     .AddEnvironmentVariables().Build();
 
-var mockKubernetesFunction = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions);
+string? mockKubernetesFunction = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions);
 if (!string.IsNullOrEmpty(mockKubernetesFunction))
 {
     serviceCollectionStarter.AddSingleton<IKubernetesService, MockKubernetesService>();
@@ -31,7 +34,7 @@ else
 {
     serviceCollectionStarter.AddSingleton<IKubernetesService, KubernetesService>(sp =>
     {
-        var useKubeConfig = bool.Parse(configuration["UseKubeConfig"] ?? "false");
+        bool useKubeConfig = bool.Parse(configuration["UseKubeConfig"] ?? "false");
         return new KubernetesService(sp.GetRequiredService<ILogger<KubernetesService>>(), useKubeConfig);
     });
 }
@@ -42,13 +45,13 @@ serviceCollectionStarter.AddLogging(loggingBuilder =>
     loggingBuilder.AddDebug();
 });
 
-var serviceProviderStarter = serviceCollectionStarter.BuildServiceProvider();
-var replicasService = serviceProviderStarter.GetService<IReplicasService>();
+ServiceProvider serviceProviderStarter = serviceCollectionStarter.BuildServiceProvider();
+IReplicasService? replicasService = serviceProviderStarter.GetService<IReplicasService>();
 
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-var serviceCollectionSlimFaas = builder.Services;
+IServiceCollection serviceCollectionSlimFaas = builder.Services;
 serviceCollectionSlimFaas.AddHostedService<SlimWorker>();
 serviceCollectionSlimFaas.AddHostedService<ScaleReplicasWorker>();
 serviceCollectionSlimFaas.AddHostedService<ReplicasSynchronizationWorker>();
@@ -56,21 +59,24 @@ serviceCollectionSlimFaas.AddHostedService<HistorySynchronizationWorker>();
 serviceCollectionSlimFaas.AddHttpClient();
 serviceCollectionSlimFaas.AddSingleton<ISlimFaasQueue, SlimFaasSlimFaasQueue>();
 serviceCollectionSlimFaas.AddSingleton<ISlimDataStatus, SlimDataStatus>();
-serviceCollectionSlimFaas.AddSingleton<IReplicasService, ReplicasService>((sp) => (ReplicasService)serviceProviderStarter.GetService<IReplicasService>()!);
+serviceCollectionSlimFaas.AddSingleton<IReplicasService, ReplicasService>(sp =>
+    (ReplicasService)serviceProviderStarter.GetService<IReplicasService>()!);
 serviceCollectionSlimFaas.AddSingleton<HistoryHttpDatabaseService>();
-serviceCollectionSlimFaas.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>((sp) => serviceProviderStarter.GetService<HistoryHttpMemoryService>()!);
-serviceCollectionSlimFaas.AddSingleton<IKubernetesService>((sp) => serviceProviderStarter.GetService<IKubernetesService>()!);
+serviceCollectionSlimFaas.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>(sp =>
+    serviceProviderStarter.GetService<HistoryHttpMemoryService>()!);
+serviceCollectionSlimFaas.AddSingleton<IKubernetesService>(sp =>
+    serviceProviderStarter.GetService<IKubernetesService>()!);
 
 
-var publicEndPoint = string.Empty;
-var podDataDirectoryPersistantStorage = string.Empty;
+string publicEndPoint = string.Empty;
+string podDataDirectoryPersistantStorage = string.Empty;
 
 string namespace_ = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ??
                     EnvironmentVariables.NamespaceDefault;
 Console.WriteLine($"Starting in namespace {namespace_}");
 replicasService?.SyncDeploymentsAsync(namespace_).Wait();
 
-var hostname = Environment.GetEnvironmentVariable("HOSTNAME") ?? EnvironmentVariables.HostnameDefault;
+string hostname = Environment.GetEnvironmentVariable("HOSTNAME") ?? EnvironmentVariables.HostnameDefault;
 while (replicasService?.Deployments.SlimFaas.Pods.Any(p => p.Name == hostname) == false)
 {
     Console.WriteLine("Waiting current pod to be ready");
@@ -78,7 +84,8 @@ while (replicasService?.Deployments.SlimFaas.Pods.Any(p => p.Name == hostname) =
     replicasService?.SyncDeploymentsAsync(namespace_).Wait();
 }
 
-while (!slimDataAllowColdStart && replicasService?.Deployments.SlimFaas.Pods.Count(p => !string.IsNullOrEmpty(p.Ip)) < 2)
+while (!slimDataAllowColdStart &&
+       replicasService?.Deployments.SlimFaas.Pods.Count(p => !string.IsNullOrEmpty(p.Ip)) < 2)
 {
     Console.WriteLine("Waiting for at least 2 pods to be ready");
     Thread.Sleep(1000);
@@ -112,11 +119,14 @@ if (replicasService?.Deployments.SlimFaas.Pods != null)
         Startup.ClusterMembers.Add(slimDataEndpoint);
     }
 
-    var currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == hostname);
+    PodInformation currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == hostname);
     Console.WriteLine($"Starting node {currentPod.Name}");
     podDataDirectoryPersistantStorage = Path.Combine(slimDataDirectory, currentPod.Name);
     if (Directory.Exists(podDataDirectoryPersistantStorage) == false)
+    {
         Directory.CreateDirectory(podDataDirectoryPersistantStorage);
+    }
+
     publicEndPoint = SlimDataEndpoint.Get(currentPod);
     Console.WriteLine($"Node started {currentPod.Name} {publicEndPoint}");
 }
@@ -125,7 +135,7 @@ serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
 serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
 serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler() { AllowAutoRedirect = true });
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true });
 
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
 
@@ -139,25 +149,27 @@ serviceCollectionSlimFaas.AddOpenTelemetry()
         .AddAspNetCoreInstrumentation());
 
 if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
+{
     builder.Configuration[SlimPersistentState.LogLocation] = podDataDirectoryPersistantStorage;
-
+}
 
 
 Startup startup = new(builder.Configuration);
-var slimFaasPorts = EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts, EnvironmentVariables.SlimFaasPortsDefault);
+int[] slimFaasPorts =
+    EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts, EnvironmentVariables.SlimFaasPortsDefault);
 
 // Node start as master if it is alone in the cluster
-var coldStart = replicasService != null && replicasService.Deployments.SlimFaas.Pods.Count == 1 ? "true" : "false";
-var slimDataConfiguration = new Dictionary<string, string>
+string coldStart = replicasService != null && replicasService.Deployments.SlimFaas.Pods.Count == 1 ? "true" : "false";
+Dictionary<string, string> slimDataConfiguration = new()
 {
-    {"partitioning", "false"},
-    {"lowerElectionTimeout", "300" },
-    {"upperElectionTimeout", "600" },
-    {"publicEndPoint", publicEndPoint},
-    {"coldStart",  coldStart},
-    {"requestJournal:memoryLimit", "5" },
-    {"requestJournal:expiration", "00:01:00" },
-    {"heartbeatThreshold", "0.6" }
+    { "partitioning", "false" },
+    { "lowerElectionTimeout", "300" },
+    { "upperElectionTimeout", "600" },
+    { "publicEndPoint", publicEndPoint },
+    { "coldStart", coldStart },
+    { "requestJournal:memoryLimit", "5" },
+    { "requestJournal:expiration", "00:01:00" },
+    { "heartbeatThreshold", "0.6" }
 };
 builder.Configuration["publicEndPoint"] = slimDataConfiguration["publicEndPoint"];
 startup.ConfigureServices(serviceCollectionSlimFaas);
@@ -166,7 +178,7 @@ builder.Host
     .ConfigureAppConfiguration(builder => builder.AddInMemoryCollection(slimDataConfiguration!))
     .JoinCluster();
 
-var uri = new Uri(publicEndPoint);
+Uri uri = new(publicEndPoint);
 
 builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 {
@@ -178,16 +190,16 @@ builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 });
 
 
-
-var app = builder.Build();
+WebApplication app = builder.Build();
 app.UseMiddleware<SlimProxyMiddleware>();
 app.Use(async (context, next) =>
 {
-    if(!HostPort.IsSamePort(context.Request.Host.Port, slimFaasPorts))
+    if (!HostPort.IsSamePort(context.Request.Host.Port, slimFaasPorts))
     {
         await next.Invoke();
         return;
     }
+
     if (context.Request.Path == "/health")
     {
         await context.Response.WriteAsync("OK");
@@ -209,27 +221,31 @@ app.Run(async context =>
 app.Run();
 
 serviceProviderStarter.Dispose();
+
 static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
-    {
-        return HttpPolicyExtensions
-            .HandleTransientHttpError()
-            .OrResult(msg =>
+{
+    return HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(msg =>
+        {
+            HttpStatusCode[] httpStatusCodesWorthRetrying =
             {
-                HttpStatusCode[] httpStatusCodesWorthRetrying = {
-                    HttpStatusCode.RequestTimeout, // 408
-                    HttpStatusCode.InternalServerError, // 500
-                    HttpStatusCode.BadGateway, // 502
-                    HttpStatusCode.ServiceUnavailable, // 503
-                    HttpStatusCode.GatewayTimeout // 504
-                };
-                return httpStatusCodesWorthRetrying.Contains(msg.StatusCode);
-            })
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
-                retryAttempt)));
-    }
+                HttpStatusCode.RequestTimeout, // 408
+                HttpStatusCode.InternalServerError, // 500
+                HttpStatusCode.BadGateway, // 502
+                HttpStatusCode.ServiceUnavailable, // 503
+                HttpStatusCode.GatewayTimeout // 504
+            };
+            return httpStatusCodesWorthRetrying.Contains(msg.StatusCode);
+        })
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
+            retryAttempt)));
+}
 
 
-public partial class Program { }
+public partial class Program
+{
+}
 
 
 #pragma warning restore CA2252

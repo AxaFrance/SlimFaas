@@ -39,22 +39,27 @@ internal sealed class AdvancedDebugProvider : Disposable, ILoggerProvider
 
         public IDisposable BeginScope<TState>(TState state)
             where TState : notnull
-            => NullLogger.Instance.BeginScope<TState>(state);
+            => NullLogger.Instance.BeginScope(state);
 
         public bool IsEnabled(LogLevel logLevel) => Debugger.IsAttached && logLevel is not LogLevel.None;
 
         /// <inheritdoc />
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
+            Func<TState, Exception, string> formatter)
         {
             if (!IsEnabled(logLevel))
+            {
                 return;
+            }
 
             string message = formatter?.Invoke(state, exception);
 
             if (string.IsNullOrEmpty(message))
+            {
                 return;
+            }
 
-            var buffer = new BufferWriterSlim<char>(stackalloc char[128]);
+            BufferWriterSlim<char> buffer = new BufferWriterSlim<char>(stackalloc char[128]);
             buffer.WriteString($"[{prefix}]({new Timestamp()}){logLevel}: {message}");
 
             if (exception is not null)
@@ -85,14 +90,15 @@ internal static class TestLoggers
     }
 
     private static void AddDebugLogger(this string prefix, ILoggingBuilder builder)
-        => builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, AdvancedDebugProvider>(prefix.CreateProvider));
+        => builder.Services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<ILoggerProvider, AdvancedDebugProvider>(prefix.CreateProvider));
 
     internal static ILoggerFactory CreateDebugLoggerFactory(string prefix, Action<ILoggingBuilder> builder)
         => LoggerFactory.Create(prefix.AddDebugLogger + builder);
 }
 
 [ExcludeFromCodeCoverage]
-class LeaderChangedEvent : TaskCompletionSource<IClusterMember>
+internal class LeaderChangedEvent : TaskCompletionSource<IClusterMember>
 {
     internal LeaderChangedEvent()
         : base(TaskCreationOptions.RunContinuationsAsynchronously)
@@ -102,11 +108,13 @@ class LeaderChangedEvent : TaskCompletionSource<IClusterMember>
     internal void OnLeaderChanged(ICluster sender, IClusterMember leader)
     {
         if (leader is not null)
+        {
             TrySetResult(leader);
+        }
     }
 }
 
-sealed class LeaderTracker : LeaderChangedEvent, IClusterMemberLifetime
+internal sealed class LeaderTracker : LeaderChangedEvent, IClusterMemberLifetime
 {
     void IClusterMemberLifetime.OnStart(IRaftCluster cluster, IDictionary<string, string> metadata)
         => cluster.LeaderChanged += OnLeaderChanged;
@@ -119,22 +127,28 @@ public class RaftClusterTests
 {
     private protected static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(20);
 
-    private static IHost CreateHost<TStartup>(int port, IDictionary<string, string> configuration, IClusterMemberLifetime configurator = null, Func<TimeSpan, IRaftClusterMember, IFailureDetector> failureDetectorFactory = null)
-        where TStartup : class
-    {
-        return new HostBuilder()
+    private static IHost CreateHost<TStartup>(int port, IDictionary<string, string> configuration,
+        IClusterMemberLifetime configurator = null,
+        Func<TimeSpan, IRaftClusterMember, IFailureDetector> failureDetectorFactory = null)
+        where TStartup : class =>
+        new HostBuilder()
             .ConfigureWebHost(webHost => webHost.UseKestrel(options => options.ListenLocalhost(port))
                 .ConfigureServices(services =>
                 {
                     if (configurator is not null)
+                    {
                         services.AddSingleton(configurator);
+                    }
 
                     if (failureDetectorFactory is not null)
+                    {
                         services.AddSingleton(failureDetectorFactory);
+                    }
+
                     services.AddSingleton<IDatabaseService, SlimDataService>();
                     services.AddHttpClient<IDatabaseService, SlimDataService>()
                         .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler() { AllowAutoRedirect = true });
+                        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true });
                 })
                 .UseStartup<TStartup>()
             )
@@ -143,7 +157,7 @@ public class RaftClusterTests
             .ConfigureLogging(builder => builder.AddDebugLogger(port.ToString()).SetMinimumLevel(LogLevel.Debug))
             .JoinCluster()
             .Build();
-    }
+
     private static IRaftHttpCluster GetLocalClusterView(IHost host)
         => host.Services.GetRequiredService<IRaftHttpCluster>();
 
@@ -151,7 +165,8 @@ public class RaftClusterTests
     {
         string tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-        if(File.Exists(tempDirectory)) {
+        if (File.Exists(tempDirectory))
+        {
             return GetTemporaryDirectory();
         }
 
@@ -162,48 +177,48 @@ public class RaftClusterTests
     [Fact(Timeout = 20000)]
     public static async Task MessageExchange()
     {
-        var config1 = new Dictionary<string, string>
-            {
-                {"partitioning", "false"},
-                {"lowerElectionTimeout", "600" },
-                {"upperElectionTimeout", "900" },
-                {"publicEndPoint", "http://localhost:3262/" },
-                {"coldStart", "true"},
-                {"requestTimeout", "00:01:00"},
-                {SlimPersistentState.LogLocation, GetTemporaryDirectory()}
-            };
-
-        var config2 = new Dictionary<string, string>
-            {
-                {"partitioning", "false"},
-                {"lowerElectionTimeout", "600" },
-                {"upperElectionTimeout", "900" },
-                {"publicEndPoint", "http://localhost:3263/" },
-                {"coldStart", "false"},
-                {"requestTimeout", "00:01:00"},
-                {SlimPersistentState.LogLocation, GetTemporaryDirectory()}
-            };
-
-        var config3 = new Dictionary<string, string>
+        Dictionary<string, string> config1 = new Dictionary<string, string>
         {
-            {"partitioning", "false"},
-            {"lowerElectionTimeout", "600" },
-            {"upperElectionTimeout", "900" },
-            {"publicEndPoint", "http://localhost:3264/" },
-            {"coldStart", "false"},
-            {"requestTimeout", "00:01:00"},
-            {SlimPersistentState.LogLocation, GetTemporaryDirectory()}
+            { "partitioning", "false" },
+            { "lowerElectionTimeout", "600" },
+            { "upperElectionTimeout", "900" },
+            { "publicEndPoint", "http://localhost:3262/" },
+            { "coldStart", "true" },
+            { "requestTimeout", "00:01:00" },
+            { SlimPersistentState.LogLocation, GetTemporaryDirectory() }
         };
 
-        var listener = new LeaderTracker();
-        using var host1 = CreateHost<Startup>(3262, config1, listener);
+        Dictionary<string, string> config2 = new Dictionary<string, string>
+        {
+            { "partitioning", "false" },
+            { "lowerElectionTimeout", "600" },
+            { "upperElectionTimeout", "900" },
+            { "publicEndPoint", "http://localhost:3263/" },
+            { "coldStart", "false" },
+            { "requestTimeout", "00:01:00" },
+            { SlimPersistentState.LogLocation, GetTemporaryDirectory() }
+        };
+
+        Dictionary<string, string> config3 = new Dictionary<string, string>
+        {
+            { "partitioning", "false" },
+            { "lowerElectionTimeout", "600" },
+            { "upperElectionTimeout", "900" },
+            { "publicEndPoint", "http://localhost:3264/" },
+            { "coldStart", "false" },
+            { "requestTimeout", "00:01:00" },
+            { SlimPersistentState.LogLocation, GetTemporaryDirectory() }
+        };
+
+        LeaderTracker listener = new LeaderTracker();
+        using IHost host1 = CreateHost<Startup>(3262, config1, listener);
         await host1.StartAsync();
         Assert.True(GetLocalClusterView(host1).Readiness.IsCompletedSuccessfully);
 
-        using var host2 = CreateHost<Startup>(3263, config2);
+        using IHost host2 = CreateHost<Startup>(3263, config2);
         await host2.StartAsync();
 
-        using var host3 = CreateHost<Startup>(3264, config3);
+        using IHost host3 = CreateHost<Startup>(3264, config3);
         await host3.StartAsync();
 
         while (GetLocalClusterView(host1).Leader == null)
@@ -217,23 +232,24 @@ public class RaftClusterTests
         Assert.True(await GetLocalClusterView(host1).AddMemberAsync(GetLocalClusterView(host3).LocalMemberAddress));
         await GetLocalClusterView(host3).Readiness.WaitAsync(DefaultTimeout);
 
-        var databaseService = host3.Services.GetRequiredService<IDatabaseService>();
+        IDatabaseService databaseService = host3.Services.GetRequiredService<IDatabaseService>();
 
         await databaseService.SetAsync("key1", "value1");
         Assert.Equal("value1", await databaseService.GetAsync("key1"));
 
-        await databaseService.HashSetAsync("hashsetKey1", new Dictionary<string, string> {{"field1", "value1"}, {"field2", "value2"}});
-        var hashGet = await databaseService.HashGetAllAsync("hashsetKey1");
+        await databaseService.HashSetAsync("hashsetKey1",
+            new Dictionary<string, string> { { "field1", "value1" }, { "field2", "value2" } });
+        IDictionary<string, string> hashGet = await databaseService.HashGetAllAsync("hashsetKey1");
 
         Assert.Equal("value1", hashGet["field1"]);
         Assert.Equal("value2", hashGet["field2"]);
 
         await databaseService.ListLeftPushAsync("listKey1", "value1");
 
-        var listLength = await databaseService.ListLengthAsync("listKey1");
+        long listLength = await databaseService.ListLengthAsync("listKey1");
         Assert.Equal(1, listLength);
 
-        var listRightPop = await databaseService.ListRightPopAsync("listKey1");
+        IList<string> listRightPop = await databaseService.ListRightPopAsync("listKey1");
         Assert.Equal("value1", listRightPop[0]);
 
         await host1.StopAsync();

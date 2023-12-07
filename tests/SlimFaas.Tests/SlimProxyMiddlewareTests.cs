@@ -10,58 +10,43 @@ using SlimFaas.Kubernetes;
 
 namespace SlimFaas.Tests;
 
-
-class MemoryReplicasService : IReplicasService
+internal class MemoryReplicasService : IReplicasService
 {
     public DeploymentsInformations Deployments =>
         new(
-            Functions: new List<DeploymentInformation>()
+            new List<DeploymentInformation>
             {
                 new(Replicas: 0, Deployment: "fibonacci", Namespace: "default",
                     Pods: new List<PodInformation> { new("", true, true, "", "") })
-            }, SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, new List<PodInformation>()));
+            }, new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
 
-    public Task SyncDeploymentsAsync(string kubeNamespace)
-    {
-        throw new NotImplementedException();
-    }
+    public Task SyncDeploymentsAsync(string kubeNamespace) => throw new NotImplementedException();
 
-    public Task CheckScaleAsync(string kubeNamespace)
-    {
-        throw new NotImplementedException();
-    }
+    public Task CheckScaleAsync(string kubeNamespace) => throw new NotImplementedException();
 }
 
-class MemorySlimFaasQueue: ISlimFaasQueue
+internal class MemorySlimFaasQueue : ISlimFaasQueue
 {
-    public async Task EnqueueAsync(string key, string message)
-    {
-        await Task.Delay(100);
-    }
+    public async Task EnqueueAsync(string key, string message) => await Task.Delay(100);
 
-    public Task<IList<string>> DequeueAsync(string key, long count = 1)
-    {
-        throw new NotImplementedException();
-    }
+    public Task<IList<string>> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
 
-    public Task<long> CountAsync(string key)
-    {
-        throw new NotImplementedException();
-    }
+    public Task<long> CountAsync(string key) => throw new NotImplementedException();
 }
 
-class SendClientMock : ISendClient
+internal class SendClientMock : ISendClient
 {
     public Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null)
     {
-        var responseMessage = new HttpResponseMessage();
+        HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
         return Task.FromResult(responseMessage);
     }
 
-    public Task<HttpResponseMessage> SendHttpRequestSync(HttpContext httpContext, string functionName, string functionPath, string functionQuery)
+    public Task<HttpResponseMessage> SendHttpRequestSync(HttpContext httpContext, string functionName,
+        string functionPath, string functionQuery)
     {
-        var responseMessage = new HttpResponseMessage();
+        HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
         Task.Delay(100).Wait();
         return Task.FromResult(responseMessage);
@@ -70,19 +55,18 @@ class SendClientMock : ISendClient
 
 public class ProxyMiddlewareTests
 {
-
     [Theory]
     [InlineData("/function/fibonacci/download", HttpStatusCode.OK)]
     [InlineData("/function/wrong/download", HttpStatusCode.NotFound)]
     public async Task CallFunctionInSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
-        var responseMessage = new HttpResponseMessage();
+        HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
-        var sendClientMock = new Mock<ISendClient>();
+        Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
         sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>()))
             .ReturnsAsync(responseMessage);
 
-        using var host = await new HostBuilder()
+        using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
             {
                 webBuilder
@@ -94,14 +78,11 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicasService>();
                     })
-                    .Configure(app =>
-                    {
-                        app.UseMiddleware<SlimProxyMiddleware>();
-                    });
+                    .Configure(app => { app.UseMiddleware<SlimProxyMiddleware>(); });
             })
             .StartAsync();
 
-        var response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
+        HttpResponseMessage response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
 
         Assert.Equal(expected, response.StatusCode);
     }
@@ -111,7 +92,7 @@ public class ProxyMiddlewareTests
     [InlineData("/async-function/wrong/download", HttpStatusCode.NotFound)]
     public async Task CallFunctionInAsyncSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
-        using var host = await new HostBuilder()
+        using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
             {
                 webBuilder
@@ -123,14 +104,11 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicasService>();
                     })
-                    .Configure(app =>
-                    {
-                        app.UseMiddleware<SlimProxyMiddleware>();
-                    });
+                    .Configure(app => { app.UseMiddleware<SlimProxyMiddleware>(); });
             })
             .StartAsync();
 
-        var response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
+        HttpResponseMessage response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
 
         Assert.Equal(expected, response.StatusCode);
     }
@@ -138,9 +116,10 @@ public class ProxyMiddlewareTests
     [Theory]
     [InlineData("/wake-function/fibonacci", HttpStatusCode.NoContent, true)]
     [InlineData("/wake-function/wrong", HttpStatusCode.NotFound, false)]
-    public async Task JustWakeFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode, bool expectedTickFound)
+    public async Task JustWakeFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode,
+        bool expectedTickFound)
     {
-        using var host = await new HostBuilder()
+        using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
             {
                 webBuilder
@@ -152,16 +131,14 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicasService>();
                     })
-                    .Configure(app =>
-                    {
-                        app.UseMiddleware<SlimProxyMiddleware>();
-                    });
+                    .Configure(app => { app.UseMiddleware<SlimProxyMiddleware>(); });
             })
             .StartAsync();
 
-        var response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
-        var historyHttpMemoryService = host.Services.GetRequiredService<HistoryHttpMemoryService>();
-        var ticksLastCall = historyHttpMemoryService.GetTicksLastCall("fibonacci");
+        HttpResponseMessage response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
+        HistoryHttpMemoryService historyHttpMemoryService =
+            host.Services.GetRequiredService<HistoryHttpMemoryService>();
+        long ticksLastCall = historyHttpMemoryService.GetTicksLastCall("fibonacci");
 
         Assert.Equal(ticksLastCall > 0, expectedTickFound);
         Assert.Equal(expectedHttpStatusCode, response.StatusCode);
@@ -170,9 +147,10 @@ public class ProxyMiddlewareTests
     [Theory]
     [InlineData("/status-function/fibonacci", HttpStatusCode.OK, "{\"NumberReady\":1,\"numberRequested\":1}")]
     [InlineData("/status-function/wrong", HttpStatusCode.NotFound, "")]
-    public async Task GetStatusFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode, string expectedBody)
+    public async Task GetStatusFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode,
+        string expectedBody)
     {
-        using var host = await new HostBuilder()
+        using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
             {
                 webBuilder
@@ -184,17 +162,13 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicasService>();
                     })
-                    .Configure(app =>
-                    {
-                        app.UseMiddleware<SlimProxyMiddleware>();
-                    });
+                    .Configure(app => { app.UseMiddleware<SlimProxyMiddleware>(); });
             })
             .StartAsync();
 
-        var response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
-        var body = await response.Content.ReadAsStringAsync();
+        HttpResponseMessage response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
+        string body = await response.Content.ReadAsStringAsync();
         Assert.Equal(expectedBody, body);
         Assert.Equal(expectedHttpStatusCode, response.StatusCode);
     }
-
 }
