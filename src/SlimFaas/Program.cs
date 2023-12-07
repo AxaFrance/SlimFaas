@@ -157,6 +157,12 @@ var slimDataConfiguration = new Dictionary<string, string>
     {"heartbeatThreshold", "0.6" }
 };
 startup.ConfigureServices(serviceCollectionSlimFaas);
+var endpoint = configuration["publicEndPoint"];
+Console.WriteLine("register SlimDataInfo publicEndPoint {0}", endpoint);
+if (!string.IsNullOrEmpty(endpoint))
+{
+    serviceCollectionSlimFaas.AddSingleton<SlimDataInfo>(sp => new SlimDataInfo(new Uri(endpoint).Port));
+}
 
 builder.Host
     .ConfigureAppConfiguration(builder => builder.AddInMemoryCollection(slimDataConfiguration!))
