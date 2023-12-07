@@ -12,7 +12,6 @@ public class HostPort
 
         foreach (var port in ports)
         {
-            Console.WriteLine($"port: {port} == requestPort: {requestPort}");
             if (port == requestPort)
             {
                 return true;

@@ -16,13 +16,13 @@ spec:
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:
         - name: fibonacci1
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:pr-24-242
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -53,13 +53,13 @@ spec:
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:
         - name: fibonacci2
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:pr-24-242
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -90,13 +90,13 @@ spec:
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:
         - name: fibonacci3
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:pr-24-242
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
