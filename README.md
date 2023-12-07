@@ -123,7 +123,7 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
     spec:
@@ -142,19 +142,18 @@ spec:
             - containerPort: 8080
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: slimfaas
 spec:
+  replicas: 3
+  podManagementPolicy: Parallel
+  serviceName: slimfaas
   selector:
     matchLabels:
       app: slimfaas
   template:
     metadata:
-      annotations:
-        prometheus.io/path: /metrics
-        prometheus.io/port: '5000'
-        prometheus.io/scrape: 'true'
       labels:
         app: slimfaas
     spec:
@@ -170,24 +169,26 @@ spec:
             httpGet:
               path: /health
               port: 5000
-            initialDelaySeconds: 1
+            initialDelaySeconds: 3
             periodSeconds: 10
             timeoutSeconds: 8
           env:
             - name: BASE_FUNCTION_URL
               value: "http://{function_name}.default.svc.cluster.local:8080"
-            - name: ASPNETCORE_URLS
-              value: http://+:5000
+            - name: BASE_SLIMDATA_URL
+              value: "http://{pod_name}.slimfaas.default.svc.cluster.local:3262/"  # Don't expose this port, it can also be like "http://{pod_ip}:3262/" but if you can use DNS it's better
+            - name: SLIMFAAS_PORTS
+              value: "5000" # can be like "5000,6000,7000" if you want to expose more ports
             - name: NAMESPACE
               value: "default"
             - name: SLIMDATA_DIRECTORY
               value: "/database"
             # If you want to use just one pod for testing purpose, you can use this env variable
-            - name: MOCK_SLIMDATA
-              value: "true"
+            - name: SLIMDATA_ALLOW_COLD_START
+              value: "true" # default equivalent to false, but allow to start a pod alone as a leader
             # If your are not on kubernetes for example docker-compose, you can use this env variable, but you will lose auto-scale
             #- name: MOCK_KUBERNETES_FUNCTIONS
-            #  value: "{\"Functions\":[{\"Name\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}]}"
+            #  value: "{"Functions":[{"Name":"fibonacci","NumberParallelRequest":1}],"Slimfaas":[{"Name":"slimfaas-1"}]}"
 
             # Optional, longer is the delay, less CPU and RAM is used
             #- name : HISTORY_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS
@@ -197,7 +198,7 @@ spec:
             #  value : "2000" # default equivalent to 2 seconds
             # Optional, longer is the delay, less CPU and RAM is used
             #- name : SLIM_WORKER_DELAY_MILLISECONDS
-            #  value : "10" # default equivalent to 10 milliseconds
+            #  value : "50" # default equivalent to 50 milliseconds
             # Optional, longer is the delay, less CPU and RAM is used
             #- name : SCALE_REPLICAS_WORKER_DELAY_MILLISECONDS
             #  value : "1000" # default equivalent to 1 seconds

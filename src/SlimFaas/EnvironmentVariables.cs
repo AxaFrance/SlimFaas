@@ -4,15 +4,17 @@ public static class EnvironmentVariables
 {
 
     public const string SlimWorkerDelayMilliseconds = "SLIM_WORKER_DELAY_MILLISECONDS";
+    public const int SlimWorkerDelayMillisecondsDefault = 50;
 
     public const string SlimFaasPorts = "SLIMFAAS_PORTS";
     public static readonly int[] SlimFaasPortsDefault = new[] {5000};
     public const string BaseSlimDataUrl = "BASE_SLIMDATA_URL";
     public const string BaseSlimDataUrlDefault = "http://{pod_name}.slimfaas.default.svc.cluster.local:3262/";
 
-    public const int SlimWorkerDelayMillisecondsDefault = 50;
+
     public const int SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault = 10000;
     public const string TimeMaximumWaitForAtLeastOnePodStartedForSyncFunction = "TIME_MAXIMUM_WAIT_FOR_AT_LEAST_ONE_POD_STARTED_FOR_SYNC_FUNCTION";
+
     public const string ReplicasSynchronisationWorkerDelayMilliseconds = "REPLICAS_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS";
     public const int ReplicasSynchronizationWorkerDelayMillisecondsDefault = 2000;
 
@@ -20,7 +22,6 @@ public static class EnvironmentVariables
     public const int HistorySynchronizationWorkerDelayMillisecondsDefault = 500;
 
     public const string ScaleReplicasWorkerDelayMilliseconds = "SCALE_REPLICAS_WORKER_DELAY_MILLISECONDS";
-
     public const int ScaleReplicasWorkerDelayMillisecondsDefault = 1000;
 
     public const string PodScaledUpByDefaultWhenInfrastructureHasNeverCalled = "POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED";
