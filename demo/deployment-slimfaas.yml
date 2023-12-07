@@ -22,7 +22,7 @@ spec:
       serviceAccountName: slimfaas
       containers:
         - name: slimfaas
-          image: axaguildev/slimfaas:pr-24-246
+          image: axaguildev/slimfaas:pr-24-248
           livenessProbe:
             httpGet:
               path: /health
@@ -34,7 +34,7 @@ spec:
             - name: BASE_FUNCTION_URL
               value: "http://{function_name}.slimfaas-demo.svc.cluster.local:5000"
             - name: BASE_SLIMDATA_URL
-              value: "http://{pod_ip}:3262/"
+              value: "http://{pod_name}.slimfaas-demo.svc.cluster.local:3262/"
             - name: NAMESPACE
               value: "slimfaas-demo"
             - name: SLIMDATA_DIRECTORY

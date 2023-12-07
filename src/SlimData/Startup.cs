@@ -279,9 +279,10 @@ public class Startup(IConfiguration configuration)
             services.UsePersistenceEngine<ISupplier<SupplierPayload>, SlimPersistentState>();
         }
         var endpoint = configuration["publicEndPoint"];
-        if (!string.IsNullOrWhiteSpace(endpoint))
+        if (!string.IsNullOrEmpty(endpoint))
         {
             var uri = new Uri(endpoint);
+            Console.WriteLine("register SlimDataInfo publicEndPoint {0}", uri.Port);
             services.AddSingleton<SlimDataInfo>(sp => new SlimDataInfo(uri.Port));
         }
     }
