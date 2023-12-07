@@ -33,45 +33,49 @@ public record struct SlimfaasMock
 [JsonSerializable(typeof(FunctionMock))]
 [JsonSerializable(typeof(List<FunctionMock>))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-internal class FunctionsMockSerializerContext : JsonSerializerContext
+internal partial class FunctionsMockSerializerContext : JsonSerializerContext
 {
+
 }
 
 [ExcludeFromCodeCoverage]
 public class MockKubernetesService : IKubernetesService
 {
-    private readonly DeploymentsInformations _deploymentInformations;
 
+    private readonly DeploymentsInformations _deploymentInformations;
     public MockKubernetesService()
     {
-        string functionsJson = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions) ??
-                               EnvironmentVariables.MockKubernetesFunctionsDefault;
-        object? functions =
-            JsonSerializer.Deserialize(functionsJson, FunctionsMockSerializerContext.Default.FunctionsMock);
-        List<PodInformation> slimfaasPods = new List<PodInformation>();
+
+        var functionsJson = Environment.GetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions) ?? EnvironmentVariables.MockKubernetesFunctionsDefault;
+        var functions = JsonSerializer.Deserialize(functionsJson, FunctionsMockSerializerContext.Default.FunctionsMock);
+        var slimfaasPods = new List<PodInformation>();
         foreach (var pod in functions.Slimfaas)
         {
             slimfaasPods.Add(new PodInformation(pod.Name, true, true, "localhost", "slimfaas"));
         }
 
-        _deploymentInformations = new DeploymentsInformations(new List<DeploymentInformation>(),
-            new SlimFaasDeploymentInformation(1, slimfaasPods));
+        _deploymentInformations = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
+            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, slimfaasPods));
 
         foreach (var function in functions.Functions)
         {
-            DeploymentInformation deploymentInformation = new DeploymentInformation(function.Name, Replicas: 1,
+            var deploymentInformation = new DeploymentInformation(Deployment: function.Name, Replicas: 1,
                 ReplicasMin: 1, ReplicasAtStart: 1, TimeoutSecondBeforeSetReplicasMin: 1000000,
                 Namespace: "default",
                 ReplicasStartAsSoonAsOneFunctionRetrieveARequest: false,
                 NumberParallelRequest: function.NumberParallelRequest,
-                Pods: new List<PodInformation> { new("", true, true, "", "") }
-            );
+                Pods: new List<PodInformation>() { new("", true, true, "", "") }
+                );
             _deploymentInformations.Functions.Add(deploymentInformation);
         }
     }
+    public Task<ReplicaRequest?> ScaleAsync(ReplicaRequest? request)
+    {
+        return Task.FromResult(request);
+    }
 
-    public Task<ReplicaRequest?> ScaleAsync(ReplicaRequest? request) => Task.FromResult(request);
-
-    public Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace) =>
-        Task.FromResult(_deploymentInformations);
+    public Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace)
+    {
+        return Task.FromResult(_deploymentInformations);
+    }
 }

@@ -8,6 +8,6 @@ public class ListString : List<string>
 
 [JsonSerializable(typeof(ListString))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-public class ListStringSerializerContext : JsonSerializerContext
+public partial class ListStringSerializerContext : JsonSerializerContext
 {
 }

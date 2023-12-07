@@ -16,7 +16,7 @@ public record FunctionStatus(int NumberReady, int numberRequested);
 
 [JsonSerializable(typeof(FunctionStatus))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-public class FunctionStatusSerializerContext : JsonSerializerContext
+public partial class FunctionStatusSerializerContext : JsonSerializerContext
 {
 }
 
