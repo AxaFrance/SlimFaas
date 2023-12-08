@@ -18,7 +18,7 @@ public class Endpoints
             context.RequestAborted);
     }
 
-    public static async Task RespondAsync(HttpContext context, RespondDelegate respondDelegate)
+    public static async Task DoAsync(HttpContext context, RespondDelegate respondDelegate)
     {
         var slimDataInfo = context.RequestServices.GetRequiredService<SlimDataInfo>();
         if (context.Request.Host.Port != slimDataInfo.Port)
@@ -49,7 +49,7 @@ public class Endpoints
 
     public static Task AddHashSet(HttpContext context)
     {
-        return RespondAsync(context, async (cluster, provider, source) =>
+        return DoAsync(context, async (cluster, provider, source) =>
         {
             var form = await context.Request.ReadFormAsync(source.Token);
 
@@ -64,7 +64,7 @@ public class Endpoints
             if (string.IsNullOrEmpty(key))
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsync("Key ______key_____ is empty", context.RequestAborted);
+                await context.Response.WriteAsync("GetKeyValue ______key_____ is empty", context.RequestAborted);
                 return;
             }
 
@@ -78,23 +78,16 @@ public class Endpoints
 
     public static Task ListRigthPop(HttpContext context)
     {
-        return RespondAsync(context, async (cluster, provider, source) =>
+        return DoAsync(context, async (cluster, provider, source) =>
         {
             var form = await context.Request.ReadFormAsync(source.Token);
 
-            var key = string.Empty;
-            var value = string.Empty;
-            foreach (var formData in form)
-            {
-                key = formData.Key;
-                value = formData.Value.ToString();
-                break;
-            }
+            var (key, value) = GetKeyValue(form);
 
             if (string.IsNullOrEmpty(key) || !int.TryParse(value, out var count))
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsync("Key key is empty or value is not a number",
+                await context.Response.WriteAsync("GetKeyValue key is empty or value is not a number",
                     context.RequestAborted);
                 return;
             }
@@ -128,19 +121,11 @@ public class Endpoints
 
     public static Task ListLeftPush(HttpContext context)
     {
-        return RespondAsync(context, async (cluster, provider, source) =>
+        return DoAsync(context, async (cluster, provider, source) =>
         {
             var form = await context.Request.ReadFormAsync(source.Token);
 
-            var key = string.Empty;
-            var value = string.Empty;
-
-            foreach (var keyValue in form)
-            {
-                key = keyValue.Key;
-                value = keyValue.Value.ToString();
-                break;
-            }
+            var (key, value) = GetKeyValue(form);
 
             if (string.IsNullOrEmpty(key))
             {
@@ -157,21 +142,28 @@ public class Endpoints
         });
     }
 
+    private static (string key, string value) GetKeyValue(IFormCollection form)
+    {
+        var key = string.Empty;
+        var value = string.Empty;
+
+        if (form.Count > 0)
+        {
+            var keyValue = form.First();
+            key = keyValue.Key;
+            value = keyValue.Value.ToString();
+        }
+
+        return (key, value);
+    }
+
     public static Task AddKeyValue(HttpContext context)
     {
-        return RespondAsync(context, async (cluster, provider, source) =>
+        return DoAsync(context, async (cluster, provider, source) =>
         {
             var form = await context.Request.ReadFormAsync(source.Token);
 
-            var key = string.Empty;
-            var value = string.Empty;
-
-            foreach (var keyValue in form)
-            {
-                key = keyValue.Key;
-                value = keyValue.Value.ToString();
-                break;
-            }
+            var (key, value) = GetKeyValue(form);
 
             if (string.IsNullOrEmpty(key))
             {
