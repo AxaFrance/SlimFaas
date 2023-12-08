@@ -31,7 +31,7 @@ public class Startup(IConfiguration configuration)
             .UseRouting()
             .UseEndpoints(static endpoints =>
             {
-                endpoints.MapGet(LeaderResource, Endpoints.RedirectToLeaderAsync);s
+                endpoints.MapGet(LeaderResource, Endpoints.RedirectToLeaderAsync);
                 endpoints.MapGet(HealthResource, async context => { await context.Response.WriteAsync("OK"); });
                 endpoints.MapPost(ListLeftPushResource,  Endpoints.ListLeftPush);
                 endpoints.MapPost(ListRightPopResource,  Endpoints.ListRigthPop);
