@@ -32,7 +32,7 @@ spec:
             timeoutSeconds: 8
           env:
             - name: BASE_FUNCTION_URL
-              value: "http://{function_name}.slimfaas-demo.svc.cluster.local:5000"
+              value: "http://{function_name}.{namespace}.svc.cluster.local:5000"
             - name: BASE_SLIMDATA_URL
               value: "http://{pod_ip}:3262/"
             - name: NAMESPACE

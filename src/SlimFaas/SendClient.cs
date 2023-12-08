@@ -15,6 +15,8 @@ public class SendClient(HttpClient httpClient) : ISendClient
     private readonly string _baseFunctionUrl =
         Environment.GetEnvironmentVariable(EnvironmentVariables.BaseFunctionUrl) ??
         EnvironmentVariables.BaseFunctionUrlDefault;
+    private readonly string _namespaceSlimFaas =
+        Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
 
     public async Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest,
         HttpContext? context = null)
@@ -24,7 +26,7 @@ public class SendClient(HttpClient httpClient) : ISendClient
         string customRequestPath = customRequest.Path;
         string customRequestQuery = customRequest.Query;
         string targetUrl =
-            ComputeTargetUrl(functionUrl, customRequestFunctionName, customRequestPath, customRequestQuery);
+            ComputeTargetUrl(functionUrl, customRequestFunctionName, customRequestPath, customRequestQuery, _namespaceSlimFaas);
         HttpRequestMessage targetRequestMessage = CreateTargetMessage(customRequest, new Uri(targetUrl));
         if (context != null)
         {
@@ -39,7 +41,7 @@ public class SendClient(HttpClient httpClient) : ISendClient
     public async Task<HttpResponseMessage> SendHttpRequestSync(HttpContext context, string functionName,
         string functionPath, string functionQuery)
     {
-        string targetUri = ComputeTargetUrl(_baseFunctionUrl, functionName, functionPath, functionQuery);
+        string targetUri = ComputeTargetUrl(_baseFunctionUrl, functionName, functionPath, functionQuery, _namespaceSlimFaas);
         HttpRequestMessage targetRequestMessage = CreateTargetMessage(context, new Uri(targetUri));
         HttpResponseMessage responseMessage = await httpClient.SendAsync(targetRequestMessage,
             HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
@@ -120,9 +122,9 @@ public class SendClient(HttpClient httpClient) : ISendClient
 
     private static string ComputeTargetUrl(string functionUrl, string customRequestFunctionName,
         string customRequestPath,
-        string customRequestQuery)
+        string customRequestQuery, string namespaceSlimFaas )
     {
-        string url = functionUrl.Replace("{function_name}", customRequestFunctionName) + customRequestPath +
+        string url = functionUrl.Replace("{function_name}", customRequestFunctionName).Replace("{namespace}", namespaceSlimFaas) + customRequestPath +
                      customRequestQuery;
         return url;
     }
