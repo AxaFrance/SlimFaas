@@ -4,7 +4,7 @@ public class HostPort
 {
     public static bool IsSamePort(int? requestPort, int[] ports)
     {
-        if (requestPort != 32620)
+        if (requestPort != 3262)
         {
             Console.WriteLine($"requestPort: {requestPort}");
             foreach (int port in ports)
