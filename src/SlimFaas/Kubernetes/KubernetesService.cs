@@ -140,7 +140,7 @@ public class KubernetesService : IKubernetesService
             string? podName = item.Metadata.Name;
             string deploymentName = ExtractPodDeploymentNameFrom(item.Metadata.GenerateName);
 
-            PodInformation podInformation = new PodInformation(podName, started, ready, podIp, deploymentName);
+            PodInformation podInformation = new(podName, started, ready, podIp, deploymentName);
             yield return podInformation;
         }
     }
