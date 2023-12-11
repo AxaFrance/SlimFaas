@@ -116,7 +116,7 @@ if (replicasService?.Deployments.SlimFaas.Pods != null)
     {
         string slimDataEndpoint = SlimDataEndpoint.Get(podInformation);
         Console.WriteLine($"Adding node  {slimDataEndpoint}");
-        Startup.ClusterMembers.Add(slimDataEndpoint);
+        Startup.AddClusterMemberBeforeStart(slimDataEndpoint);
     }
 
     PodInformation currentPod = replicasService.Deployments.SlimFaas.Pods.First(p => p.Name == hostname);

@@ -8,8 +8,12 @@ namespace RaftNode;
 
 public class Startup(IConfiguration configuration)
 {
-    public static readonly IList<string> ClusterMembers = new List<string>(2);
-    
+    private static readonly IList<string> ClusterMembers = new List<string>(2);
+
+    public static void AddClusterMemberBeforeStart(string endpoint)
+    {
+        ClusterMembers.Add(endpoint);
+    }
 
     public void Configure(IApplicationBuilder app)
     {
