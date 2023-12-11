@@ -40,6 +40,10 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     public async Task InvokeAsync(HttpContext context,
         HistoryHttpMemoryService historyHttpService, ISendClient sendClient, IReplicasService replicasService)
     {
+        if (context.Request.Host.Port != 3262)
+        {
+            Console.WriteLine($"contextRequest.Path: {context.Request.Path}");
+        }
         if (!HostPort.IsSamePort(context.Request.Host.Port, _slimFaasPorts))
         {
             await next(context);
@@ -49,10 +53,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         HttpRequest contextRequest = context.Request;
         (string functionPath, string functionName, FunctionType functionType) = GetFunctionInfo(logger, contextRequest);
         HttpResponse contextResponse = context.Response;
-        Console.WriteLine($"contextRequest.Path: {contextRequest.Path}");
-        Console.WriteLine($"functionPath: {functionPath}");
-        Console.WriteLine($"functionName: {functionName}");
-        Console.WriteLine($"functionType: {functionType}");
+
         switch (functionType)
         {
             case FunctionType.NotAFunction:
