@@ -12,7 +12,7 @@ public enum FunctionType
     NotAFunction
 }
 
-public record FunctionStatus(int NumberReady, int numberRequested);
+public record FunctionStatus(int NumberReady, int NumberRequested);
 
 [JsonSerializable(typeof(FunctionStatus))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
