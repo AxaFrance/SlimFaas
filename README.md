@@ -184,8 +184,8 @@ spec:
             - name: SLIMDATA_DIRECTORY
               value: "/database"
             # If you want to use just one pod for testing purpose, you can use this env variable
-            - name: SLIMDATA_ALLOW_COLD_START
-              value: "true" # default equivalent to false, but allow to start a pod alone as a leader
+            #- name: SLIMDATA_ALLOW_COLD_START
+            #  value: "true" # default equivalent to false, but allow to start a pod alone as a leader
             # If your are not on kubernetes for example docker-compose, you can use this env variable, but you will lose auto-scale
             #- name: MOCK_KUBERNETES_FUNCTIONS
             #  value: "{"Functions":[{"Name":"fibonacci","NumberParallelRequest":1}],"Slimfaas":[{"Name":"slimfaas-1"}]}"
@@ -221,7 +221,21 @@ spec:
           ports:
             - containerPort: 5000
             - containerPort: 3262
-
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: slimfaas
+spec:
+    selector:
+        app: slimfaas
+    ports:
+        - name: "http"
+          port: 80
+          targetPort: 5000
+        - name: "slimdata"
+          port: 3262
+          targetPort: 3262
 ````
 
 
@@ -269,6 +283,13 @@ Instead of creating many pods, SlimFaas use internally many workers in the same 
 
 **SlimData** is a simple redis like database included inside SlimFaas executable. It is based on **Raft** algorithm offered by awesome https://github.com/dotnet/dotNext library.
 By default **SlimData** use a second HTTP port 3262 to expose its API. Don't expose it and keep it internal.
+
+SlimFaas require a least 3 nodes in production. 2 nodes are requires to keep the database in a consistent state.
+If you want to use just one pod for testing purpose, you can use this env variable:
+- SLIMDATA_ALLOW_COLD_START: "true"
+
+This will allow to start a pod alone as a leader.
+SlimFaas can to scale up and down by using classic Horizontal Pod Autoscaler (HPA).
 
 ### Build with .NET
 

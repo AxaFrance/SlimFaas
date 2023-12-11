@@ -147,7 +147,7 @@ public class KubernetesService : IKubernetesService
 
     public static string ExtractPodDeploymentNameFrom(string generalName)
     {
-        string[] names = generalName.Split("-");
+        string[] names = generalName.Split('-');
         if (names.Length <= 0)
         {
             return string.Empty;

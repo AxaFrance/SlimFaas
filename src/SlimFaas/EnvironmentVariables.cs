@@ -100,7 +100,7 @@ public static class EnvironmentVariables
             return defaultNames;
         }
 
-        string[] splits = slimFaasPorts.Split(",");
+        string[] splits = slimFaasPorts.Split(',');
         foreach (string split in splits)
         {
             if (int.TryParse(split, out int value))
