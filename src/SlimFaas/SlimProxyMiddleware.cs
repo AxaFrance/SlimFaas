@@ -49,6 +49,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         HttpRequest contextRequest = context.Request;
         (string functionPath, string functionName, FunctionType functionType) = GetFunctionInfo(logger, contextRequest);
         HttpResponse contextResponse = context.Response;
+        Console.WriteLine($"contextRequest.Path: {contextRequest.Path}");
         Console.WriteLine($"functionPath: {functionPath}");
         Console.WriteLine($"functionName: {functionName}");
         Console.WriteLine($"functionType: {functionType}");
