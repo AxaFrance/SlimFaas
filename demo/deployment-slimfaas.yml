@@ -56,7 +56,6 @@ spec:
               name: slimfaas
             - containerPort: 3262
               name: slimdata
-
 ---
 apiVersion: v1
 kind: Service

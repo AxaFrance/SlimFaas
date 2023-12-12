@@ -8,9 +8,9 @@ Why use SlimFaas ?
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
 - Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
-- REST API that show the status of your functions and allow to wake up your infrastructure
+- Mind Changer: REST API that show the status of your functions and allow to wake up your infrastructure
   - Very useful to inform end users that your infrastructure is starting
-- Simple to install: just deploy a standard pod
+- Plug and Play: just deploy a standard pod
   - No impact on your current kubernetes manifests: just add an annotation to the pod you want to auto-scale
 - Very **Slim** and very **Fast**
 
@@ -221,6 +221,17 @@ spec:
           ports:
             - containerPort: 5000
             - containerPort: 3262
+  # You can use this section to define a persistent volume claim
+  #volumeClaimTemplates:
+  #- metadata:
+  #    name: slimfaas-volume
+  #  spec:
+  #    accessModes: [ "ReadWriteOnce" ]
+  #    storageClassName: managed-csi # or any other storage class available in your cluster
+  #    volumeMode: Filesystem
+  #    resources:
+  #      requests:
+  #        storage: 10Mi
 ---
 apiVersion: v1
 kind: Service
