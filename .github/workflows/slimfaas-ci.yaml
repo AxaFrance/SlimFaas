@@ -8,14 +8,14 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  unit_tests:
+  sonarcloud:
     name: Build and analyze
     runs-on: windows-latest
     steps:
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: 11
+          java-version: 17
           distribution: 'zulu' # Alternative distribution options are available.
       - uses: actions/checkout@v3
         with:
@@ -33,23 +33,37 @@ jobs:
           path: .\.sonar\scanner
           key: ${{ runner.os }}-sonar-scanner
           restore-keys: ${{ runner.os }}-sonar-scanner
+      - uses: actions/setup-dotnet@v3
+        with:
+          global-json-file: global.json
       - name: Install SonarCloud scanner
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: powershell
         run: |
           New-Item -Path .\.sonar\scanner -ItemType Directory
           dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
-      - uses: actions/setup-dotnet@v1
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"AxaFrance_SlimFaas" /o:"axaguildev" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"AxaFrance_SlimFaas" /o:"axaguildev" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
           dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
-          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
-
+          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+  unit_tests:
+    name: Build and analyze
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - uses: actions/setup-dotnet@v3
+        with:
+          global-json-file: global.json
+      - name: Run unit tests
+        run: |
+          dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
   tags:
     needs: unit_tests
     runs-on: ubuntu-latest
@@ -79,12 +93,12 @@ jobs:
       image_name: "axaguildev/slimfaas"
       image_version: "${{ needs.tags.outputs.new_version }}"
       image_build_args: ""
-      image_context: ./src/SlimFaas
-      image_file: "./src/SlimFaas/Dockerfile"
+      image_context: "."
+      image_file: "./Dockerfile"
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      
+
   build_fibonacci:
     needs: tags
     uses: ./.github/workflows/Docker.yml
@@ -92,7 +106,7 @@ jobs:
       image_name: "axaguildev/fibonacci"
       image_version: "${{ needs.tags.outputs.new_version }}"
       image_build_args: ""
-      image_context: ./src/Fibonacci
+      image_context: "./src/Fibonacci"
       image_file: "./src/Fibonacci/Dockerfile"
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}

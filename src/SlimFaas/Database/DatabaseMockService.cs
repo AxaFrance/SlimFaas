@@ -2,18 +2,20 @@
 
 namespace SlimFaas;
 
-public class RedisMockService : IRedisService
+public class DatabaseMockService : IDatabaseService
 {
+    private readonly ConcurrentDictionary<string, IDictionary<string, string>> hashSet = new();
 
-    private ConcurrentDictionary<string, string> keys = new();
-    private ConcurrentDictionary<string, List<string>> queue = new();
-    private ConcurrentDictionary<string, IDictionary<string, string>> hashSet = new();
+    private readonly ConcurrentDictionary<string, string> keys = new();
+    private readonly ConcurrentDictionary<string, List<string>> queue = new();
+
     public Task<string> GetAsync(string key)
     {
         if (keys.ContainsKey(key))
         {
             return Task.FromResult(keys[key]);
         }
+
         return Task.FromResult<string>("");
     }
 
@@ -27,6 +29,7 @@ public class RedisMockService : IRedisService
         {
             keys.TryAdd(key, value);
         }
+
         return Task.CompletedTask;
     }
 
@@ -40,6 +43,7 @@ public class RedisMockService : IRedisService
         {
             hashSet.TryAdd(key, values);
         }
+
         return Task.CompletedTask;
     }
 
@@ -49,6 +53,7 @@ public class RedisMockService : IRedisService
         {
             return Task.FromResult(hashSet[key]);
         }
+
         return Task.FromResult<IDictionary<string, string>>(new Dictionary<string, string>());
     }
 
@@ -64,30 +69,39 @@ public class RedisMockService : IRedisService
             list = new List<string>();
             queue.TryAdd(key, list);
         }
+
         list.Add(field);
         return Task.CompletedTask;
     }
 
     public Task<IList<string>> ListRightPopAsync(string key, long count = 1)
     {
-        if (!queue.ContainsKey(key)) return Task.FromResult<IList<string>>(new List<string>());
-        var list = queue[key];
-            
-        var listToReturn = list.TakeLast((int)count).ToList();
+        if (!queue.ContainsKey(key))
+        {
+            return Task.FromResult<IList<string>>(new List<string>());
+        }
+
+        List<string> list = queue[key];
+
+        List<string> listToReturn = list.TakeLast((int)count).ToList();
         if (listToReturn.Count > 0)
         {
             list.RemoveRange(listToReturn.Count - 1, listToReturn.Count);
             return Task.FromResult<IList<string>>(listToReturn);
         }
+
         return Task.FromResult<IList<string>>(new List<string>());
     }
 
     public Task<long> ListLengthAsync(string key)
     {
-        if (!queue.ContainsKey(key)) return Task.FromResult<long>(0);
-        var list = queue[key];
-            
-        return Task.FromResult<long>(list.Count);
+        if (!queue.ContainsKey(key))
+        {
+            return Task.FromResult<long>(0);
+        }
 
+        List<string> list = queue[key];
+
+        return Task.FromResult<long>(list.Count);
     }
 }

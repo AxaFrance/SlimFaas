@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Moq;
-using SlimFaas.Kubernetes;
+﻿using SlimFaas.Kubernetes;
 
 namespace SlimFaas.Tests;
 
@@ -12,8 +10,7 @@ public class KubernetesServiceShould
     [InlineData("finbonacci-05161655-0561131", "finbonacci")]
     public void ExtractPodDeploymentNameFrom(string generalName, string expectedName)
     {
-        var name = KubernetesService.ExtractPodDeploymentNameFrom(generalName);
+        string name = KubernetesService.ExtractPodDeploymentNameFrom(generalName);
         Assert.Equal(expectedName, name);
     }
-    
 }

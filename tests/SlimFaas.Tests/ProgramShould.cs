@@ -1,10 +1,4 @@
-﻿using System.Net;
-using Microsoft.Extensions.Logging;
-using Moq;
-using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace SlimFaas.Tests;
 
@@ -13,13 +7,17 @@ public class ProgramShould
     [Fact]
     public async Task TestRootEndpoint()
     {
-        Environment.SetEnvironmentVariable("MOCK_REDIS", "true");
-        Environment.SetEnvironmentVariable("MOCK_KUBERNETES_FUNCTIONS", "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}]}");
-        await using var application = new WebApplicationFactory<Program>();
-        using var client = application.CreateClient();
+        Environment.SetEnvironmentVariable(EnvironmentVariables.BaseSlimDataUrl, "http://localhost:3262/");
+        Environment.SetEnvironmentVariable(EnvironmentVariables.SlimDataAllowColdStart, "true");
+        Environment.SetEnvironmentVariable(EnvironmentVariables.MockKubernetesFunctions,
+            "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}],\"Slimfaas\":[{\"Name\":\"slimfaas-1\"}]}");
+#pragma warning disable CA2252
+        await using WebApplicationFactory<Program> application = new WebApplicationFactory<Program>();
+#pragma warning restore CA2252
+        using HttpClient client = application.CreateClient();
 
-        var response = await client.GetStringAsync("/health");
-  
+        string response = await client.GetStringAsync("http://localhost:5000/health");
+
         Assert.Equal("OK", response);
     }
 }

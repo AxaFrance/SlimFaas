@@ -9,35 +9,42 @@ public class HistorySynchronizationWorkerShould
     [Fact]
     public async Task SyncLastTicksBetweenDatabaseAndMemory()
     {
-        var logger = new Mock<ILogger<HistorySynchronizationWorker>>();
-        var redisMockService = new RedisMockService();
-        var historyHttpRedisService = new HistoryHttpRedisService(redisMockService);
-        var kubernetesService = new Mock<IKubernetesService>();
-        var deploymentsInformations = new DeploymentsInformations(Functions: new List<DeploymentInformation>()
-        {
-            new(Deployment: "fibonacci1", Namespace: "default", Replicas: 1, Pods: new List<PodInformation>()),
-            new(Deployment: "fibonacci2", Namespace: "default", Replicas: 0, Pods: new List<PodInformation>())
-        },
-            new SlimFaasDeploymentInformation(1));
+        Mock<ILogger<HistorySynchronizationWorker>> logger = new Mock<ILogger<HistorySynchronizationWorker>>();
+        DatabaseMockService redisMockService = new DatabaseMockService();
+        HistoryHttpDatabaseService historyHttpRedisService = new HistoryHttpDatabaseService(redisMockService);
+        Mock<IKubernetesService> kubernetesService = new Mock<IKubernetesService>();
+        DeploymentsInformations deploymentsInformations = new DeploymentsInformations(
+            new List<DeploymentInformation>
+            {
+                new("fibonacci1", "default", Replicas: 1, Pods: new List<PodInformation>()),
+                new("fibonacci2", "default", Replicas: 0, Pods: new List<PodInformation>())
+            },
+            new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).ReturnsAsync(deploymentsInformations);
-        var historyHttpMemoryService = new HistoryHttpMemoryService();
-        var loggerReplicasService = new Mock<ILogger<ReplicasService>>();
-        var replicasService = new ReplicasService(kubernetesService.Object, historyHttpMemoryService, loggerReplicasService.Object);
+        HistoryHttpMemoryService historyHttpMemoryService = new HistoryHttpMemoryService();
+        Mock<ILogger<ReplicasService>> loggerReplicasService = new Mock<ILogger<ReplicasService>>();
+        ReplicasService replicasService = new ReplicasService(kubernetesService.Object, historyHttpMemoryService,
+            loggerReplicasService.Object);
+
+        Mock<ISlimDataStatus> slimDataStatus = new Mock<ISlimDataStatus>();
+        slimDataStatus.Setup(s => s.WaitForReadyAsync()).Returns(Task.CompletedTask);
+
         await replicasService.SyncDeploymentsAsync("default");
 
-        var firstTicks = 1L;
+        long firstTicks = 1L;
         await historyHttpRedisService.SetTickLastCallAsync("fibonacci1", firstTicks);
-        var service = new HistorySynchronizationWorker(replicasService, historyHttpMemoryService, historyHttpRedisService, logger.Object, 100);
+        HistorySynchronizationWorker service = new HistorySynchronizationWorker(replicasService,
+            historyHttpMemoryService, historyHttpRedisService, logger.Object, slimDataStatus.Object, 100);
 
-        var task = service.StartAsync(CancellationToken.None);
+        Task task = service.StartAsync(CancellationToken.None);
         await Task.Delay(200);
-        var ticksFirstCallAsync = historyHttpMemoryService.GetTicksLastCall("fibonacci1");
+        long ticksFirstCallAsync = historyHttpMemoryService.GetTicksLastCall("fibonacci1");
         Assert.Equal(firstTicks, ticksFirstCallAsync);
 
-        var secondTicks = 2L;
+        long secondTicks = 2L;
         historyHttpMemoryService.SetTickLastCall("fibonacci1", secondTicks);
         await Task.Delay(200);
-        var ticksSecondCallAsync = await historyHttpRedisService.GetTicksLastCallAsync("fibonacci1");
+        long ticksSecondCallAsync = await historyHttpRedisService.GetTicksLastCallAsync("fibonacci1");
         Assert.Equal(secondTicks, ticksSecondCallAsync);
 
         Assert.True(task.IsCompleted);
@@ -46,15 +53,19 @@ public class HistorySynchronizationWorkerShould
     [Fact]
     public async Task LogErrorWhenExceptionIsThrown()
     {
-        var logger = new Mock<ILogger<HistorySynchronizationWorker>>();
-        var redisMockService = new RedisMockService();
-        var historyHttpRedisService = new HistoryHttpRedisService(redisMockService);
-        var historyHttpMemoryService = new HistoryHttpMemoryService();
-        var replicasService = new Mock<IReplicasService>();
+        Mock<ILogger<HistorySynchronizationWorker>> logger = new Mock<ILogger<HistorySynchronizationWorker>>();
+        DatabaseMockService redisMockService = new DatabaseMockService();
+        HistoryHttpDatabaseService historyHttpRedisService = new HistoryHttpDatabaseService(redisMockService);
+        HistoryHttpMemoryService historyHttpMemoryService = new HistoryHttpMemoryService();
+        Mock<IReplicasService> replicasService = new Mock<IReplicasService>();
         replicasService.Setup(r => r.Deployments).Throws(new Exception());
-        var service = new HistorySynchronizationWorker(replicasService.Object, historyHttpMemoryService, historyHttpRedisService, logger.Object, 10);
+        Mock<ISlimDataStatus> slimDataStatus = new Mock<ISlimDataStatus>();
+        slimDataStatus.Setup(s => s.WaitForReadyAsync()).Returns(Task.CompletedTask);
 
-        var task = service.StartAsync(CancellationToken.None);
+        HistorySynchronizationWorker service = new HistorySynchronizationWorker(replicasService.Object,
+            historyHttpMemoryService, historyHttpRedisService, logger.Object, slimDataStatus.Object, 10);
+
+        Task task = service.StartAsync(CancellationToken.None);
         await Task.Delay(100);
 
         logger.Verify(l => l.Log(
@@ -62,7 +73,7 @@ public class HistorySynchronizationWorkerShould
             It.IsAny<EventId>(),
             It.IsAny<It.IsAnyType>(),
             It.IsAny<Exception>(),
-            (Func<It.IsAnyType, Exception?, string>) It.IsAny<object>()), Times.AtLeastOnce);
+            (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()), Times.AtLeastOnce);
         Assert.True(task.IsCompleted);
     }
 }

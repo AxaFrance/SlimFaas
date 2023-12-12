@@ -6,6 +6,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlimFaas.Tests", "tests\Sli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fibonacci", "src\Fibonacci\Fibonacci.csproj", "{8D37956E-F212-4F86-98C1-4B50E1FBCB20}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlimData", "src\SlimData\SlimData.csproj", "{4CAF5B5F-0101-4394-838F-4BD225DAD27D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlimData.Tests", "tests\SlimData.Tests\SlimData.Tests.csproj", "{4F9BBB0F-39E6-47F1-A1A0-C5154743081E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +28,13 @@ Global
 		{8D37956E-F212-4F86-98C1-4B50E1FBCB20}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D37956E-F212-4F86-98C1-4B50E1FBCB20}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D37956E-F212-4F86-98C1-4B50E1FBCB20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CAF5B5F-0101-4394-838F-4BD225DAD27D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CAF5B5F-0101-4394-838F-4BD225DAD27D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CAF5B5F-0101-4394-838F-4BD225DAD27D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CAF5B5F-0101-4394-838F-4BD225DAD27D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F9BBB0F-39E6-47F1-A1A0-C5154743081E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F9BBB0F-39E6-47F1-A1A0-C5154743081E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F9BBB0F-39E6-47F1-A1A0-C5154743081E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F9BBB0F-39E6-47F1-A1A0-C5154743081E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

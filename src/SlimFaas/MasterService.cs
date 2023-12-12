@@ -1,62 +1,22 @@
-﻿namespace SlimFaas;
+﻿using DotNext.Net.Cluster.Consensus.Raft;
+
+namespace SlimFaas;
 
 public interface IMasterService
 {
     bool IsMaster { get; }
-    Task CheckAsync();
 }
 
-public class MasterService : IMasterService
+public class MasterSlimDataService(IRaftCluster cluster) : IMasterService
 {
-    private readonly IRedisService _redisService;
-    private readonly string _id = Guid.NewGuid().ToString();
-    public bool IsMaster { get; private set; }
-    private const string SlimFaasMaster = "slimfaas_master";
-    private const string MasterId = "master_id";
-    private const string LastTicks = "last_ticks";
-    private readonly object Lock = new();
-
-    public MasterService(IRedisService redisService)
+    public bool IsMaster
     {
-        _redisService = redisService; 
-    }
-
-    public async Task CheckAsync()
-    {
-        var dictionary= await _redisService.HashGetAllAsync(SlimFaasMaster);
-        if (dictionary.Count == 0)
+        get
         {
-            await _redisService.HashSetAsync(SlimFaasMaster, new Dictionary<string, string>
-            {
-                { MasterId, _id },
-                { LastTicks, DateTime.Now.Ticks.ToString() },
-            });
-            return;
-        }
-
-        var currentMasterId = dictionary[MasterId];
-        var currentTicks = long.Parse(dictionary[LastTicks]);
-        var isMaster = currentMasterId == _id;
-        if (isMaster != IsMaster)
-        {
-            lock (Lock)
-            {
-                IsMaster = isMaster;
-            }
-        }
-
-        var isMasterTimeElapsed = TimeSpan.FromTicks(currentTicks) + TimeSpan.FromSeconds(2) < TimeSpan.FromTicks(DateTime.Now.Ticks);
-        switch (isMaster)
-        {
-            case false when isMasterTimeElapsed:
-            case true when !isMasterTimeElapsed:
-                await _redisService.HashSetAsync(SlimFaasMaster, new Dictionary<string, string>
-                {
-                    { MasterId, _id },
-                    { LastTicks, DateTime.Now.Ticks.ToString() },
-                });
-                break;
+            CancellationToken leadershipToken = cluster.LeadershipToken;
+            return !leadershipToken.IsCancellationRequested;
         }
     }
 
+    public Task CheckAsync() => Task.CompletedTask;
 }

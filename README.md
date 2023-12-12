@@ -1,6 +1,6 @@
 # SlimFaas : The slimest and simplest Function As A Service [![Continuous Integration](https://github.com/AxaFrance/SlimFaas/actions/workflows/slimfaas-ci.yaml/badge.svg)](https://github.com/AxaFrance/SlimFaas/actions/workflows/slimfaas-ci.yaml) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=alert_status)](https://sonarcloud.io/dashboard?id=AxaFrance_SlimFaas) [![Reliability](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=AxaFrance_SlimFaas&metric=reliability_rating) [![Security](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=security_rating)](https://sonarcloud.io/component_measures?id=AxaGuilDEv_ml-cli&metric=security_rating) [![Code Corevage](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=coverage)](https://sonarcloud.io/component_measures?id=AxaFrance_SlimFaas&metric=Coverage) [![Docker SlimFaas](https://img.shields.io/docker/pulls/axaguildev/slimfaas.svg)](https://hub.docker.com/r/axaguildev/slimfaas/builds)
 
-![SlimFaas.png](documentation%2FSlimFaas.png)
+![SlimFaas.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/SlimFaas.png)
 
 Why use SlimFaas ?
 - Scale to 0 after a period of inactivity
@@ -8,11 +8,13 @@ Why use SlimFaas ?
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
 - Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
-- Simple to install: just deploy a standard pod
+- Mind Changer: REST API that show the status of your functions and allow to wake up your infrastructure
+  - Very useful to inform end users that your infrastructure is starting
+- Plug and Play: just deploy a standard pod
   - No impact on your current kubernetes manifests: just add an annotation to the pod you want to auto-scale
-- Very Slim and very Fast
+- Very **Slim** and very **Fast**
 
-![slim-faas-ram-cpu.png](documentation%2Fslim-faas-ram-cpu.png)
+![slim-faas-ram-cpu.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/slim-faas-ram-cpu.png)
 
 ## Getting Started with Kubernetes
 
@@ -36,20 +38,24 @@ kubectl apply -f deployment-functions.yml
 Now, you can access your pod via SlimFaas proxy:
 
 Synchronous way:
-- http://localhost:30020/function/fibonacci1/hello/guillaume
-- http://localhost:30020/function/fibonacci2/hello/elodie
-- http://localhost:30020/function/fibonacci3/hello/julie
+- http://localhost:30021/function/fibonacci1/hello/guillaume
+- http://localhost:30021/function/fibonacci2/hello/elodie
+- http://localhost:30021/function/fibonacci3/hello/julie
 
 Asynchronous way:
-- http://localhost:30020/async-function/fibonacci1/hello/guillaume
-- http://localhost:30020/async-function/fibonacci2/hello/elodie
-- http://localhost:30020/async-function/fibonacci3/hello/julie
+- http://localhost:30021/async-function/fibonacci1/hello/guillaume
+- http://localhost:30021/async-function/fibonacci2/hello/elodie
+- http://localhost:30021/async-function/fibonacci3/hello/julie
 
 Just wake up function:
-- http://localhost:30020/wake-function/fibonacci1
-- http://localhost:30020/wake-function/fibonacci2
-- http://localhost:30020/wake-function/fibonacci3
+- http://localhost:30021/wake-function/fibonacci1
+- http://localhost:30021/wake-function/fibonacci2
+- http://localhost:30021/wake-function/fibonacci3
 
+Get function status:
+- http://localhost:30021/status-function/fibonacci1 => {"NumberReady":1,"numberRequested":1}
+- http://localhost:30021/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1}
+- http://localhost:30021/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1}
 
 Enjoy slimfaas !!!!
 
@@ -78,14 +84,14 @@ SlimFaas act as an HTTP proxy with 2 modes:
 
 - Synchronous http://slimfaas/function/myfunction = > HTTP response function
 
-![sync_http_call.PNG](documentation%2Fsync_http_call.PNG)
+![sync_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/sync_http_call.PNG)
 
 ### Asynchrounous HTTP call
 
 - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
-  - Tail in memory or using Redis
+  - Tail using SlimData database included in SlimFaas pod
 
-![async_http_call.PNG](documentation%2Fasync_http_call.PNG)
+![async_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/async_http_call.PNG)
 
 ### Wake HTTP call
 
@@ -114,10 +120,10 @@ spec:
         app: fibonacci1
       annotations:
         # Just add SlimFaas annotation to your pods and that's it !
-        SlimFaas/Function: "true" 
+        SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
     spec:
@@ -136,22 +142,25 @@ spec:
             - containerPort: 8080
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: slimfaas
 spec:
+  replicas: 3
+  podManagementPolicy: Parallel
+  serviceName: slimfaas
   selector:
     matchLabels:
       app: slimfaas
   template:
     metadata:
-      annotations:
-        prometheus.io/path: /metrics
-        prometheus.io/port: '5000'
-        prometheus.io/scrape: 'true'
       labels:
         app: slimfaas
     spec:
+      volumes:
+        - name: slimfaas-volume
+          emptyDir:
+            sizeLimit: 10Mi
       serviceAccountName: admin # Use a service account with admin role
       containers:
         - name: slimfaas
@@ -160,24 +169,26 @@ spec:
             httpGet:
               path: /health
               port: 5000
-            initialDelaySeconds: 1
+            initialDelaySeconds: 3
             periodSeconds: 10
             timeoutSeconds: 8
           env:
             - name: BASE_FUNCTION_URL
-              value: "http://{function_name}.default.svc.cluster.local:8080"
-            - name: ASPNETCORE_URLS
-              value: http://+:5000
+              value: "http://{function_name}.{namespace}.svc.cluster.local:8080"
+            - name: BASE_SLIMDATA_URL
+              value: "http://{pod_name}.slimfaas.{namespace}.svc.cluster.local:3262/"  # Don't expose this port, it can also be like "http://{pod_ip}:3262/" but if you can use DNS it's better
+            - name: SLIMFAAS_PORTS
+              value: "5000" # can be like "5000,6000,7000" if you want to expose more ports
             - name: NAMESPACE
               value: "default"
-            # If you want to use Redis use this env variable and comment MOCK_REDIS
-            #- name: REDIS_CONNECTION_STRING
-            #  value: "redis-ha-haproxy:6379"
-            - name: MOCK_REDIS
-              value: "true"
+            - name: SLIMDATA_DIRECTORY
+              value: "/database"
+            # If you want to use just one pod for testing purpose, you can use this env variable
+            #- name: SLIMDATA_ALLOW_COLD_START
+            #  value: "true" # default equivalent to false, but allow to start a pod alone as a leader
             # If your are not on kubernetes for example docker-compose, you can use this env variable, but you will lose auto-scale
-            #- name: MOCK_KUBERNETES_FUNCTIONS 
-            #  value: "{\"Functions\":[{\"Name\":\"kubernetes-bootcamp1\",\"NumberParallelRequest\":1}]}"
+            #- name: MOCK_KUBERNETES_FUNCTIONS
+            #  value: "{"Functions":[{"Name":"fibonacci","NumberParallelRequest":1}],"Slimfaas":[{"Name":"slimfaas-1"}]}"
 
             # Optional, longer is the delay, less CPU and RAM is used
             #- name : HISTORY_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS
@@ -187,7 +198,7 @@ spec:
             #  value : "2000" # default equivalent to 2 seconds
             # Optional, longer is the delay, less CPU and RAM is used
             #- name : SLIM_WORKER_DELAY_MILLISECONDS
-            #  value : "10" # default equivalent to 10 milliseconds
+            #  value : "50" # default equivalent to 50 milliseconds
             # Optional, longer is the delay, less CPU and RAM is used
             #- name : SCALE_REPLICAS_WORKER_DELAY_MILLISECONDS
             #  value : "1000" # default equivalent to 1 seconds
@@ -197,6 +208,9 @@ spec:
             # Optional
             # name : POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED
             # value : "false" # default equivalent to false
+          volumeMounts:
+            - name: slimfaas-volume
+              mountPath: /database
           resources:
             limits:
               memory: "76Mi"
@@ -206,12 +220,38 @@ spec:
               cpu: "250m"
           ports:
             - containerPort: 5000
-
+            - containerPort: 3262
+  # You can use this section to define a persistent volume claim
+  #volumeClaimTemplates:
+  #- metadata:
+  #    name: slimfaas-volume
+  #  spec:
+  #    accessModes: [ "ReadWriteOnce" ]
+  #    storageClassName: managed-csi # or any other storage class available in your cluster
+  #    volumeMode: Filesystem
+  #    resources:
+  #      requests:
+  #        storage: 10Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: slimfaas
+spec:
+    selector:
+        app: slimfaas
+    ports:
+        - name: "http"
+          port: 80
+          targetPort: 5000
+        - name: "slimdata"
+          port: 3262
+          targetPort: 3262
 ````
 
 
 ### SlimFaas Annotations with defaults values
-- SlimFaas/Function: "true" 
+- SlimFaas/Function: "true"
   - Activate SlimFaas on this pod, so your pod will be auto-scaled
 - SlimFaas/ReplicasMin: "0"
   - Scale down to this value after a period of inactivity
@@ -247,22 +287,31 @@ Now we have a solution not **coupled** to anything. **SlimFaas** is **simple**, 
 Instead of creating many pods, SlimFaas use internally many workers in the same pod:
 
 - **SlimWorker**: Manage asynchronous HTTP requests calls to underlying functions
+- **SlimDataSynchronizationWorker**: Allow to make possible scale up and down SlimData Raft nodes
 - **HistorySynchronisationWorker**: Manage history of HTTP requests between the pod and kubernetes
 - **ReplicasSynchronizationWorker**: Manage replicas synchronization between the pod and kubernetes
-- **MasterWorker**: Elect a master pod to manage kubernetes scale up and down
 - **ReplicasScaleWorker**: If master, then scale up and down kubernetes pods
+
+**SlimData** is a simple redis like database included inside SlimFaas executable. It is based on **Raft** algorithm offered by awesome https://github.com/dotnet/dotNext library.
+By default **SlimData** use a second HTTP port 3262 to expose its API. Don't expose it and keep it internal.
+
+SlimFaas require a least 3 nodes in production. 2 nodes are requires to keep the database in a consistent state.
+If you want to use just one pod for testing purpose, you can use this env variable:
+- SLIMDATA_ALLOW_COLD_START: "true"
+
+This will allow to start a pod alone as a leader.
+SlimFaas can to scale up and down by using classic Horizontal Pod Autoscaler (HPA).
 
 ### Build with .NET
 
 Why .NET ?
-- .NET is always getting faster and faster : https://www.techempower.com/benchmarks/#section=data-r21
+- .NET is always getting faster and faster : https://www.techempower.com/benchmarks/#section=data-r22
 - ASP.NET Core allow to resolve complex use cases with few lines of codes
 - .NET is always getting smaller and smaller: https://twitter.com/MStrehovsky/status/1660806238979117056?t=WPrZwi7WrIWi4tjoDUXEgg&s=19
 
 
 ## What Next ?
 
-1. Public Open Source
-2. Add a build version without any redis dependencies and allow SlimFaas to manage internal queue
+1. Different scale down mode depending from configuration and current hour
+2. Allow to scale down also statefulset pods
 3. Scale up dynamically from SlimFaas
-4. Upgrade to .NET8 using AOT => lighter and faster

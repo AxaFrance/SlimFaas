@@ -15,14 +15,14 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:
-        - name: kubernetes-bootcamp1
-          image: axaguildev/fibonacci:latest
+        - name: fibonacci1
+          image: axaguildev/fibonacci:pr-24-242
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -52,14 +52,14 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:
-        - name: kubernetes-bootcamp2
-          image: axaguildev/fibonacci:latest
+        - name: fibonacci2
+          image: axaguildev/fibonacci:pr-24-242
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -89,14 +89,14 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:
         - name: fibonacci3
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:pr-24-242
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -121,7 +121,7 @@ spec:
   ports:
     - port: 5000
       targetPort: 5000
-      nodePort: 30012
+      nodePort: 30015
 ---
 apiVersion: v1
 kind: Service
@@ -134,7 +134,7 @@ spec:
   ports:
     - port: 5000
       targetPort: 5000
-      nodePort: 30013
+      nodePort: 30016
 ---
 apiVersion: v1
 kind: Service
@@ -147,4 +147,4 @@ spec:
   ports:
     - port: 5000
       targetPort: 5000
-      nodePort: 30014
+      nodePort: 30017

@@ -1,6 +1,6 @@
 ﻿namespace SlimFaas;
 
-public interface IQueue
+public interface ISlimFaasQueue
 {
     Task EnqueueAsync(string key, string message);
     Task<IList<string>> DequeueAsync(string key, long count = 1);

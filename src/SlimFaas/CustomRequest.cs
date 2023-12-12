@@ -7,10 +7,8 @@ public record struct CustomRequest(IList<CustomHeader> Headers, byte[]? Body, st
 
 public record struct CustomHeader(string Key, string?[] Values);
 
-
 [JsonSerializable(typeof(CustomRequest))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 public partial class CustomRequestSerializerContext : JsonSerializerContext
 {
-    
 }

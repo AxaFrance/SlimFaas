@@ -1,9 +1,12 @@
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: slimfaas
 spec:
+  replicas: 3
+  podManagementPolicy: Parallel
+  serviceName: slimfaas
   selector:
     matchLabels:
       app: slimfaas
@@ -12,40 +15,62 @@ spec:
       labels:
         app: slimfaas
     spec:
+      volumes:
+        - name: slimfaas-volume
+          emptyDir:
+            sizeLimit: 10Mi
       serviceAccountName: slimfaas
       containers:
         - name: slimfaas
-          image: axaguildev/slimfaas:latest
+          image: axaguildev/slimfaas:pr-24-267
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 8
           env:
             - name: BASE_FUNCTION_URL
-              value: "http://{function_name}.slimfaas-demo.svc.cluster.local:5000"
-            - name: ASPNETCORE_URLS
-              value: http://+:5000
+              value: "http://{function_name}.{namespace}.svc.cluster.local:5000"
+            - name: BASE_SLIMDATA_URL
+              value: "http://{pod_ip}:3262/"
             - name: NAMESPACE
               value: "slimfaas-demo"
-            - name: MOCK_REDIS
-              value: "true"
-            #- name: REDIS_CONNECTION_STRING
-            #  value: "redis-ha-haproxy:6379"
+            - name: SLIMDATA_DIRECTORY
+              value: "/database"
+            - name: SLIMFAAS_PORTS
+              value: "5000,30021"
+          volumeMounts:
+            - name: slimfaas-volume
+              mountPath: /database
           resources:
             limits:
-              memory: "76Mi"
-              cpu: "4000m"
+              memory: "160Mi"
+              cpu: "1000m"
             requests:
               memory: "76Mi"
               cpu: "200m"
           ports:
             - containerPort: 5000
+              name: slimfaas
+            - containerPort: 3262
+              name: slimdata
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: slimfaas
 spec:
+  type: NodePort
   selector:
     app: slimfaas
-  type: NodePort
   ports:
-    - port: 80
+    - name: "http"
+      port: 5000
       targetPort: 5000
-      nodePort: 30020
+      nodePort: 30021
+    - name: "slimdata"
+      port: 3262
+      targetPort: 3262
+  externalTrafficPolicy: Local  # Preserve source IP

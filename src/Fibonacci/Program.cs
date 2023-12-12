@@ -1,28 +1,28 @@
 using Microsoft.AspNetCore.Mvc;
 
-var builder = WebApplication.CreateBuilder(args);
-var serviceCollection = builder.Services;
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+IServiceCollection serviceCollection = builder.Services;
 serviceCollection.AddSingleton<Fibonacci, Fibonacci>();
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 
 app.MapPost("/fibonacci", (
-    [FromServices]ILogger<Fibonacci> logger, 
-    [FromServices] Fibonacci fibonacci, 
+    [FromServices] ILogger<Fibonacci> logger,
+    [FromServices] Fibonacci fibonacci,
     int input) =>
 {
     logger.LogDebug("Fibonacci Called");
     return fibonacci.Run(input);
 });
 
-app.MapGet("/download", ([FromServices]ILogger<Fibonacci> logger) =>
+app.MapGet("/download", ([FromServices] ILogger<Fibonacci> logger) =>
 {
     logger.LogDebug("Download Called");
-    var path = Path.Combine(Directory.GetCurrentDirectory(), "dog.png");
-    return Results.File(path, contentType:  "image/png");
+    string path = Path.Combine(Directory.GetCurrentDirectory(), "dog.png");
+    return Results.File(path, "image/png");
 });
 
-app.MapGet("/hello/{name}", ([FromServices]ILogger<Fibonacci> logger, string name) =>
+app.MapGet("/hello/{name}", ([FromServices] ILogger<Fibonacci> logger, string name) =>
 {
     logger.LogDebug("Hello Called");
     return $"Hello {name}!";
@@ -30,7 +30,7 @@ app.MapGet("/hello/{name}", ([FromServices]ILogger<Fibonacci> logger, string nam
 
 app.Run();
 
-class Fibonacci
+internal class Fibonacci
 {
     public int Run(int i)
     {
@@ -38,6 +38,7 @@ class Fibonacci
         {
             return 1;
         }
+
         return Run(i - 1) + Run(i - 2);
     }
 }
