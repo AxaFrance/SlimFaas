@@ -22,7 +22,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci1
-          image: axaguildev/fibonacci:pr-24-242
+          image: axaguildev/fibonacci:pr-25-277
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -59,7 +59,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci2
-          image: axaguildev/fibonacci:pr-24-242
+          image: axaguildev/fibonacci:pr-25-277
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -96,7 +96,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci3
-          image: axaguildev/fibonacci:pr-24-242
+          image: axaguildev/fibonacci:pr-25-277
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
