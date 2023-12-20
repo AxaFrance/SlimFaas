@@ -3,8 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 IServiceCollection serviceCollection = builder.Services;
 serviceCollection.AddSingleton<Fibonacci, Fibonacci>();
-WebApplication app = builder.Build();
+serviceCollection.AddCors();
 
+WebApplication app = builder.Build();
+app.UseCors(builder => builder
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+);
 
 app.MapPost("/fibonacci", (
     [FromServices] ILogger<Fibonacci> logger,
