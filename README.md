@@ -190,6 +190,8 @@ spec:
             #- name: MOCK_KUBERNETES_FUNCTIONS
             #  value: "{"Functions":[{"Name":"fibonacci","NumberParallelRequest":1}],"Slimfaas":[{"Name":"slimfaas-1"}]}"
 
+             # Configure CORS allowed Origins, default is *, you can use a comma separated list example: http://localhost:3000,http://localhost:3001
+            #- name: SLIMFAAS_CORS_ALLOW_ORIGIN
             # Optional, longer is the delay, less CPU and RAM is used
             #- name : HISTORY_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS
             #  value : "500" # default equivalent to 0,5 seconds

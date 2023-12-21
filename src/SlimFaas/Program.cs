@@ -191,11 +191,25 @@ builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 
 
 WebApplication app = builder.Build();
-app.UseCors(builder => builder
-    .AllowAnyOrigin()
-    .AllowAnyMethod()
-    .AllowAnyHeader()
-);
+app.UseCors(builder =>
+{
+    string slimFaasCorsAllowOrigin = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimFaasCorsAllowOrigin) ??
+                               EnvironmentVariables.SlimFaasCorsAllowOriginDefault;
+    if (slimFaasCorsAllowOrigin == "*")
+    {
+        builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    }
+    else
+    {
+        builder
+            .WithOrigins(slimFaasCorsAllowOrigin.Split(','))
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+}
+});
 app.UseMiddleware<SlimProxyMiddleware>();
 app.Use(async (context, next) =>
 {

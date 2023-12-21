@@ -21,23 +21,24 @@ function useInterval(callback, delay) {
   }, [delay]);
 }
 
-function App({ name }) {
-  const [state, setState] = useState( {"NumberReady":0,"numberRequested":0});
+function App({ name, url }) {
+  const [state, setState] = useState( {"NumberReady":0,"NumberRequested":0});
+  const [stateFibonacci, setFibonacci] = useState( {"NumberReady":0,"NumberRequested":0});
   useInterval(() => {
-    fetch('http://localhost:30021/status-function/'+name).then((res) => res.json()).then((data) => {
+    fetch( url + '/status-function/'+name).then((res) => res.json()).then((data) => {
       console.log(data);
       setState(data);
     });
   }, 2000);
 
   const postFibonacciAsync = () => {
-    fetch('http://localhost:30021/function/'+name, {
+    fetch( url +'/function/'+name + "/fibonacci", {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({"input": 42})
-    }).then((res) => res.json()).then((data) => {
+      body: JSON.stringify({ "input": 42 })
+    }).then((res) => res.json() ).then((data) => {
       console.log(data);
       setState(data);
     });
@@ -51,7 +52,7 @@ function App({ name }) {
           Post Fibonacci(42)
         </button>
         <p>
-          {state.NumberReady} of {state.numberRequested} numbers ready
+          {state.NumberReady} of {state.NumberRequested} numbers ready
         </p>
       </div>
     </>

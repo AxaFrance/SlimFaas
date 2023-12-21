@@ -12,13 +12,17 @@ app.UseCors(builder => builder
     .AllowAnyHeader()
 );
 
+
+
 app.MapPost("/fibonacci", (
     [FromServices] ILogger<Fibonacci> logger,
     [FromServices] Fibonacci fibonacci,
-    int input) =>
+    FibonacciInput input) =>
 {
     logger.LogDebug("Fibonacci Called");
-    return fibonacci.Run(input);
+    var output = new FibonacciOutput();
+    output.Result = fibonacci.Run(input.Input);
+    return output;
 });
 
 app.MapGet("/download", ([FromServices] ILogger<Fibonacci> logger) =>
@@ -47,4 +51,12 @@ internal class Fibonacci
 
         return Run(i - 1) + Run(i - 2);
     }
+}
+
+public record FibonacciInput{
+    public int Input { get; set; }
+}
+
+public record FibonacciOutput{
+    public int Result { get; set; }
 }
