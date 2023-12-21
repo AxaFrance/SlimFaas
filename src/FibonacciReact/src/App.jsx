@@ -22,11 +22,15 @@ function useInterval(callback, delay) {
 }
 
 function App({ name, url }) {
-  const [state, setState] = useState( {"NumberReady":0,"NumberRequested":0});
+  const [state, setState] = useState( {"status": "not_started"});
   const [stateFibonacci, setFibonacci] = useState( {});
   useInterval(() => {
     fetch( url + '/status-function/'+name).then((res) => res.json()).then((data) => {
-      setState(data);
+        data.NumberReady = data.NumberReady || 0;
+        data.NumberRequested = data.NumberRequested || 0;
+        let status = data.NumberReady === data.NumberRequested ? "ready" : "loading";
+        if(data.NumberRequested === 0) status = "not_started";
+        setState({status: status});
     });
   }, 2000);
 
@@ -43,7 +47,7 @@ function App({ name, url }) {
       const end = performance.now();
       const result = {...data, "duration_seconds": (end - start)/1000};
       console.log(result);
-        setFibonacci(result);
+      setFibonacci(result);
     });
   }
 
@@ -62,8 +66,8 @@ function App({ name, url }) {
                 Wake up
             </button>
             <p>
-                {state.NumberReady} of {state.NumberRequested} numbers ready <br/>
-                {JSON.stringify(stateFibonacci)}
+               Environement status: {state.status} <br/>
+               Request status: {JSON.stringify(stateFibonacci)}
             </p>
         </div>
     </>
