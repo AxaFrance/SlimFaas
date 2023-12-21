@@ -10,9 +10,9 @@ RUN dotnet restore "Fibonacci.csproj"
 RUN dotnet build "Fibonacci.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Fibonacci.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Fibonacci.csproj" -linux-x64 -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Fibonacci.dll"]
+ENTRYPOINT ["./Fibonacci"]

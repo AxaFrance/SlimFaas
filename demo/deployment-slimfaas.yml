@@ -22,7 +22,7 @@ spec:
       serviceAccountName: slimfaas
       containers:
         - name: slimfaas
-          image: axaguildev/slimfaas:pr-25-281
+          image: axaguildev/slimfaas:pr-25-283
           livenessProbe:
             httpGet:
               path: /health
