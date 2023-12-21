@@ -38,6 +38,9 @@ app.MapGet("/hello/{name}", ([FromServices] ILogger<Fibonacci> logger, string na
     return $"Hello {name}!";
 });
 
+
+app.MapGet("/health", () => "OK");
+
 app.Run();
 
 internal class Fibonacci

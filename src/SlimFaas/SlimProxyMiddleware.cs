@@ -89,7 +89,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 ? 0
                 : functionDeploymentInformation.Pods.Count(p => p.Ready.HasValue && p.Ready.Value);
             int numberRequested =
-                functionDeploymentInformation == null ? 0 : functionDeploymentInformation.Pods.Count();
+                functionDeploymentInformation?.Replicas ?? 0;
             contextResponse.StatusCode = 200;
             contextResponse.WriteAsJsonAsync(new FunctionStatus(numberReady, numberRequested),
                 FunctionStatusSerializerContext.Default.FunctionStatus);
