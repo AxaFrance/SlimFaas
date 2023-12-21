@@ -100,13 +100,24 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         }
     }
 
-    private static void BuildWakeResponse(HistoryHttpMemoryService historyHttpService, IReplicasService replicasService,
+    private static async Task BuildWakeResponse(HistoryHttpMemoryService historyHttpService, IReplicasService replicasService,
         string functionName, HttpResponse contextResponse)
     {
         DeploymentInformation? function = SearchFunction(replicasService, functionName);
         if (function != null)
         {
-            historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+            var numberPods = 0;
+            while (numberPods == 0)
+            {
+                historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+                function = SearchFunction(replicasService, functionName);
+                if (function != null)
+                {
+                    numberPods = function.Pods.Count(p => p.Ready.HasValue && p.Ready.Value);
+                }
+                await Task.Delay(100);
+            }
+
             contextResponse.StatusCode = 204;
         }
         else

@@ -195,20 +195,22 @@ app.UseCors(builder =>
 {
     string slimFaasCorsAllowOrigin = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimFaasCorsAllowOrigin) ??
                                EnvironmentVariables.SlimFaasCorsAllowOriginDefault;
-    if (slimFaasCorsAllowOrigin == "*")
+    Console.WriteLine("CORS Allowing origins: " + slimFaasCorsAllowOrigin);
+    //if (slimFaasCorsAllowOrigin == "*")
     {
+        Console.WriteLine("CORS Allowing all origins");
         builder
             .AllowAnyOrigin()
             .AllowAnyMethod()
             .AllowAnyHeader();
     }
-    else
+    /*else
     {
         builder
             .WithOrigins(slimFaasCorsAllowOrigin.Split(','))
             .AllowAnyMethod()
             .AllowAnyHeader();
-}
+    }*/
 });
 app.UseMiddleware<SlimProxyMiddleware>();
 app.Use(async (context, next) =>
