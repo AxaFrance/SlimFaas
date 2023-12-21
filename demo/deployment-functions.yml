@@ -16,19 +16,19 @@ spec:
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "20"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:
         - name: fibonacci1
-          image: axaguildev/fibonacci:pr-25-290
+          image: axaguildev/fibonacci:pr-25-291
           livenessProbe:
             httpGet:
               path: /health
               port: 5000
-            initialDelaySeconds: 3
-            periodSeconds: 2
+            initialDelaySeconds: 15
+            periodSeconds: 8
             timeoutSeconds: 8
           env:
             - name: ASPNETCORE_URLS
@@ -59,14 +59,21 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "20"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:
         - name: fibonacci2
-          image: axaguildev/fibonacci:pr-25-290
+          image: axaguildev/fibonacci:pr-25-291
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 8
+            timeoutSeconds: 8
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -97,13 +104,20 @@ spec:
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "20"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
     spec:
       serviceAccountName: default
       containers:
         - name: fibonacci3
-          image: axaguildev/fibonacci:pr-25-290
+          image: axaguildev/fibonacci:pr-25-291
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 8
+            timeoutSeconds: 8
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -133,7 +147,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: webapp
-          image: axaguildev/fibonacci-webapp:pr-25-290
+          image: axaguildev/fibonacci-webapp:pr-25-291
           resources:
             limits:
               memory: "96Mi"
