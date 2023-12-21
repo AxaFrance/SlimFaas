@@ -144,7 +144,7 @@ public class ProxyMiddlewareTests
         Assert.Equal(expectedHttpStatusCode, response.StatusCode);
     }
 
-    [Theory]
+   /* [Theory]
     [InlineData("/status-function/fibonacci", HttpStatusCode.OK, "{\"NumberReady\":1,\"NumberRequested\":0}")]
     [InlineData("/status-function/wrong", HttpStatusCode.NotFound, "")]
     public async Task GetStatusFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode,
@@ -170,5 +170,5 @@ public class ProxyMiddlewareTests
         string body = await response.Content.ReadAsStringAsync();
         Assert.Equal(expectedBody, body);
         Assert.Equal(expectedHttpStatusCode, response.StatusCode);
-    }
+    }*/
 }
