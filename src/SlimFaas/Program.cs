@@ -66,7 +66,7 @@ serviceCollectionSlimFaas.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemo
     serviceProviderStarter.GetService<HistoryHttpMemoryService>()!);
 serviceCollectionSlimFaas.AddSingleton<IKubernetesService>(sp =>
     serviceProviderStarter.GetService<IKubernetesService>()!);
-
+serviceCollectionSlimFaas.AddCors();
 
 string publicEndPoint = string.Empty;
 string podDataDirectoryPersistantStorage = string.Empty;
@@ -191,6 +191,11 @@ builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 
 
 WebApplication app = builder.Build();
+app.UseCors(builder => builder
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+);
 app.UseMiddleware<SlimProxyMiddleware>();
 app.Use(async (context, next) =>
 {
