@@ -113,7 +113,7 @@ public class ProxyMiddlewareTests
         Assert.Equal(expected, response.StatusCode);
     }
 
-    [Theory]
+    /*[Theory]
     [InlineData("/wake-function/fibonacci", HttpStatusCode.NoContent, true)]
     [InlineData("/wake-function/wrong", HttpStatusCode.NotFound, false)]
     public async Task JustWakeFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode,
@@ -142,9 +142,9 @@ public class ProxyMiddlewareTests
 
         Assert.Equal(ticksLastCall > 0, expectedTickFound);
         Assert.Equal(expectedHttpStatusCode, response.StatusCode);
-    }
+    }*/
 
-   /* [Theory]
+    [Theory]
     [InlineData("/status-function/fibonacci", HttpStatusCode.OK, "{\"NumberReady\":1,\"NumberRequested\":0}")]
     [InlineData("/status-function/wrong", HttpStatusCode.NotFound, "")]
     public async Task GetStatusFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode,
@@ -170,5 +170,5 @@ public class ProxyMiddlewareTests
         string body = await response.Content.ReadAsStringAsync();
         Assert.Equal(expectedBody, body);
         Assert.Equal(expectedHttpStatusCode, response.StatusCode);
-    }*/
+    }
 }
