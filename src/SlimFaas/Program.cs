@@ -172,6 +172,7 @@ Dictionary<string, string> slimDataConfiguration = new()
     { "heartbeatThreshold", "0.6" }
 };
 builder.Configuration["publicEndPoint"] = slimDataConfiguration["publicEndPoint"];
+builder.Configuration["lowerElectionTimeout"] = slimDataConfiguration["lowerElectionTimeout"];
 startup.ConfigureServices(serviceCollectionSlimFaas);
 
 builder.Host
