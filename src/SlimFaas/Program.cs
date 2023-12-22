@@ -135,6 +135,7 @@ serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
 serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
 serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddPolicyHandler(GetRetrySlimDataPolicy())
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true });
 
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
@@ -160,16 +161,24 @@ int[] slimFaasPorts =
 
 // Node start as master if it is alone in the cluster
 string coldStart = replicasService != null && replicasService.Deployments.SlimFaas.Pods.Count == 1 ? "true" : "false";
+string slimDataHeartbeatThreshold = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataHeartbeatThreshold) ??
+                           EnvironmentVariables.SlimDataHeartbeatThresholdDefault;
+string slimDataLowerElectionTimeout = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataLowerElectionTimeout) ??
+                                        EnvironmentVariables.SlimDataLowerElectionTimeoutDefault;
+string slimDataUpperElectionTimeout =
+    Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataUpperElectionTimeout) ??
+    EnvironmentVariables.SlimDataUpperElectionTimeoutDefault;
+
 Dictionary<string, string> slimDataConfiguration = new()
 {
     { "partitioning", "false" },
-    { "lowerElectionTimeout", "300" },
-    { "upperElectionTimeout", "600" },
+    { "lowerElectionTimeout", slimDataLowerElectionTimeout },
+    { "upperElectionTimeout", slimDataUpperElectionTimeout },
     { "publicEndPoint", publicEndPoint },
     { "coldStart", coldStart },
     { "requestJournal:memoryLimit", "5" },
     { "requestJournal:expiration", "00:01:00" },
-    { "heartbeatThreshold", "0.6" }
+    { "heartbeatThreshold", slimDataHeartbeatThreshold }
 };
 builder.Configuration["publicEndPoint"] = slimDataConfiguration["publicEndPoint"];
 startup.ConfigureServices(serviceCollectionSlimFaas);
@@ -240,6 +249,26 @@ static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
         })
         .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
             retryAttempt)));
+}
+
+static IAsyncPolicy<HttpResponseMessage> GetRetrySlimDataPolicy()
+{
+    return HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(msg =>
+        {
+            HttpStatusCode[] httpStatusCodesWorthRetrying =
+            {
+                HttpStatusCode.RequestTimeout, // 408
+                HttpStatusCode.InternalServerError, // 500
+                HttpStatusCode.BadGateway, // 502
+                HttpStatusCode.ServiceUnavailable, // 503
+                HttpStatusCode.GatewayTimeout // 504
+            };
+            return httpStatusCodesWorthRetrying.Contains(msg.StatusCode);
+        })
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(2,
+            retryAttempt)) * 20);
 }
 
 

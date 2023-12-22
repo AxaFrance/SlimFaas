@@ -203,11 +203,20 @@ spec:
             #- name : SCALE_REPLICAS_WORKER_DELAY_MILLISECONDS
             #  value : "1000" # default equivalent to 1 seconds
             # Optional
-            # name : TIME_MAXIMUM_WAIT_FOR_AT_LEAST_ONE_POD_STARTED_FOR_SYNC_FUNCTION
+            #- name : TIME_MAXIMUM_WAIT_FOR_AT_LEAST_ONE_POD_STARTED_FOR_SYNC_FUNCTION
             # value : "10000" # default equivalent to 10 seconds
             # Optional
-            # name : POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED
+            #- name : POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED
             # value : "false" # default equivalent to false
+            # Optional, more info https://dotnet.github.io/dotNext/features/cluster/raft.html
+            #- name: SLIMDATA_LOWER_ELECTION_TIMEOUT
+            #  value: "300" # default equivalent to 300 milliseconds
+            # Optional, more info https://dotnet.github.io/dotNext/features/cluster/raft.html
+            #- name: SLIMDATA_UPPER_ELECTION_TIMEOUT
+            #  value: "600" # default equivalent to 600 milliseconds
+            # Optional, more info https://dotnet.github.io/dotNext/features/cluster/raft.html
+            #- name: SLIMDATA_HEARTBEAT_THRESHOLD
+            #  value: "0.6" # a number between 0 and 1, default equivalent to 0.6
           volumeMounts:
             - name: slimfaas-volume
               mountPath: /database
