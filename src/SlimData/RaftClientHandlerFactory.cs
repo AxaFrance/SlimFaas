@@ -5,9 +5,15 @@ namespace RaftNode;
 
 internal sealed class RaftClientHandlerFactory : IHttpMessageHandlerFactory
 {
+    private readonly int _connectTimeoutMs;
+
+    public RaftClientHandlerFactory(int connectTimeoutMs)
+    {
+        _connectTimeoutMs = connectTimeoutMs;
+    }
     public HttpMessageHandler CreateHandler(string name)
     {
-        var handler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromMilliseconds(300) };
+        var handler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromMilliseconds(_connectTimeoutMs) };
         handler.SslOptions.RemoteCertificateValidationCallback = AllowCertificate;
         handler.UseProxy = false;
         return handler;

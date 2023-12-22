@@ -49,7 +49,7 @@ public class Startup(IConfiguration configuration)
     {
         services.UseInMemoryConfigurationStorage(AddClusterMembers)
             .ConfigureCluster<ClusterConfigurator>()
-            .AddSingleton<IHttpMessageHandlerFactory, RaftClientHandlerFactory>()
+            .AddSingleton<IHttpMessageHandlerFactory, RaftClientHandlerFactory>(sp => new RaftClientHandlerFactory( int.Parse(configuration["lowerElectionTimeout"] ?? "300")) )
             .AddOptions()
             .AddRouting();
         var path = configuration[SlimPersistentState.LogLocation];
