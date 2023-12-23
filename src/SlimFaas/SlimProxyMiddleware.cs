@@ -20,7 +20,7 @@ public partial class FunctionStatusSerializerContext : JsonSerializerContext
 {
 }
 
-public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue,
+public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue, IWakeUpFunction wakeUpFunction,
     ILogger<SlimProxyMiddleware> logger,
     int timeoutWaitWakeSyncFunctionMilliSecond =
         EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault)
@@ -57,7 +57,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 await next(context);
                 return;
             case FunctionType.Wake:
-                BuildWakeResponse(historyHttpService, replicasService, functionName, contextResponse);
+                BuildWakeResponse(replicasService, wakeUpFunction, functionName, contextResponse);
                 return;
             case FunctionType.Status:
                 BuildStatusResponse(replicasService, functionName, contextResponse);
@@ -100,24 +100,15 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         }
     }
 
-    private static async Task BuildWakeResponse(HistoryHttpMemoryService historyHttpService, IReplicasService replicasService,
+    private static async Task BuildWakeResponse(IReplicasService replicasService, IWakeUpFunction wakeUpFunction,
         string functionName, HttpResponse contextResponse)
     {
         DeploymentInformation? function = SearchFunction(replicasService, functionName);
         if (function != null)
         {
-            var numberPods = 0;
-            while (numberPods == 0)
-            {
-                historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
-                function = SearchFunction(replicasService, functionName);
-                if (function != null)
-                {
-                    numberPods = function.Pods.Count(p => p.Ready.HasValue && p.Ready.Value);
-                }
-                await Task.Delay(100);
-            }
-
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            wakeUpFunction.FireAndForgetWakeUpAsync(functionName);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             contextResponse.StatusCode = 204;
         }
         else

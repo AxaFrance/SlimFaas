@@ -22,7 +22,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci1
-          image: axaguildev/fibonacci:pr-25-291
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -66,7 +66,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci2
-          image: axaguildev/fibonacci:pr-25-291
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -110,7 +110,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci3
-          image: axaguildev/fibonacci:pr-25-291
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -130,33 +130,33 @@ spec:
               cpu: "10m"
           ports:
             - containerPort: 5000
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: webapp
-spec:
-  selector:
-    matchLabels:
-      app: webapp
-  template:
-    metadata:
-      labels:
-        app: webapp
-    spec:
-      serviceAccountName: default
-      containers:
-        - name: webapp
-          image: axaguildev/fibonacci-webapp:pr-25-291
-          resources:
-            limits:
-              memory: "96Mi"
-              cpu: "50m"
-            requests:
-              memory: "96Mi"
-              cpu: "10m"
-          ports:
-            - containerPort: 8000
+#---
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: webapp
+#spec:
+#  selector:
+#    matchLabels:
+#      app: webapp
+#  template:
+#    metadata:
+#      labels:
+#        app: webapp
+#    spec:
+#      serviceAccountName: default
+#      containers:
+#        - name: webapp
+#          image: axaguildev/fibonacci-webapp:latest
+#          resources:
+#            limits:
+#              memory: "96Mi"
+#              cpu: "50m"
+#            requests:
+#              memory: "96Mi"
+#              cpu: "10m"
+#          ports:
+#            - containerPort: 8000
 ---
 apiVersion: v1
 kind: Service
@@ -196,16 +196,16 @@ spec:
     - port: 5000
       targetPort: 5000
       nodePort: 30017
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: webapp
-spec:
-  selector:
-    app: webapp
-  type: NodePort
-  ports:
-    - port: 8000
-      targetPort: 8000
-      nodePort: 30018
+#---
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: webapp
+#spec:
+#  selector:
+#    app: webapp
+#  type: NodePort
+#  ports:
+#    - port: 8000
+#      targetPort: 8000
+#      nodePort: 30018

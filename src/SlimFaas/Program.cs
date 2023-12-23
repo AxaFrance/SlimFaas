@@ -133,6 +133,7 @@ if (replicasService?.Deployments.SlimFaas.Pods != null)
 
 serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
 serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
+serviceCollectionSlimFaas.AddSingleton<IWakeUpFunction, WakeUpFunction>();
 serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true });
@@ -195,8 +196,8 @@ app.UseCors(builder =>
 {
     string slimFaasCorsAllowOrigin = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimFaasCorsAllowOrigin) ??
                                EnvironmentVariables.SlimFaasCorsAllowOriginDefault;
-    Console.WriteLine("CORS Allowing origins: " + slimFaasCorsAllowOrigin);
-    //if (slimFaasCorsAllowOrigin == "*")
+    Console.WriteLine($"CORS Allowing origins: {slimFaasCorsAllowOrigin}");
+    if (slimFaasCorsAllowOrigin == "*")
     {
         Console.WriteLine("CORS Allowing all origins");
         builder
@@ -204,13 +205,13 @@ app.UseCors(builder =>
             .AllowAnyMethod()
             .AllowAnyHeader();
     }
-    /*else
+    else
     {
         builder
             .WithOrigins(slimFaasCorsAllowOrigin.Split(','))
             .AllowAnyMethod()
             .AllowAnyHeader();
-    }*/
+    }
 });
 app.UseMiddleware<SlimProxyMiddleware>();
 app.Use(async (context, next) =>
