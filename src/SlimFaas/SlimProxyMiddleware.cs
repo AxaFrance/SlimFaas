@@ -20,7 +20,7 @@ public partial class FunctionStatusSerializerContext : JsonSerializerContext
 {
 }
 
-public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue,
+public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue, IWakeUpFunction wakeUpFunction,
     ILogger<SlimProxyMiddleware> logger,
     int timeoutWaitWakeSyncFunctionMilliSecond =
         EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault)
@@ -57,7 +57,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 await next(context);
                 return;
             case FunctionType.Wake:
-                BuildWakeResponse(historyHttpService, replicasService, functionName, contextResponse);
+                BuildWakeResponse(replicasService, wakeUpFunction, functionName, contextResponse);
                 return;
             case FunctionType.Status:
                 BuildStatusResponse(replicasService, functionName, contextResponse);
@@ -89,7 +89,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 ? 0
                 : functionDeploymentInformation.Pods.Count(p => p.Ready.HasValue && p.Ready.Value);
             int numberRequested =
-                functionDeploymentInformation == null ? 0 : functionDeploymentInformation.Pods.Count();
+                functionDeploymentInformation?.Replicas ?? 0;
             contextResponse.StatusCode = 200;
             contextResponse.WriteAsJsonAsync(new FunctionStatus(numberReady, numberRequested),
                 FunctionStatusSerializerContext.Default.FunctionStatus);
@@ -100,13 +100,15 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         }
     }
 
-    private static void BuildWakeResponse(HistoryHttpMemoryService historyHttpService, IReplicasService replicasService,
+    private static async Task BuildWakeResponse(IReplicasService replicasService, IWakeUpFunction wakeUpFunction,
         string functionName, HttpResponse contextResponse)
     {
         DeploymentInformation? function = SearchFunction(replicasService, functionName);
         if (function != null)
         {
-            historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            wakeUpFunction.FireAndForgetWakeUpAsync(functionName);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             contextResponse.StatusCode = 204;
         }
         else

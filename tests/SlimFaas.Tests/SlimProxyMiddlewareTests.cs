@@ -60,6 +60,7 @@ public class ProxyMiddlewareTests
     [InlineData("/function/wrong/download", HttpStatusCode.NotFound)]
     public async Task CallFunctionInSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
+        Mock<IWakeUpFunction> wakeUpFunctionMock = new();
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
         Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
@@ -77,6 +78,7 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<ISendClient, SendClientMock>();
                         services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicasService>();
+                        services.AddSingleton<IWakeUpFunction>(sp => wakeUpFunctionMock.Object);
                     })
                     .Configure(app => { app.UseMiddleware<SlimProxyMiddleware>(); });
             })
@@ -92,6 +94,7 @@ public class ProxyMiddlewareTests
     [InlineData("/async-function/wrong/download", HttpStatusCode.NotFound)]
     public async Task CallFunctionInAsyncSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
+        Mock<IWakeUpFunction> wakeUpFunctionMock = new();
         using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
             {
@@ -103,6 +106,7 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<ISendClient, SendClientMock>();
                         services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicasService>();
+                        services.AddSingleton<IWakeUpFunction>(sp => wakeUpFunctionMock.Object);
                     })
                     .Configure(app => { app.UseMiddleware<SlimProxyMiddleware>(); });
             })
@@ -114,11 +118,13 @@ public class ProxyMiddlewareTests
     }
 
     [Theory]
-    [InlineData("/wake-function/fibonacci", HttpStatusCode.NoContent, true)]
-    [InlineData("/wake-function/wrong", HttpStatusCode.NotFound, false)]
+    [InlineData("/wake-function/fibonacci", HttpStatusCode.NoContent, 1)]
+    [InlineData("/wake-function/wrong", HttpStatusCode.NotFound, 0)]
     public async Task JustWakeFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode,
-        bool expectedTickFound)
+        int numberFireAndForgetWakeUpAsyncCall)
     {
+        Mock<IWakeUpFunction> wakeUpFunctionMock = new();
+        wakeUpFunctionMock.Setup(k => k.FireAndForgetWakeUpAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
         using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
             {
@@ -130,6 +136,7 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<ISendClient, SendClientMock>();
                         services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicasService>();
+                        services.AddSingleton<IWakeUpFunction>(sp => wakeUpFunctionMock.Object);
                     })
                     .Configure(app => { app.UseMiddleware<SlimProxyMiddleware>(); });
             })
@@ -138,18 +145,18 @@ public class ProxyMiddlewareTests
         HttpResponseMessage response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
         HistoryHttpMemoryService historyHttpMemoryService =
             host.Services.GetRequiredService<HistoryHttpMemoryService>();
-        long ticksLastCall = historyHttpMemoryService.GetTicksLastCall("fibonacci");
 
-        Assert.Equal(ticksLastCall > 0, expectedTickFound);
+        wakeUpFunctionMock.Verify(k => k.FireAndForgetWakeUpAsync(It.IsAny<string>()), Times.AtMost(numberFireAndForgetWakeUpAsyncCall));
         Assert.Equal(expectedHttpStatusCode, response.StatusCode);
     }
 
     [Theory]
-    [InlineData("/status-function/fibonacci", HttpStatusCode.OK, "{\"NumberReady\":1,\"NumberRequested\":1}")]
+    [InlineData("/status-function/fibonacci", HttpStatusCode.OK, "{\"NumberReady\":1,\"NumberRequested\":0}")]
     [InlineData("/status-function/wrong", HttpStatusCode.NotFound, "")]
     public async Task GetStatusFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode,
         string expectedBody)
     {
+        Mock<IWakeUpFunction> wakeUpFunctionMock = new();
         using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
             {
@@ -161,6 +168,7 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<ISendClient, SendClientMock>();
                         services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicasService>();
+                        services.AddSingleton<IWakeUpFunction>(sp => wakeUpFunctionMock.Object);
                     })
                     .Configure(app => { app.UseMiddleware<SlimProxyMiddleware>(); });
             })

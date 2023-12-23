@@ -33,7 +33,10 @@ kubectl apply -f deployment-slimfaas.yml
 # Install three instances of fibonacci functions
 # fibonacci1, fibonacci2 and fibonacci3
 kubectl apply -f deployment-functions.yml
+# to run Single Page webapp demo (optional)
+docker run -p 8000:8000 --rm axaguildev/fibonacci-webapp:latest
 ```
+
 
 Now, you can access your pod via SlimFaas proxy:
 
@@ -57,8 +60,11 @@ Get function status:
 - http://localhost:30021/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1}
 - http://localhost:30021/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1}
 
-Enjoy slimfaas !!!!
+Single Page WebApp demo :
 
+- http://localhost:8000
+
+Enjoy slimfaas !!!!
 
 ## Getting Started with docker-compose
 
@@ -190,6 +196,8 @@ spec:
             #- name: MOCK_KUBERNETES_FUNCTIONS
             #  value: "{"Functions":[{"Name":"fibonacci","NumberParallelRequest":1}],"Slimfaas":[{"Name":"slimfaas-1"}]}"
 
+             # Configure CORS allowed Origins, default is *, you can use a comma separated list example: http://localhost:3000,http://localhost:3001
+            #- name: SLIMFAAS_CORS_ALLOW_ORIGIN
             # Optional, longer is the delay, less CPU and RAM is used
             #- name : HISTORY_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS
             #  value : "500" # default equivalent to 0,5 seconds
@@ -309,6 +317,9 @@ Why .NET ?
 - ASP.NET Core allow to resolve complex use cases with few lines of codes
 - .NET is always getting smaller and smaller: https://twitter.com/MStrehovsky/status/1660806238979117056?t=WPrZwi7WrIWi4tjoDUXEgg&s=19
 
+## Videos
+
+- French : https://www.youtube.com/watch?v=Lvd6FCuCZPI
 
 ## What Next ?
 

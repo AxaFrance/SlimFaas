@@ -3,16 +3,26 @@ using Microsoft.AspNetCore.Mvc;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 IServiceCollection serviceCollection = builder.Services;
 serviceCollection.AddSingleton<Fibonacci, Fibonacci>();
+serviceCollection.AddCors();
+
 WebApplication app = builder.Build();
+app.UseCors(builder => builder
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+);
+
 
 
 app.MapPost("/fibonacci", (
     [FromServices] ILogger<Fibonacci> logger,
     [FromServices] Fibonacci fibonacci,
-    int input) =>
+    FibonacciInput input) =>
 {
     logger.LogDebug("Fibonacci Called");
-    return fibonacci.Run(input);
+    var output = new FibonacciOutput();
+    output.Result = fibonacci.Run(input.Input);
+    return output;
 });
 
 app.MapGet("/download", ([FromServices] ILogger<Fibonacci> logger) =>
@@ -28,6 +38,9 @@ app.MapGet("/hello/{name}", ([FromServices] ILogger<Fibonacci> logger, string na
     return $"Hello {name}!";
 });
 
+
+app.MapGet("/health", () => "OK");
+
 app.Run();
 
 internal class Fibonacci
@@ -41,4 +54,12 @@ internal class Fibonacci
 
         return Run(i - 1) + Run(i - 2);
     }
+}
+
+public record FibonacciInput{
+    public int Input { get; set; }
+}
+
+public record FibonacciOutput{
+    public int Result { get; set; }
 }
