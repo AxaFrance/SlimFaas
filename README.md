@@ -33,7 +33,7 @@ kubectl apply -f deployment-slimfaas.yml
 # Install three instances of fibonacci functions
 # fibonacci1, fibonacci2 and fibonacci3
 kubectl apply -f deployment-functions.yml
-# to run html webapp demo (optional)
+# to run Single Page webapp demo (optional)
 docker run -p 8000:8000 --rm axaguildev/fibonacci-webapp:latest
 ```
 
@@ -60,7 +60,7 @@ Get function status:
 - http://localhost:30021/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1}
 - http://localhost:30021/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1}
 
-WebApp demo :
+Single Page WebApp demo :
 
 - http://localhost:8000
 
