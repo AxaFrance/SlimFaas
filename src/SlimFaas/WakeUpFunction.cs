@@ -9,8 +9,8 @@ public interface IWakeUpFunction
 
 public class WakeUpFunction(IServiceScopeFactory serviceScopeFactory, ILogger<WakeUpFunction> logger) : IWakeUpFunction
 {
-    List<string> _runningFunctions = new();
-    object _lock = new();
+    readonly List<string> _runningFunctions = new();
+    readonly object _lock = new();
     private static DeploymentInformation? SearchFunction(IReplicasService replicasService, string functionName)
     {
         DeploymentInformation? function =
