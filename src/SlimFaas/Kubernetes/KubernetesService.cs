@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using DotNext.Collections.Generic;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
@@ -19,9 +20,13 @@ public record SlimFaasDeploymentInformation(int Replicas, IList<PodInformation> 
 public record DeploymentsInformations(IList<DeploymentInformation> Functions, SlimFaasDeploymentInformation SlimFaas);
 
 public record DeploymentInformation(string Deployment, string Namespace, IList<PodInformation> Pods, int Replicas,
-    int ReplicasAtStart = 1, int ReplicasMin = 0, int TimeoutSecondBeforeSetReplicasMin = 300,
+    int ReplicasAtStart = 1,
+    int ReplicasMin = 0,
+    int TimeoutSecondBeforeSetReplicasMin = 300,
     int NumberParallelRequest = 10,
-    bool ReplicasStartAsSoonAsOneFunctionRetrieveARequest = false, PodType PodType = PodType.Deployment);
+    bool ReplicasStartAsSoonAsOneFunctionRetrieveARequest = false,
+    PodType PodType = PodType.Deployment,
+    IList<string>? DependsOn = null);
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
 
@@ -31,6 +36,7 @@ public class KubernetesService : IKubernetesService
     private const string ReplicasMin = "SlimFaas/ReplicasMin";
     private const string Function = "SlimFaas/Function";
     private const string ReplicasAtStart = "SlimFaas/ReplicasAtStart";
+    private const string DependsOn = "SlimFaas/DependsOn";
 
     private const string ReplicasStartAsSoonAsOneFunctionRetrieveARequest =
         "SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest";
@@ -142,7 +148,8 @@ public class KubernetesService : IKubernetesService
                     ? int.Parse(annotations[NumberParallelRequest])
                     : 10, annotations.ContainsKey(
                               ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
-                          annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true");
+                          annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.Deployment,
+                annotations.ContainsKey(DependsOn) ? annotations[DependsOn].Split(',').ToList() : new List<string>());
             deploymentInformationList.Add(deploymentInformation);
         }
     }
@@ -174,7 +181,8 @@ public class KubernetesService : IKubernetesService
                     ? int.Parse(annotations[NumberParallelRequest])
                     : 10, annotations.ContainsKey(
                               ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
-                          annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.StatefulSet);
+                          annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.StatefulSet,
+                annotations.ContainsKey(DependsOn) ? annotations[DependsOn].Split(',').ToList() : new List<string>());
             deploymentInformationList.Add(deploymentInformation);
         }
     }

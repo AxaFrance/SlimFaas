@@ -2,6 +2,7 @@ namespace SlimFaas;
 
 public static class EnvironmentVariables
 {
+
     public const string SlimFaasCorsAllowOrigin = "SLIMFAAS_CORS_ALLOW_ORIGIN";
     public const string SlimFaasCorsAllowOriginDefault = "*";
 

@@ -134,6 +134,7 @@ spec:
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
+        SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment of statefulset names
     spec:
       serviceAccountName: default
       containers:
@@ -273,6 +274,10 @@ spec:
   - Scale down to SlimFaas/ReplicasMin after this period of inactivity in seconds
 - SlimFaas/NumberParallelRequest : "10"
   - Limit the number of parallel HTTP requests for each underlying function
+- SlimFaas/DependsOn : ""
+  - Comma separated list of deployment of statefulset names
+  - Pods will be scaled up only if all pods in this list are in ready state with the minimum number of replicas superior or equal to ReplicasAtStart
+  - This property is useful if you want to scale up your pods only if your database is ready for example
 
 ## Why SlimFaas ?
 
