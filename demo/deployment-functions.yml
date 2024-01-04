@@ -106,6 +106,7 @@ spec:
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
+        SlimFaas/DependsOn: "mysql"
     spec:
       serviceAccountName: default
       containers:
