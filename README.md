@@ -3,7 +3,7 @@
 ![SlimFaas.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/SlimFaas.png)
 
 Why use SlimFaas ?
-- Scale to 0 after a period of inactivity
+- Scale to 0 after a period of inactivity (work with deployment and statefulset)
 - Synchronous HTTP calls
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
@@ -33,6 +33,8 @@ kubectl apply -f deployment-slimfaas.yml
 # Install three instances of fibonacci functions
 # fibonacci1, fibonacci2 and fibonacci3
 kubectl apply -f deployment-functions.yml
+# Install MySql
+kubectl apply -f deployment-mysql.yml
 # to run Single Page webapp demo (optional)
 docker run -p 8000:8000 --rm axaguildev/fibonacci-webapp:latest
 ```
@@ -132,6 +134,7 @@ spec:
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
+        SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment of statefulset names
     spec:
       serviceAccountName: default
       containers:
@@ -271,6 +274,10 @@ spec:
   - Scale down to SlimFaas/ReplicasMin after this period of inactivity in seconds
 - SlimFaas/NumberParallelRequest : "10"
   - Limit the number of parallel HTTP requests for each underlying function
+- SlimFaas/DependsOn : ""
+  - Comma separated list of deployment names or statefulset names
+  - Pods will be scaled up only if all pods in this list are in ready state with the minimum number of replicas superior or equal to ReplicasAtStart
+  - This property is useful if you want to scale up your pods only if your database is ready for example
 
 ## Why SlimFaas ?
 
@@ -319,11 +326,10 @@ Why .NET ?
 
 ## Videos
 
-- French : https://www.youtube.com/watch?v=Lvd6FCuCZPI 
+- French : https://www.youtube.com/watch?v=Lvd6FCuCZPI
 - English: https://www.youtube.com/watch?hxRfvJhWW1w
 
 ## What Next ?
 
 1. Different scale down mode depending from configuration and current hour
-2. Allow to scale down also statefulset pods
-3. Scale up dynamically from SlimFaas
+2. Scale up dynamically from SlimFaas

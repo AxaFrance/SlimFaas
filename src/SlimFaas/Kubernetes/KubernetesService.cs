@@ -1,21 +1,32 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using DotNext.Collections.Generic;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
 
 namespace SlimFaas.Kubernetes;
 
-public record ReplicaRequest(string Deployment, string Namespace, int Replicas);
+public enum PodType
+{
+    Deployment,
+    StatefulSet
+}
+
+public record ReplicaRequest(string Deployment, string Namespace, int Replicas, PodType PodType);
 
 public record SlimFaasDeploymentInformation(int Replicas, IList<PodInformation> Pods);
 
 public record DeploymentsInformations(IList<DeploymentInformation> Functions, SlimFaasDeploymentInformation SlimFaas);
 
 public record DeploymentInformation(string Deployment, string Namespace, IList<PodInformation> Pods, int Replicas,
-    int ReplicasAtStart = 1, int ReplicasMin = 0, int TimeoutSecondBeforeSetReplicasMin = 300,
+    int ReplicasAtStart = 1,
+    int ReplicasMin = 0,
+    int TimeoutSecondBeforeSetReplicasMin = 300,
     int NumberParallelRequest = 10,
-    bool ReplicasStartAsSoonAsOneFunctionRetrieveARequest = false);
+    bool ReplicasStartAsSoonAsOneFunctionRetrieveARequest = false,
+    PodType PodType = PodType.Deployment,
+    IList<string>? DependsOn = null);
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
 
@@ -25,6 +36,7 @@ public class KubernetesService : IKubernetesService
     private const string ReplicasMin = "SlimFaas/ReplicasMin";
     private const string Function = "SlimFaas/Function";
     private const string ReplicasAtStart = "SlimFaas/ReplicasAtStart";
+    private const string DependsOn = "SlimFaas/DependsOn";
 
     private const string ReplicasStartAsSoonAsOneFunctionRetrieveARequest =
         "SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest";
@@ -48,10 +60,20 @@ public class KubernetesService : IKubernetesService
     {
         try
         {
-            using k8s.Kubernetes client = new k8s.Kubernetes(_k8SConfig);
+            using k8s.Kubernetes client = new(_k8SConfig);
             string patchString = $"{{\"spec\": {{\"replicas\": {request.Replicas}}}}}";
-            V1Patch patch = new V1Patch(patchString, V1Patch.PatchType.MergePatch);
-            await client.PatchNamespacedDeploymentScaleAsync(patch, request.Deployment, request.Namespace);
+            V1Patch patch = new(patchString, V1Patch.PatchType.MergePatch);
+            switch (request.PodType)
+            {
+                case PodType.Deployment:
+                    await client.PatchNamespacedDeploymentScaleAsync(patch, request.Deployment, request.Namespace);
+                    break;
+                case PodType.StatefulSet:
+                    await client.PatchNamespacedStatefulSetScaleAsync(patch, request.Deployment, request.Namespace);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
         catch (HttpOperationException e)
         {
@@ -68,7 +90,7 @@ public class KubernetesService : IKubernetesService
         try
         {
             IList<DeploymentInformation>? deploymentInformationList = new List<DeploymentInformation>();
-            using k8s.Kubernetes client = new k8s.Kubernetes(_k8SConfig);
+            using k8s.Kubernetes client = new(_k8SConfig);
             Task<V1DeploymentList>? deploymentListTask = client.ListNamespacedDeploymentAsync(kubeNamespace);
             Task<V1PodList>? podListTask = client.ListNamespacedPodAsync(kubeNamespace);
             Task<V1StatefulSetList>? statefulSetListTask = client.ListNamespacedStatefulSetAsync(kubeNamespace);
@@ -85,33 +107,8 @@ public class KubernetesService : IKubernetesService
                             podList.Where(p => p.Name.StartsWith(deploymentListItem.Metadata.Name)).ToList()))
                 .FirstOrDefault();
 
-            foreach (V1Deployment? deploymentListItem in deploymentList.Items)
-            {
-                IDictionary<string, string>? annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
-                if (annotations == null || !annotations.ContainsKey(Function) ||
-                    annotations[Function].ToLower() != "true")
-                {
-                    continue;
-                }
-
-                DeploymentInformation deploymentInformation = new DeploymentInformation(
-                    deploymentListItem.Metadata.Name,
-                    kubeNamespace,
-                    podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
-                    deploymentListItem.Spec.Replicas ?? 0,
-                    annotations.ContainsKey(ReplicasAtStart)
-                        ? int.Parse(annotations[ReplicasAtStart])
-                        : 1, annotations.ContainsKey(ReplicasMin)
-                        ? int.Parse(annotations[ReplicasMin])
-                        : 1, annotations.ContainsKey(TimeoutSecondBeforeSetReplicasMin)
-                        ? int.Parse(annotations[TimeoutSecondBeforeSetReplicasMin])
-                        : 300, annotations.ContainsKey(NumberParallelRequest)
-                        ? int.Parse(annotations[NumberParallelRequest])
-                        : 10, annotations.ContainsKey(
-                                  ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
-                              annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true");
-                deploymentInformationList.Add(deploymentInformation);
-            }
+            AddDeployments(kubeNamespace, deploymentList, podList, deploymentInformationList);
+            AddStatefulSets(kubeNamespace, statefulSetList, podList, deploymentInformationList);
 
             return new DeploymentsInformations(deploymentInformationList,
                 slimFaasDeploymentInformation ?? new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
@@ -121,6 +118,72 @@ public class KubernetesService : IKubernetesService
             _logger.LogError(e, "Error while listing kubernetes functions");
             return new DeploymentsInformations(new List<DeploymentInformation>(),
                 new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
+        }
+    }
+
+    private static void AddDeployments(string kubeNamespace, V1DeploymentList deploymentList, IEnumerable<PodInformation> podList,
+        IList<DeploymentInformation> deploymentInformationList)
+    {
+        foreach (V1Deployment? deploymentListItem in deploymentList.Items)
+        {
+            IDictionary<string, string>? annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
+            if (annotations == null || !annotations.ContainsKey(Function) ||
+                annotations[Function].ToLower() != "true")
+            {
+                continue;
+            }
+
+            DeploymentInformation deploymentInformation = new(
+                deploymentListItem.Metadata.Name,
+                kubeNamespace,
+                podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
+                deploymentListItem.Spec.Replicas ?? 0,
+                annotations.ContainsKey(ReplicasAtStart)
+                    ? int.Parse(annotations[ReplicasAtStart])
+                    : 1, annotations.ContainsKey(ReplicasMin)
+                    ? int.Parse(annotations[ReplicasMin])
+                    : 1, annotations.ContainsKey(TimeoutSecondBeforeSetReplicasMin)
+                    ? int.Parse(annotations[TimeoutSecondBeforeSetReplicasMin])
+                    : 300, annotations.ContainsKey(NumberParallelRequest)
+                    ? int.Parse(annotations[NumberParallelRequest])
+                    : 10, annotations.ContainsKey(
+                              ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
+                          annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.Deployment,
+                annotations.ContainsKey(DependsOn) ? annotations[DependsOn].Split(',').ToList() : new List<string>());
+            deploymentInformationList.Add(deploymentInformation);
+        }
+    }
+
+    private static void AddStatefulSets(string kubeNamespace, V1StatefulSetList deploymentList, IEnumerable<PodInformation> podList,
+        IList<DeploymentInformation> deploymentInformationList)
+    {
+        foreach (V1StatefulSet? deploymentListItem in deploymentList.Items)
+        {
+            IDictionary<string, string>? annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
+            if (annotations == null || !annotations.ContainsKey(Function) ||
+                annotations[Function].ToLower() != "true")
+            {
+                continue;
+            }
+
+            DeploymentInformation deploymentInformation = new(
+                deploymentListItem.Metadata.Name,
+                kubeNamespace,
+                podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
+                deploymentListItem.Spec.Replicas ?? 0,
+                annotations.ContainsKey(ReplicasAtStart)
+                    ? int.Parse(annotations[ReplicasAtStart])
+                    : 1, annotations.ContainsKey(ReplicasMin)
+                    ? int.Parse(annotations[ReplicasMin])
+                    : 1, annotations.ContainsKey(TimeoutSecondBeforeSetReplicasMin)
+                    ? int.Parse(annotations[TimeoutSecondBeforeSetReplicasMin])
+                    : 300, annotations.ContainsKey(NumberParallelRequest)
+                    ? int.Parse(annotations[NumberParallelRequest])
+                    : 10, annotations.ContainsKey(
+                              ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
+                          annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.StatefulSet,
+                annotations.ContainsKey(DependsOn) ? annotations[DependsOn].Split(',').ToList() : new List<string>());
+            deploymentInformationList.Add(deploymentInformation);
         }
     }
 

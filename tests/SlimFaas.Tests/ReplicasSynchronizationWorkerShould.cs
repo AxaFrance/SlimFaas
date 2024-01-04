@@ -36,17 +36,17 @@ public class ReplicasSynchronizationWorkerShould
     [ClassData(typeof(DeploymentsTestData))]
     public async Task SynchroniseDeployments(DeploymentsInformations deploymentsInformations)
     {
-        Mock<ILogger<ReplicasSynchronizationWorker>> logger = new Mock<ILogger<ReplicasSynchronizationWorker>>();
-        Mock<IKubernetesService> kubernetesService = new Mock<IKubernetesService>();
+        Mock<ILogger<ReplicasSynchronizationWorker>> logger = new();
+        Mock<IKubernetesService> kubernetesService = new();
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).ReturnsAsync(deploymentsInformations);
-        Mock<IMasterService> masterService = new Mock<IMasterService>();
-        HistoryHttpMemoryService historyHttpService = new HistoryHttpMemoryService();
-        Mock<ILogger<ReplicasService>> loggerReplicasService = new Mock<ILogger<ReplicasService>>();
+        Mock<IMasterService> masterService = new();
+        HistoryHttpMemoryService historyHttpService = new();
+        Mock<ILogger<ReplicasService>> loggerReplicasService = new();
         ReplicasService replicasService =
-            new ReplicasService(kubernetesService.Object, historyHttpService, loggerReplicasService.Object);
+            new(kubernetesService.Object, historyHttpService, loggerReplicasService.Object);
         masterService.Setup(ms => ms.IsMaster).Returns(true);
 
-        ReplicasSynchronizationWorker service = new ReplicasSynchronizationWorker(replicasService, logger.Object, 100);
+        ReplicasSynchronizationWorker service = new(replicasService, logger.Object, 100);
         Task task = service.StartAsync(CancellationToken.None);
         await Task.Delay(300);
 

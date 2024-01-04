@@ -56,7 +56,7 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
             maximumTicks = Math.Max(maximumTicks, tickLastCall);
         }
 
-        List<Task<ReplicaRequest?>> tasks = new List<Task<ReplicaRequest?>>();
+        List<Task<ReplicaRequest?>> tasks = new();
         foreach (DeploymentInformation deploymentInformation in Deployments.Functions)
         {
             long tickLastCall = deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest
@@ -68,13 +68,23 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
                 tickLastCall = DateTime.Now.Ticks;
             }
 
-            bool timeElapsedWhithoutRequest = TimeSpan.FromTicks(tickLastCall) +
+            var allDependsOn = Deployments.Functions
+                .Where(f => f.DependsOn != null && f.DependsOn.Contains(deploymentInformation.Deployment))
+                .ToList();
+
+            foreach (DeploymentInformation information in allDependsOn)
+            {
+                if(tickLastCall < ticksLastCall[information.Deployment])
+                    tickLastCall = ticksLastCall[information.Deployment];
+            }
+
+            bool timeElapsedWithoutRequest = TimeSpan.FromTicks(tickLastCall) +
                                               TimeSpan.FromSeconds(deploymentInformation
                                                   .TimeoutSecondBeforeSetReplicasMin) <
                                               TimeSpan.FromTicks(DateTime.Now.Ticks);
             int currentScale = deploymentInformation.Replicas;
 
-            if (timeElapsedWhithoutRequest)
+            if (timeElapsedWithoutRequest)
             {
                 if (currentScale <= deploymentInformation.ReplicasMin)
                 {
@@ -84,17 +94,19 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
                 Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
                     Replicas: deploymentInformation.ReplicasMin,
                     Deployment: deploymentInformation.Deployment,
-                    Namespace: kubeNamespace
+                    Namespace: kubeNamespace,
+                    PodType: deploymentInformation.PodType
                 ));
 
                 tasks.Add(task);
             }
-            else if (currentScale is 0)
+            else if (currentScale is 0 && DependsOnReady(deploymentInformation))
             {
                 Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
                     Replicas: deploymentInformation.ReplicasAtStart,
                     Deployment: deploymentInformation.Deployment,
-                    Namespace: kubeNamespace
+                    Namespace: kubeNamespace,
+                    PodType: deploymentInformation.PodType
                 ));
 
                 tasks.Add(task);
@@ -106,7 +118,7 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
             return;
         }
 
-        List<DeploymentInformation> updatedFunctions = new List<DeploymentInformation>();
+        List<DeploymentInformation> updatedFunctions = new();
         ReplicaRequest?[] replicaRequests = await Task.WhenAll(tasks);
         foreach (DeploymentInformation function in Deployments.Functions)
         {
@@ -118,5 +130,24 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
         {
             _deployments = Deployments with { Functions = updatedFunctions };
         }
+    }
+
+    private bool DependsOnReady(DeploymentInformation deploymentInformation)
+    {
+        if (deploymentInformation.DependsOn == null)
+        {
+            return true;
+        }
+
+        foreach (string dependOn in deploymentInformation.DependsOn)
+        {
+            if (Deployments.Functions.Where(f => f.Deployment == dependOn)
+                .Any(f => f.Pods.Count(p => p.Ready.HasValue && p.Ready.Value) < f.ReplicasAtStart ))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
