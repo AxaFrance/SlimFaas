@@ -21,9 +21,9 @@ public class ReplicasScaleWorkerShould
         masterService.Setup(ms => ms.IsMaster).Returns(true);
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).ReturnsAsync(deploymentsInformations);
 
-        ReplicaRequest scaleRequestFibonacci1 = new ReplicaRequest("fibonacci1", "default", 0);
+        ReplicaRequest scaleRequestFibonacci1 = new ReplicaRequest("fibonacci1", "default", 0, PodType.Deployment);
         kubernetesService.Setup(k => k.ScaleAsync(scaleRequestFibonacci1)).ReturnsAsync(scaleRequestFibonacci1);
-        ReplicaRequest scaleRequestFibonacci2 = new ReplicaRequest("fibonacci2", "default", 1);
+        ReplicaRequest scaleRequestFibonacci2 = new ReplicaRequest("fibonacci2", "default", 1, PodType.Deployment);
         kubernetesService.Setup(k => k.ScaleAsync(scaleRequestFibonacci2)).ReturnsAsync(scaleRequestFibonacci2);
         await replicasService.SyncDeploymentsAsync("default");
 

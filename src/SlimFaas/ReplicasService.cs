@@ -84,7 +84,8 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
                 Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
                     Replicas: deploymentInformation.ReplicasMin,
                     Deployment: deploymentInformation.Deployment,
-                    Namespace: kubeNamespace
+                    Namespace: kubeNamespace,
+                    PodType: deploymentInformation.PodType
                 ));
 
                 tasks.Add(task);
@@ -94,7 +95,8 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
                 Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
                     Replicas: deploymentInformation.ReplicasAtStart,
                     Deployment: deploymentInformation.Deployment,
-                    Namespace: kubeNamespace
+                    Namespace: kubeNamespace,
+                    PodType: deploymentInformation.PodType
                 ));
 
                 tasks.Add(task);
@@ -106,7 +108,7 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
             return;
         }
 
-        List<DeploymentInformation> updatedFunctions = new List<DeploymentInformation>();
+        List<DeploymentInformation> updatedFunctions = new();
         ReplicaRequest?[] replicaRequests = await Task.WhenAll(tasks);
         foreach (DeploymentInformation function in Deployments.Functions)
         {
