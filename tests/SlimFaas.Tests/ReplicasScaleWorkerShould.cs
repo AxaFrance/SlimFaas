@@ -1,13 +1,57 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections;
+using Microsoft.Extensions.Logging;
 using Moq;
 using SlimFaas.Kubernetes;
 
 namespace SlimFaas.Tests;
 
+
+public class  ReplicasScaleDeploymentsTestData : IEnumerable<object[]>
+{
+    public IEnumerator<object[]> GetEnumerator()
+    {
+        yield return new object[]
+        {
+            new DeploymentsInformations(new List<DeploymentInformation>(),
+                new SlimFaasDeploymentInformation(1, new List<PodInformation>())),
+            Times.Never(),
+            Times.Never()
+        };
+        yield return new object[]
+        {
+            new DeploymentsInformations(
+                new List<DeploymentInformation>
+                {
+                    new("fibonacci1", "default", Replicas: 1, Pods: new List<PodInformation>()),
+                    new("fibonacci2", "default", Replicas: 0, Pods: new List<PodInformation>())
+                },
+                new SlimFaasDeploymentInformation(1, new List<PodInformation>())
+            ),
+            Times.AtLeastOnce(),
+            Times.AtLeastOnce()
+        };
+        yield return new object[]
+        {
+            new DeploymentsInformations(
+                new List<DeploymentInformation>
+                {
+                    new("fibonacci1", "default", Replicas: 1, Pods: new List<PodInformation>() { new PodInformation("fibonacci1", true, true, "localhost", "fibonacci1") }),
+                    new("fibonacci2", "default", Replicas: 0, Pods: new List<PodInformation>(), DependsOn: new List<string> { "fibonacci1" })
+                },
+                new SlimFaasDeploymentInformation(1, new List<PodInformation>())
+            ),
+            Times.AtLeastOnce(),
+            Times.Never()
+        };
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+}
+
 public class ReplicasScaleWorkerShould
 {
     [Theory]
-    [ClassData(typeof(DeploymentsTestData))]
+    [ClassData(typeof(ReplicasScaleDeploymentsTestData))]
     public async Task ScaleFunctionUpAndDown(DeploymentsInformations deploymentsInformations, Times scaleUpTimes,
         Times scaleDownTimes)
     {
