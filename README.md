@@ -275,7 +275,7 @@ spec:
 - SlimFaas/NumberParallelRequest : "10"
   - Limit the number of parallel HTTP requests for each underlying function
 - SlimFaas/DependsOn : ""
-  - Comma separated list of deployment of statefulset names
+  - Comma separated list of deployment names or statefulset names
   - Pods will be scaled up only if all pods in this list are in ready state with the minimum number of replicas superior or equal to ReplicasAtStart
   - This property is useful if you want to scale up your pods only if your database is ready for example
 
