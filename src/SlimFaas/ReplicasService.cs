@@ -68,6 +68,16 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
                 tickLastCall = DateTime.Now.Ticks;
             }
 
+            var allDependsOn = Deployments.Functions
+                .Where(f => f.DependsOn != null && f.DependsOn.Contains(deploymentInformation.Deployment))
+                .ToList();
+
+            foreach (DeploymentInformation information in allDependsOn)
+            {
+                if(tickLastCall < ticksLastCall[information.Deployment])
+                    tickLastCall = ticksLastCall[information.Deployment];
+            }
+
             bool timeElapsedWithoutRequest = TimeSpan.FromTicks(tickLastCall) +
                                               TimeSpan.FromSeconds(deploymentInformation
                                                   .TimeoutSecondBeforeSetReplicasMin) <

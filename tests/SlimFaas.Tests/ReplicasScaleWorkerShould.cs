@@ -8,29 +8,32 @@ public class ReplicasScaleWorkerShould
 {
     [Theory]
     [ClassData(typeof(DeploymentsTestData))]
-    public async Task ScaleFunctionUpAndDown(DeploymentsInformations deploymentsInformations)
+    public async Task ScaleFunctionUpAndDown(DeploymentsInformations deploymentsInformations, Times scaleUpTimes,
+        Times scaleDownTimes)
     {
-        Mock<ILogger<ScaleReplicasWorker>> logger = new Mock<ILogger<ScaleReplicasWorker>>();
-        Mock<IKubernetesService> kubernetesService = new Mock<IKubernetesService>();
-        Mock<IMasterService> masterService = new Mock<IMasterService>();
-        HistoryHttpMemoryService historyHttpService = new HistoryHttpMemoryService();
+        Mock<ILogger<ScaleReplicasWorker>> logger = new();
+        Mock<IKubernetesService> kubernetesService = new();
+        Mock<IMasterService> masterService = new();
+        HistoryHttpMemoryService historyHttpService = new();
         historyHttpService.SetTickLastCall("fibonacci2", DateTime.Now.Ticks);
-        Mock<ILogger<ReplicasService>> loggerReplicasService = new Mock<ILogger<ReplicasService>>();
+        Mock<ILogger<ReplicasService>> loggerReplicasService = new();
         ReplicasService replicasService =
-            new ReplicasService(kubernetesService.Object, historyHttpService, loggerReplicasService.Object);
+            new(kubernetesService.Object, historyHttpService, loggerReplicasService.Object);
         masterService.Setup(ms => ms.IsMaster).Returns(true);
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).ReturnsAsync(deploymentsInformations);
 
-        ReplicaRequest scaleRequestFibonacci1 = new ReplicaRequest("fibonacci1", "default", 0, PodType.Deployment);
+        ReplicaRequest scaleRequestFibonacci1 = new("fibonacci1", "default", 0, PodType.Deployment);
         kubernetesService.Setup(k => k.ScaleAsync(scaleRequestFibonacci1)).ReturnsAsync(scaleRequestFibonacci1);
-        ReplicaRequest scaleRequestFibonacci2 = new ReplicaRequest("fibonacci2", "default", 1, PodType.Deployment);
+        ReplicaRequest scaleRequestFibonacci2 = new("fibonacci2", "default", 1, PodType.Deployment);
         kubernetesService.Setup(k => k.ScaleAsync(scaleRequestFibonacci2)).ReturnsAsync(scaleRequestFibonacci2);
         await replicasService.SyncDeploymentsAsync("default");
 
-        ScaleReplicasWorker service =
-            new ScaleReplicasWorker(replicasService, masterService.Object, logger.Object, 100);
+        ScaleReplicasWorker service = new(replicasService, masterService.Object, logger.Object, 100);
         Task task = service.StartAsync(CancellationToken.None);
-        await Task.Delay(300);
+        await Task.Delay(3000);
+
+        kubernetesService.Verify(v => v.ScaleAsync(scaleRequestFibonacci2), scaleUpTimes);
+        kubernetesService.Verify(v => v.ScaleAsync(scaleRequestFibonacci1), scaleDownTimes);
 
         Assert.True(task.IsCompleted);
     }
@@ -38,17 +41,16 @@ public class ReplicasScaleWorkerShould
     [Fact]
     public async Task LogErrorWhenExceptionIsThrown()
     {
-        Mock<ILogger<ScaleReplicasWorker>> logger = new Mock<ILogger<ScaleReplicasWorker>>();
-        Mock<IMasterService> masterService = new Mock<IMasterService>();
+        Mock<ILogger<ScaleReplicasWorker>> logger = new();
+        Mock<IMasterService> masterService = new();
         masterService.Setup(ms => ms.IsMaster).Returns(true);
-        Mock<IReplicasService> replicaService = new Mock<IReplicasService>();
+        Mock<IReplicasService> replicaService = new();
         replicaService.Setup(r => r.CheckScaleAsync(It.IsAny<string>())).Throws(new Exception());
 
-        HistoryHttpMemoryService historyHttpService = new HistoryHttpMemoryService();
+        HistoryHttpMemoryService historyHttpService = new();
         historyHttpService.SetTickLastCall("fibonacci2", DateTime.Now.Ticks);
 
-        ScaleReplicasWorker service =
-            new ScaleReplicasWorker(replicaService.Object, masterService.Object, logger.Object, 10);
+        ScaleReplicasWorker service = new(replicaService.Object, masterService.Object, logger.Object, 10);
         Task task = service.StartAsync(CancellationToken.None);
         await Task.Delay(100);
 
