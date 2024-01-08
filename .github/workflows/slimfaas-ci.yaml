@@ -70,6 +70,7 @@ jobs:
           reports: './**/TestResults/**/*.cobertura.xml'
           targetdir: 'coveragereport'
           reporttypes: 'HtmlInline;MarkdownSummaryGithub'
+          assemblyfilters: 'SlimFaas*,SlimData*'
       - name: Upload coverage report artifact
         uses: actions/upload-artifact@v2.2.3
         with:
