@@ -64,6 +64,7 @@ jobs:
       - name: Run unit tests
         run: |
           dotnet test --collect "Code Coverage;Format=cobertura" --verbosity normal
+          mkdir /coveragereport
       - name: ReportGenerator
         uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
         with:
