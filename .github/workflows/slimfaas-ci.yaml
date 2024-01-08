@@ -9,7 +9,7 @@ on:
 
 jobs:
   sonarcloud:
-    name: Build and analyze
+    name: SonarCloud
     runs-on: windows-latest
     steps:
       - name: Set up JDK 17
@@ -49,10 +49,23 @@ jobs:
         shell: powershell
         run: |
           .\.sonar\scanner\dotnet-sonarscanner begin /k:"AxaFrance_SlimFaas" /o:"axaguildev" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.cobertura.reportsPaths=**/TestResults/**/*.cobertura.xml
-          dotnet test --collect "Code Coverage;Format=cobertura"
+          dotnet test --collect "Code Coverage;Format=cobertura" --verbosity normal
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+      - name: ReportGenerator
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+        with:
+          reports: './**/TestResults/**/*.cobertura.xml'
+          targetdir: '${{ github.workspace }}/coveragereport'
+          reporttypes: 'MarkdownSummaryGithub'
+      - name: Upload coverage into summary
+        run: cat $GITHUB_WORKSPACE/coveragereport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage-report
+          path: ./**/TestResults/**/*.cobertura.xml
   unit_tests:
-    name: Build and analyze
+    name: Unit Tests
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
@@ -63,7 +76,7 @@ jobs:
           global-json-file: global.json
       - name: Run unit tests
         run: |
-          dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+          dotnet test --verbosity normal
   tags:
     needs: unit_tests
     runs-on: ubuntu-latest
