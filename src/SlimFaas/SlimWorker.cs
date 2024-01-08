@@ -96,18 +96,18 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         Dictionary<string, int> setTickLastCallCounterDictionnary, string functionDeployment, int numberProcessingTasks)
     {
         int counterLimit = functionReplicas == 0 ? 10 : 300;
-        long queueLenght = await slimFaasQueue.CountAsync(functionDeployment);
+        long queueLength = await slimFaasQueue.CountAsync(functionDeployment);
         if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
         {
             setTickLastCallCounterDictionnary[functionDeployment] = 0;
 
-            if (queueLenght > 0 || numberProcessingTasks > 0)
+            if (queueLength > 0 || numberProcessingTasks > 0)
             {
                 historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
             }
         }
 
-        return queueLenght;
+        return queueLength;
     }
 
     private static int? ComputeNumberLimitProcessingTasks(SlimFaasDeploymentInformation slimFaas,

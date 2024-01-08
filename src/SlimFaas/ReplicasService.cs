@@ -68,6 +68,30 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
                 tickLastCall = DateTime.Now.Ticks;
             }
 
+            if (deploymentInformation.Schedule is { Default: not null })
+            {
+                foreach (var defaultSchedule in deploymentInformation.Schedule.Default.WakeUp)
+                {
+                    var now = DateTime.Now;
+                    var splits = defaultSchedule.Split(':');
+                    if (splits.Length != 2)
+                    {
+                        continue;
+                    }
+
+                    if (!int.TryParse(splits[0], out int hours) || !int.TryParse(splits[1], out int minutes))
+                    {
+                        continue;
+                    }
+
+                    var date = new DateTime(now.Year, now.Month, now.Day, hours, minutes, 0);
+                    if (date >= now && date.Ticks > tickLastCall)
+                    {
+                        tickLastCall = date.Ticks;
+                    }
+                }
+            }
+
             var allDependsOn = Deployments.Functions
                 .Where(f => f.DependsOn != null && f.DependsOn.Contains(deploymentInformation.Deployment))
                 .ToList();
@@ -79,8 +103,7 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
             }
 
             bool timeElapsedWithoutRequest = TimeSpan.FromTicks(tickLastCall) +
-                                              TimeSpan.FromSeconds(deploymentInformation
-                                                  .TimeoutSecondBeforeSetReplicasMin) <
+                                              TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation)) <
                                               TimeSpan.FromTicks(DateTime.Now.Ticks);
             int currentScale = deploymentInformation.Replicas;
 
@@ -130,6 +153,45 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
         {
             _deployments = Deployments with { Functions = updatedFunctions };
         }
+    }
+
+    record TimeToScaleDownTimeout(int Hours, int Minutes, int Value);
+
+    private int GetTimeoutSecondBeforeSetReplicasMin(DeploymentInformation deploymentInformation)
+    {
+        if (deploymentInformation.Schedule is { Default: not null })
+        {
+            List<TimeToScaleDownTimeout> times = new();
+            var now = DateTime.Now;
+            foreach (var defaultSchedule in deploymentInformation.Schedule.Default.ScaleDownTimeout)
+            {
+                var splits = defaultSchedule.Time.Split(':');
+                if (splits.Length != 2)
+                {
+                    continue;
+                }
+                if (!int.TryParse(splits[0], out int hours) || !int.TryParse(splits[1], out int minutes))
+                {
+                    continue;
+                }
+                times.Add( new TimeToScaleDownTimeout(hours, minutes, defaultSchedule.Value));
+            }
+
+            if (times.Count >= 2)
+            {
+                List<TimeToScaleDownTimeout> orderedTimes = times
+                    .OrderBy(t => t.Hours * 60+ t.Minutes)
+                    .Where(t => t.Hours*60 + t.Minutes < now.Hour*60 + now.Minute).ToList();
+                if (orderedTimes.Count >= 1)
+                {
+                    return orderedTimes[^1].Value;
+                }
+
+                return times.OrderBy(t => t.Hours * 60+ t.Minutes).Last().Value;
+            }
+        }
+
+        return deploymentInformation.TimeoutSecondBeforeSetReplicasMin;
     }
 
     private bool DependsOnReady(DeploymentInformation deploymentInformation)

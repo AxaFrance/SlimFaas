@@ -134,7 +134,9 @@ spec:
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
-        SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment of statefulset names
+        SlimFaas/Schedule : |
+            {"Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}
+        SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment or statefulset names
     spec:
       serviceAccountName: default
       containers:
