@@ -140,7 +140,7 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
 
     record TimeToScaleDownTimeout(int Hours, int Minutes, int Value);
 
-    public static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string culture)
+    private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string culture)
     {
         return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0, new CultureInfo(culture).Calendar).ToUniversalTime();
     }

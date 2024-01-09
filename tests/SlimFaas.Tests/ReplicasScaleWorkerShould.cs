@@ -110,7 +110,7 @@ public class ReplicasScaleWorkerShould
 
 
     [Fact]
-    public async Task GetTimeoutSecondBeforeSetReplicasMin()
+    public void GetTimeoutSecondBeforeSetReplicasMin()
     {
 
         var deplymentInformation = new DeploymentInformation("fibonacci1",
@@ -145,7 +145,7 @@ public class ReplicasScaleWorkerShould
     }
 
     [Fact]
-    public async Task GetLastTicksFromSchedule()
+    public void GetLastTicksFromSchedule()
     {
 
         var deplymentInformation = new DeploymentInformation("fibonacci1",
