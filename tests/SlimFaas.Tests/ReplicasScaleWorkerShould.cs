@@ -142,4 +142,38 @@ public class ReplicasScaleWorkerShould
         Assert.Equal(10, timeout);
 
     }
+
+    [Fact]
+    public async Task GetLastTicksFromSchedule()
+    {
+
+        var deplymentInformation = new DeploymentInformation("fibonacci1",
+            "default",
+            Replicas: 1,
+            Pods: new List<PodInformation>()
+            {
+                new PodInformation("fibonacci1", true, true, "localhost", "fibonacci1")
+            },
+            Schedule: new ScheduleConfig()
+            {
+                Default = new DefaultSchedule()
+                {
+                    WakeUp = new List<string>()
+                    {
+                        "8:00"
+                    }
+                }
+            }
+        );
+
+        var now = DateTime.UtcNow;
+        now = now.AddHours(- (now.Hour - 9));
+        var ticks = ReplicasService.GetLastTicksFromSchedule(deplymentInformation, now);
+        Assert.True(now.Ticks < ticks);
+
+        now = now.AddHours(- (now.Hour - 22));
+        ticks = ReplicasService.GetTimeoutSecondBeforeSetReplicasMin(deplymentInformation, now);
+        Assert.True(ticks == null);
+
+    }
 }

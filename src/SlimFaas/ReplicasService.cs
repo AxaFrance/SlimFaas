@@ -69,28 +69,10 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
                 tickLastCall = DateTime.Now.Ticks;
             }
 
-            if (deploymentInformation.Schedule is { Default: not null })
+            var lastTicksFromSchedule = GetLastTicksFromSchedule(deploymentInformation, DateTime.UtcNow);
+            if (lastTicksFromSchedule > tickLastCall)
             {
-                foreach (var defaultSchedule in deploymentInformation.Schedule.Default.WakeUp)
-                {
-                    var now = DateTime.Now;
-                    var splits = defaultSchedule.Split(':');
-                    if (splits.Length != 2)
-                    {
-                        continue;
-                    }
-
-                    if (!int.TryParse(splits[0], out int hours) || !int.TryParse(splits[1], out int minutes))
-                    {
-                        continue;
-                    }
-
-                    var date = new DateTime(now.Year, now.Month, now.Day, hours, minutes, 0);
-                    if (date >= now && date.Ticks > tickLastCall)
-                    {
-                        tickLastCall = date.Ticks;
-                    }
-                }
+                tickLastCall = lastTicksFromSchedule.Value;
             }
 
             var allDependsOn = Deployments.Functions
@@ -163,6 +145,41 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
         return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0, new CultureInfo(culture).Calendar).ToUniversalTime();
     }
 
+    public static long? GetLastTicksFromSchedule(DeploymentInformation deploymentInformation, DateTime nowUtc)
+    {
+        if (deploymentInformation.Schedule is not { Default: not null })
+        {
+            return null;
+        }
+        var dateTime = DateTime.MinValue;
+        foreach (var defaultSchedule in deploymentInformation.Schedule.Default.WakeUp)
+        {
+            var splits = defaultSchedule.Split(':');
+            if (splits.Length != 2)
+            {
+                continue;
+            }
+
+            if (!int.TryParse(splits[0], out int hours) || !int.TryParse(splits[1], out int minutes))
+            {
+                continue;
+            }
+
+            var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
+            if (date <= nowUtc && date > dateTime)
+            {
+                dateTime = date;
+            }
+        }
+
+        if (dateTime > DateTime.MinValue)
+        {
+            return dateTime.Ticks;
+        }
+
+        return null;
+    }
+
     public static int GetTimeoutSecondBeforeSetReplicasMin(DeploymentInformation deploymentInformation, DateTime nowUtc)
     {
         if (deploymentInformation.Schedule is { Default: not null })
@@ -187,8 +204,9 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
             if (times.Count >= 2)
             {
                 List<TimeToScaleDownTimeout> orderedTimes = times
+                    .Where(t => t.Hours*60 + t.Minutes < nowUtc.Hour*60 + nowUtc.Minute)
                     .OrderBy(t => t.Hours * 60+ t.Minutes)
-                    .Where(t => t.Hours*60 + t.Minutes < nowUtc.Hour*60 + nowUtc.Minute).ToList();
+                    .ToList();
                 if (orderedTimes.Count >= 1)
                 {
                     return orderedTimes[^1].Value;
