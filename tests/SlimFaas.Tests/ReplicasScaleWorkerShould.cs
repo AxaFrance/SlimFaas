@@ -162,7 +162,8 @@ public class ReplicasScaleWorkerShould
                 {
                     WakeUp = new List<string>()
                     {
-                        "8:00"
+                        "8:00",
+                        "21:00"
                     }
                 }
             }
@@ -171,7 +172,13 @@ public class ReplicasScaleWorkerShould
         var now = DateTime.UtcNow;
         now = now.AddHours(- (now.Hour - 9));
         var ticks = ReplicasService.GetLastTicksFromSchedule(deplymentInformation, now);
-        Assert.True(now.Ticks > ticks);
+        var dateTimeFromTicks = new DateTime(ticks ?? 0);
+        Assert.True(dateTimeFromTicks.Hour < 12);
+
+        now = now.AddHours(- (now.Hour - 22));
+        ticks = ReplicasService.GetLastTicksFromSchedule(deplymentInformation, now);
+        dateTimeFromTicks = new DateTime(ticks ?? 0);
+        Assert.True(dateTimeFromTicks.Hour > 16);
 
         now = now.AddHours(- (now.Hour - 22));
         ticks = ReplicasService.GetTimeoutSecondBeforeSetReplicasMin(deplymentInformation, now);
