@@ -107,4 +107,39 @@ public class ReplicasScaleWorkerShould
 
         Assert.True(task.IsCompleted);
     }
+
+
+    [Fact]
+    public async Task GetTimeoutSecondBeforeSetReplicasMin()
+    {
+
+        var deplymentInformation = new DeploymentInformation("fibonacci1",
+            "default",
+            Replicas: 1,
+            Pods: new List<PodInformation>()
+            {
+                new PodInformation("fibonacci1", true, true, "localhost", "fibonacci1")
+            },
+            Schedule: new ScheduleConfig()
+            {
+                Default = new DefaultSchedule()
+                {
+                    ScaleDownTimeout = new List<ScaleDownTimeout>()
+                    {
+                        new() { Time = "8:00", Value = 60 }, new() { Time = "21:00", Value = 10 },
+                    }
+                }
+            }
+        );
+
+        var now = DateTime.UtcNow;
+        now = now.AddHours(- (now.Hour - 9));
+        var timeout = ReplicasService.GetTimeoutSecondBeforeSetReplicasMin(deplymentInformation, now);
+        Assert.Equal(60, timeout);
+
+        now = now.AddHours(- (now.Hour - 22));
+        timeout = ReplicasService.GetTimeoutSecondBeforeSetReplicasMin(deplymentInformation, now);
+        Assert.Equal(10, timeout);
+
+    }
 }

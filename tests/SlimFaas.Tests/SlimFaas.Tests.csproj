@@ -32,24 +32,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="cobertura.xml\cs\" />
-    <Folder Include="cobertura.xml\de\" />
-    <Folder Include="cobertura.xml\es\" />
-    <Folder Include="cobertura.xml\fr\" />
-    <Folder Include="cobertura.xml\it\" />
-    <Folder Include="cobertura.xml\ja\" />
-    <Folder Include="cobertura.xml\ko\" />
-    <Folder Include="cobertura.xml\pl\" />
-    <Folder Include="cobertura.xml\pt-BR\" />
-    <Folder Include="cobertura.xml\refs\" />
-    <Folder Include="cobertura.xml\runtimes\win\lib\net7.0\" />
-    <Folder Include="cobertura.xml\ru\" />
-    <Folder Include="cobertura.xml\tr\" />
-    <Folder Include="cobertura.xml\zh-Hans\" />
-    <Folder Include="cobertura.xml\zh-Hant\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="cobertura.xml\xunit.runner.visualstudio.dotnetcore.testadapter.dll" />
     <None Remove="cobertura.xml\xunit.runner.utility.netcoreapp10.dll" />
     <None Remove="cobertura.xml\xunit.runner.reporters.netcoreapp10.dll" />

@@ -11,6 +11,7 @@ namespace SlimFaas.Kubernetes;
 
 public class ScheduleConfig
 {
+    public string Culture  { get; set; } = "fr-FR";
     public DefaultSchedule? Default { get; set; } = new();
 }
 

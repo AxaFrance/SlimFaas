@@ -1,4 +1,5 @@
-﻿using SlimFaas.Kubernetes;
+﻿using System.Globalization;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
@@ -103,7 +104,7 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
             }
 
             bool timeElapsedWithoutRequest = TimeSpan.FromTicks(tickLastCall) +
-                                              TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation)) <
+                                              TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow)) <
                                               TimeSpan.FromTicks(DateTime.Now.Ticks);
             int currentScale = deploymentInformation.Replicas;
 
@@ -157,12 +158,16 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
 
     record TimeToScaleDownTimeout(int Hours, int Minutes, int Value);
 
-    private int GetTimeoutSecondBeforeSetReplicasMin(DeploymentInformation deploymentInformation)
+    public static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string culture)
+    {
+        return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0, new CultureInfo(culture).Calendar).ToUniversalTime();
+    }
+
+    public static int GetTimeoutSecondBeforeSetReplicasMin(DeploymentInformation deploymentInformation, DateTime nowUtc)
     {
         if (deploymentInformation.Schedule is { Default: not null })
         {
             List<TimeToScaleDownTimeout> times = new();
-            var now = DateTime.Now;
             foreach (var defaultSchedule in deploymentInformation.Schedule.Default.ScaleDownTimeout)
             {
                 var splits = defaultSchedule.Time.Split(':');
@@ -174,14 +179,16 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
                 {
                     continue;
                 }
-                times.Add( new TimeToScaleDownTimeout(hours, minutes, defaultSchedule.Value));
+
+                var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
+                times.Add( new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value));
             }
 
             if (times.Count >= 2)
             {
                 List<TimeToScaleDownTimeout> orderedTimes = times
                     .OrderBy(t => t.Hours * 60+ t.Minutes)
-                    .Where(t => t.Hours*60 + t.Minutes < now.Hour*60 + now.Minute).ToList();
+                    .Where(t => t.Hours*60 + t.Minutes < nowUtc.Hour*60 + nowUtc.Minute).ToList();
                 if (orderedTimes.Count >= 1)
                 {
                     return orderedTimes[^1].Value;
