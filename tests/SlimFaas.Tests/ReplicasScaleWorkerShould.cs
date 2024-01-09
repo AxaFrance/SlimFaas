@@ -169,7 +169,7 @@ public class ReplicasScaleWorkerShould
         var now = DateTime.UtcNow;
         now = now.AddHours(- (now.Hour - 9));
         var ticks = ReplicasService.GetLastTicksFromSchedule(deplymentInformation, now);
-        Assert.True(now.Ticks < ticks);
+        Assert.True(now.Ticks > ticks);
 
         now = now.AddHours(- (now.Hour - 22));
         ticks = ReplicasService.GetTimeoutSecondBeforeSetReplicasMin(deplymentInformation, now);
