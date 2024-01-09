@@ -122,6 +122,7 @@ public class ReplicasScaleWorkerShould
             },
             Schedule: new ScheduleConfig()
             {
+                Culture = "fr-FR",
                 Default = new DefaultSchedule()
                 {
                     ScaleDownTimeout = new List<ScaleDownTimeout>()
@@ -156,6 +157,7 @@ public class ReplicasScaleWorkerShould
             },
             Schedule: new ScheduleConfig()
             {
+                Culture = "fr-FR",
                 Default = new DefaultSchedule()
                 {
                     WakeUp = new List<string>()
