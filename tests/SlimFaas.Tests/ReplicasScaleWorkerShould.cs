@@ -180,8 +180,8 @@ public class ReplicasScaleWorkerShould
         dateTimeFromTicks = new DateTime(ticks ?? 0);
         Assert.True(dateTimeFromTicks.Hour > 16);
 
-        now = now.AddHours(- (now.Hour - 22));
-        ticks = ReplicasService.GetTimeoutSecondBeforeSetReplicasMin(deplymentInformation, now);
+        now = now.AddHours(- (now.Hour - 1));
+        ticks = ReplicasService.GetLastTicksFromSchedule(deplymentInformation, now);
         Assert.True(ticks == null);
 
     }
