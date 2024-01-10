@@ -151,7 +151,9 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
         {
             return null;
         }
+
         var dateTime = DateTime.MinValue;
+        IList<DateTime> dates = new List<DateTime>();
         foreach (var defaultSchedule in deploymentInformation.Schedule.Default.WakeUp)
         {
             var splits = defaultSchedule.Split(':');
@@ -166,6 +168,12 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
             }
 
             var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
+            dates.Add(date);
+        }
+
+
+        foreach (var date in dates)
+        {
             if (date <= nowUtc && date > dateTime)
             {
                 dateTime = date;
@@ -175,6 +183,12 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
         if (dateTime > DateTime.MinValue)
         {
             return dateTime.Ticks;
+        }
+
+        if(dateTime == DateTime.MinValue && dates.Count > 0)
+        {
+            dateTime = dates.OrderBy(d => d).Last();
+            return dateTime.AddDays(-1).Ticks;
         }
 
         return null;

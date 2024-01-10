@@ -112,7 +112,6 @@ public class ReplicasScaleWorkerShould
     [Fact]
     public void GetTimeoutSecondBeforeSetReplicasMin()
     {
-
         var deplymentInformation = new DeploymentInformation("fibonacci1",
             "default",
             Replicas: 1,
@@ -141,14 +140,12 @@ public class ReplicasScaleWorkerShould
         now = now.AddHours(- (now.Hour - 22));
         timeout = ReplicasService.GetTimeoutSecondBeforeSetReplicasMin(deplymentInformation, now);
         Assert.Equal(10, timeout);
-
     }
 
     [Fact]
     public void GetLastTicksFromSchedule()
     {
-
-        var deplymentInformation = new DeploymentInformation("fibonacci1",
+        var deploymentInformation = new DeploymentInformation("fibonacci1",
             "default",
             Replicas: 1,
             Pods: new List<PodInformation>()
@@ -171,18 +168,20 @@ public class ReplicasScaleWorkerShould
 
         var now = DateTime.UtcNow;
         now = now.AddHours(- (now.Hour - 9));
-        var ticks = ReplicasService.GetLastTicksFromSchedule(deplymentInformation, now);
+        var ticks = ReplicasService.GetLastTicksFromSchedule(deploymentInformation, now);
         var dateTimeFromTicks = new DateTime(ticks ?? 0);
         Assert.True(dateTimeFromTicks.Hour < 12);
 
         now = now.AddHours(- (now.Hour - 22));
-        ticks = ReplicasService.GetLastTicksFromSchedule(deplymentInformation, now);
-        dateTimeFromTicks = new DateTime(ticks ?? 0);
-        Assert.True(dateTimeFromTicks.Hour > 16);
+        ticks = ReplicasService.GetLastTicksFromSchedule(deploymentInformation, now);
+        var dateTimeFromTicks22 = new DateTime(ticks ?? 0);
+        Assert.True(dateTimeFromTicks22.Hour > 16);
 
         now = now.AddHours(- (now.Hour - 1));
-        ticks = ReplicasService.GetLastTicksFromSchedule(deplymentInformation, now);
-        Assert.True(ticks == null);
-
+        ticks = ReplicasService.GetLastTicksFromSchedule(deploymentInformation, now);
+        var dateTimeFromTicks1 = new DateTime(ticks ?? 0);
+        Assert.True(dateTimeFromTicks1.Hour > 16);
+        Console.WriteLine(dateTimeFromTicks1 - dateTimeFromTicks22);
+        Assert.True(dateTimeFromTicks1 - dateTimeFromTicks22 < TimeSpan.FromHours(23));
     }
 }

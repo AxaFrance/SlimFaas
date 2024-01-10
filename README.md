@@ -264,23 +264,35 @@ spec:
 
 
 ### SlimFaas Annotations with defaults values
-- SlimFaas/Function: "true"
+- **SlimFaas/Function**: "true"
   - Activate SlimFaas on this pod, so your pod will be auto-scaled
-- SlimFaas/ReplicasMin: "0"
+- **SlimFaas/ReplicasMin**: "0"
   - Scale down to this value after a period of inactivity
-- SlimFaas/ReplicasAtStart: "1"
+- **SlimFaas/ReplicasAtStart**: "1"
   - Scale up to this value at start
-- SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+- **SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest**: "true"
   - Scale up this pod as soon as one function retrieve a request
-- SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
+- **SlimFaas/TimeoutSecondBeforeSetReplicasMin**: "300"
   - Scale down to SlimFaas/ReplicasMin after this period of inactivity in seconds
-- SlimFaas/NumberParallelRequest : "10"
+- **SlimFaas/NumberParallelRequest** : "10"
   - Limit the number of parallel HTTP requests for each underlying function
-- SlimFaas/DependsOn : ""
+- **SlimFaas/DependsOn** : ""
   - Comma separated list of deployment names or statefulset names
   - Pods will be scaled up only if all pods in this list are in ready state with the minimum number of replicas superior or equal to ReplicasAtStart
   - This property is useful if you want to scale up your pods only if your database is ready for example
+- **SlimFaas/Schedule** :
 
+````bash
+{
+  "Culture":"fr-FR", // example: en-US,  CultureInfo in .NET https://learn.microsoft.com/en-us/dotnet/api/system.globalization.cultureinfo?view=net-8.0
+  "Default":{
+    "WakeUp":["07:00"], // Wake up your infrastructure at 07:00
+    "ScaleDownTimeout":[
+              {"Time":"07:00","Value":20}, // Scale down after 20 seconds of inactivity after 07:00
+              {"Time":"21:00","Value":10} // Scale down after 10 seconds of inactivity after 21:00
+            ]
+}
+````
 ## Why SlimFaas ?
 
 We used **OpenFaas** for a long time and we love it.
