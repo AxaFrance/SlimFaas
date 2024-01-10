@@ -20,7 +20,7 @@ spec:
         SlimFaas/NumberParallelRequest : "10"
         SlimFaas/DependsOn: "fibonacci2"
         SlimFaas/Schedule: |
-                {"Culture":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time": "21:00","Value": 20},{"Time": "07:00","Value": 10}]}
+                  {"Culture":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time": "21:00","Value":20},{"Time":"07:00","Value": 10}]}}
     spec:
       serviceAccountName: default
       containers:

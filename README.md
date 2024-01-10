@@ -135,7 +135,7 @@ spec:
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
         SlimFaas/Schedule : |
-            {"Culture"="fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}
+            {"Culture":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
         SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment or statefulset names
     spec:
       serviceAccountName: default
@@ -280,7 +280,9 @@ spec:
   - Comma separated list of deployment names or statefulset names
   - Pods will be scaled up only if all pods in this list are in ready state with the minimum number of replicas superior or equal to ReplicasAtStart
   - This property is useful if you want to scale up your pods only if your database is ready for example
-- **SlimFaas/Schedule** :
+- **SlimFaas/Schedule** : json configuration
+  - Allows you to define a schedule for your functions
+  - If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00
 
 ````bash
 {
@@ -291,6 +293,7 @@ spec:
               {"Time":"07:00","Value":20}, // Scale down after 20 seconds of inactivity after 07:00
               {"Time":"21:00","Value":10} // Scale down after 10 seconds of inactivity after 21:00
             ]
+  }
 }
 ````
 ## Why SlimFaas ?
