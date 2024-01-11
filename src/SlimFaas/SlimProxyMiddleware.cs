@@ -155,22 +155,22 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, functionName,
             functionPath, context.Request.QueryString.ToUriComponent());
 
-        long lastSetTicks = DateTime.Now.Ticks;
+        long lastSetTicks = DateTime.UtcNow.Ticks;
         historyHttpService.SetTickLastCall(functionName, lastSetTicks);
         while (!responseMessagePromise.IsCompleted)
         {
             await Task.Delay(10, context.RequestAborted);
-            bool isOneSecondElapsed = new DateTime(lastSetTicks) < DateTime.Now.AddSeconds(-1);
+            bool isOneSecondElapsed = new DateTime(lastSetTicks, DateTimeKind.Utc) < DateTime.UtcNow.AddSeconds(-1);
             if (!isOneSecondElapsed)
             {
                 continue;
             }
 
-            lastSetTicks = DateTime.Now.Ticks;
+            lastSetTicks = DateTime.UtcNow.Ticks;
             historyHttpService.SetTickLastCall(functionName, lastSetTicks);
         }
 
-        historyHttpService.SetTickLastCall(functionName, DateTime.Now.Ticks);
+        historyHttpService.SetTickLastCall(functionName, DateTime.UtcNow.Ticks);
         using HttpResponseMessage responseMessage = responseMessagePromise.Result;
         context.Response.StatusCode = (int)responseMessage.StatusCode;
         CopyFromTargetResponseHeaders(context, responseMessage);
@@ -181,7 +181,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         IReplicasService replicasService, string functionName)
     {
         int numberLoop = _timeoutMaximumWaitWakeSyncFunctionMilliSecond / 10;
-        long lastSetTicks = DateTime.Now.Ticks;
+        long lastSetTicks = DateTime.UtcNow.Ticks;
         historyHttpService.SetTickLastCall(functionName, lastSetTicks);
         while (numberLoop > 0)
         {
@@ -191,10 +191,10 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             {
                 numberLoop--;
                 await Task.Delay(10, context.RequestAborted);
-                bool isOneSecondElapsed = new DateTime(lastSetTicks) < DateTime.Now.AddSeconds(-1);
+                bool isOneSecondElapsed = new DateTime(lastSetTicks) < DateTime.UtcNow.AddSeconds(-1);
                 if (isOneSecondElapsed)
                 {
-                    lastSetTicks = DateTime.Now.Ticks;
+                    lastSetTicks = DateTime.UtcNow.Ticks;
                     historyHttpService.SetTickLastCall(functionName, lastSetTicks);
                 }
 

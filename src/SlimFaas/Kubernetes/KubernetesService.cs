@@ -1,11 +1,38 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using DotNext.Collections.Generic;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
 
 namespace SlimFaas.Kubernetes;
+
+public class ScheduleConfig
+{
+    public string Culture  { get; set; } = "fr-FR";
+    public DefaultSchedule? Default { get; set; } = new();
+}
+
+public record DefaultSchedule
+{
+    public List<string> WakeUp { get; init; } = new();
+    public List<ScaleDownTimeout> ScaleDownTimeout { get; init; } = new();
+}
+
+public record ScaleDownTimeout
+{
+    public string Time { get; init; } = "00:00";
+    public int Value { get; init; }
+}
+
+[JsonSerializable(typeof(ScheduleConfig))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class ScheduleConfigSerializerContext : JsonSerializerContext
+{
+}
+
 
 public enum PodType
 {
@@ -26,7 +53,8 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
     int NumberParallelRequest = 10,
     bool ReplicasStartAsSoonAsOneFunctionRetrieveARequest = false,
     PodType PodType = PodType.Deployment,
-    IList<string>? DependsOn = null);
+    IList<string>? DependsOn = null,
+    ScheduleConfig? Schedule = null);
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
 
@@ -34,6 +62,7 @@ public record PodInformation(string Name, bool? Started, bool? Ready, string Ip,
 public class KubernetesService : IKubernetesService
 {
     private const string ReplicasMin = "SlimFaas/ReplicasMin";
+    private const string Schedule = "SlimFaas/Schedule";
     private const string Function = "SlimFaas/Function";
     private const string ReplicasAtStart = "SlimFaas/ReplicasAtStart";
     private const string DependsOn = "SlimFaas/DependsOn";
@@ -149,7 +178,8 @@ public class KubernetesService : IKubernetesService
                     : 10, annotations.ContainsKey(
                               ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
                           annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.Deployment,
-                annotations.ContainsKey(DependsOn) ? annotations[DependsOn].Split(',').ToList() : new List<string>());
+                annotations.ContainsKey(DependsOn) ? annotations[DependsOn].Split(',').ToList() : new List<string>(),
+                annotations.ContainsKey(Schedule) ? JsonSerializer.Deserialize(annotations[Schedule], ScheduleConfigSerializerContext.Default.ScheduleConfig) : new ScheduleConfig());
             deploymentInformationList.Add(deploymentInformation);
         }
     }
@@ -182,7 +212,9 @@ public class KubernetesService : IKubernetesService
                     : 10, annotations.ContainsKey(
                               ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
                           annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.StatefulSet,
-                annotations.ContainsKey(DependsOn) ? annotations[DependsOn].Split(',').ToList() : new List<string>());
+                annotations.ContainsKey(DependsOn) ? annotations[DependsOn].Split(',').ToList() : new List<string>(),
+                annotations.ContainsKey(Schedule) ? JsonSerializer.Deserialize(annotations[Schedule], ScheduleConfigSerializerContext.Default.ScheduleConfig) : new ScheduleConfig());
+
             deploymentInformationList.Add(deploymentInformation);
         }
     }

@@ -1,4 +1,5 @@
-﻿using SlimFaas.Kubernetes;
+﻿using System.Globalization;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
@@ -65,7 +66,13 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
 
             if (_isTurnOnByDefault && tickLastCall == 0)
             {
-                tickLastCall = DateTime.Now.Ticks;
+                tickLastCall = DateTime.UtcNow.Ticks;
+            }
+
+            var lastTicksFromSchedule = GetLastTicksFromSchedule(deploymentInformation, DateTime.UtcNow);
+            if (lastTicksFromSchedule > tickLastCall)
+            {
+                tickLastCall = lastTicksFromSchedule.Value;
             }
 
             var allDependsOn = Deployments.Functions
@@ -79,9 +86,8 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
             }
 
             bool timeElapsedWithoutRequest = TimeSpan.FromTicks(tickLastCall) +
-                                              TimeSpan.FromSeconds(deploymentInformation
-                                                  .TimeoutSecondBeforeSetReplicasMin) <
-                                              TimeSpan.FromTicks(DateTime.Now.Ticks);
+                                              TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow)) <
+                                              TimeSpan.FromTicks(DateTime.UtcNow.Ticks);
             int currentScale = deploymentInformation.Replicas;
 
             if (timeElapsedWithoutRequest)
@@ -130,6 +136,101 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
         {
             _deployments = Deployments with { Functions = updatedFunctions };
         }
+    }
+
+    record TimeToScaleDownTimeout(int Hours, int Minutes, int Value);
+
+    private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string culture)
+    {
+        return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0, new CultureInfo(culture).Calendar).ToUniversalTime();
+    }
+
+    public static long? GetLastTicksFromSchedule(DeploymentInformation deploymentInformation, DateTime nowUtc)
+    {
+        if (deploymentInformation.Schedule is not { Default: not null })
+        {
+            return null;
+        }
+
+        var dateTime = DateTime.MinValue;
+        IList<DateTime> dates = new List<DateTime>();
+        foreach (var defaultSchedule in deploymentInformation.Schedule.Default.WakeUp)
+        {
+            var splits = defaultSchedule.Split(':');
+            if (splits.Length != 2)
+            {
+                continue;
+            }
+
+            if (!int.TryParse(splits[0], out int hours) || !int.TryParse(splits[1], out int minutes))
+            {
+                continue;
+            }
+
+            var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
+            dates.Add(date);
+        }
+
+
+        foreach (var date in dates)
+        {
+            if (date <= nowUtc && date > dateTime)
+            {
+                dateTime = date;
+            }
+        }
+
+        if (dateTime > DateTime.MinValue)
+        {
+            return dateTime.Ticks;
+        }
+
+        if(dateTime == DateTime.MinValue && dates.Count > 0)
+        {
+            dateTime = dates.OrderBy(d => d).Last();
+            return dateTime.AddDays(-1).Ticks;
+        }
+
+        return null;
+    }
+
+    public static int GetTimeoutSecondBeforeSetReplicasMin(DeploymentInformation deploymentInformation, DateTime nowUtc)
+    {
+        if (deploymentInformation.Schedule is { Default: not null })
+        {
+            List<TimeToScaleDownTimeout> times = new();
+            foreach (var defaultSchedule in deploymentInformation.Schedule.Default.ScaleDownTimeout)
+            {
+                var splits = defaultSchedule.Time.Split(':');
+                if (splits.Length != 2)
+                {
+                    continue;
+                }
+                if (!int.TryParse(splits[0], out int hours) || !int.TryParse(splits[1], out int minutes))
+                {
+                    continue;
+                }
+
+                var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
+                times.Add( new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value));
+            }
+
+            if (times.Count >= 2)
+            {
+                List<TimeToScaleDownTimeout> orderedTimes = times
+                    .Where(t => t.Hours*60 + t.Minutes < nowUtc.Hour*60 + nowUtc.Minute)
+                    .OrderBy(t => t.Hours * 60+ t.Minutes)
+                    .ToList();
+                if (orderedTimes.Count >= 1)
+                {
+                    return orderedTimes[^1].Value;
+                }
+
+                return times.OrderBy(t => t.Hours * 60+ t.Minutes).Last().Value;
+            }
+        }
+
+        return deploymentInformation.TimeoutSecondBeforeSetReplicasMin;
     }
 
     private bool DependsOnReady(DeploymentInformation deploymentInformation)

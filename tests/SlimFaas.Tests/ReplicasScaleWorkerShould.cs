@@ -59,7 +59,7 @@ public class ReplicasScaleWorkerShould
         Mock<IKubernetesService> kubernetesService = new();
         Mock<IMasterService> masterService = new();
         HistoryHttpMemoryService historyHttpService = new();
-        historyHttpService.SetTickLastCall("fibonacci2", DateTime.Now.Ticks);
+        historyHttpService.SetTickLastCall("fibonacci2", DateTime.UtcNow.Ticks);
         Mock<ILogger<ReplicasService>> loggerReplicasService = new();
         ReplicasService replicasService =
             new(kubernetesService.Object, historyHttpService, loggerReplicasService.Object);
@@ -92,7 +92,7 @@ public class ReplicasScaleWorkerShould
         replicaService.Setup(r => r.CheckScaleAsync(It.IsAny<string>())).Throws(new Exception());
 
         HistoryHttpMemoryService historyHttpService = new();
-        historyHttpService.SetTickLastCall("fibonacci2", DateTime.Now.Ticks);
+        historyHttpService.SetTickLastCall("fibonacci2", DateTime.UtcNow.Ticks);
 
         ScaleReplicasWorker service = new(replicaService.Object, masterService.Object, logger.Object, 10);
         Task task = service.StartAsync(CancellationToken.None);
@@ -106,5 +106,82 @@ public class ReplicasScaleWorkerShould
             (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()), Times.AtLeastOnce);
 
         Assert.True(task.IsCompleted);
+    }
+
+
+    [Fact]
+    public void GetTimeoutSecondBeforeSetReplicasMin()
+    {
+        var deplymentInformation = new DeploymentInformation("fibonacci1",
+            "default",
+            Replicas: 1,
+            Pods: new List<PodInformation>()
+            {
+                new PodInformation("fibonacci1", true, true, "localhost", "fibonacci1")
+            },
+            Schedule: new ScheduleConfig()
+            {
+                Culture = "fr-FR",
+                Default = new DefaultSchedule()
+                {
+                    ScaleDownTimeout = new List<ScaleDownTimeout>()
+                    {
+                        new() { Time = "8:00", Value = 60 }, new() { Time = "21:00", Value = 10 },
+                    }
+                }
+            }
+        );
+
+        var now = DateTime.UtcNow;
+        now = now.AddHours(- (now.Hour - 9));
+        var timeout = ReplicasService.GetTimeoutSecondBeforeSetReplicasMin(deplymentInformation, now);
+        Assert.Equal(60, timeout);
+
+        now = now.AddHours(- (now.Hour - 22));
+        timeout = ReplicasService.GetTimeoutSecondBeforeSetReplicasMin(deplymentInformation, now);
+        Assert.Equal(10, timeout);
+    }
+
+    [Fact]
+    public void GetLastTicksFromSchedule()
+    {
+        var deploymentInformation = new DeploymentInformation("fibonacci1",
+            "default",
+            Replicas: 1,
+            Pods: new List<PodInformation>()
+            {
+                new PodInformation("fibonacci1", true, true, "localhost", "fibonacci1")
+            },
+            Schedule: new ScheduleConfig()
+            {
+                Culture = "fr-FR",
+                Default = new DefaultSchedule()
+                {
+                    WakeUp = new List<string>()
+                    {
+                        "8:00",
+                        "21:00"
+                    }
+                }
+            }
+        );
+
+        var now = DateTime.UtcNow;
+        now = now.AddHours(- (now.Hour - 9));
+        var ticks = ReplicasService.GetLastTicksFromSchedule(deploymentInformation, now);
+        var dateTimeFromTicks = new DateTime(ticks ?? 0, DateTimeKind.Utc);
+        Assert.True(dateTimeFromTicks.Hour < 12);
+
+        now = now.AddHours(- (now.Hour - 22));
+        ticks = ReplicasService.GetLastTicksFromSchedule(deploymentInformation, now);
+        var dateTimeFromTicks22 = new DateTime(ticks ?? 0, DateTimeKind.Utc);
+        Assert.True(dateTimeFromTicks22.Hour > 16);
+
+        now = now.AddHours(- (now.Hour - 1));
+        ticks = ReplicasService.GetLastTicksFromSchedule(deploymentInformation, now);
+        var dateTimeFromTicks1 = new DateTime(ticks ?? 0, DateTimeKind.Utc);
+        Assert.True(dateTimeFromTicks1.Hour > 16);
+        Console.WriteLine(dateTimeFromTicks1 - dateTimeFromTicks22);
+        Assert.True(dateTimeFromTicks1 - dateTimeFromTicks22 < TimeSpan.FromHours(23));
     }
 }

@@ -33,7 +33,7 @@ public class HistorySynchronizationWorkerShould
 
         long firstTicks = 1L;
         await historyHttpRedisService.SetTickLastCallAsync("fibonacci1", firstTicks);
-        HistorySynchronizationWorker service = new HistorySynchronizationWorker(replicasService,
+        HistorySynchronizationWorker service = new(replicasService,
             historyHttpMemoryService, historyHttpRedisService, logger.Object, slimDataStatus.Object, 100);
 
         Task task = service.StartAsync(CancellationToken.None);
