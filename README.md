@@ -281,12 +281,11 @@ spec:
   - Pods will be scaled up only if all pods in this list are in ready state with the minimum number of replicas superior or equal to ReplicasAtStart
   - This property is useful if you want to scale up your pods only if your database is ready for example
 - **SlimFaas/Schedule** : json configuration
-  - Allows you to define a schedule for your functions
-  - If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00
+  - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00
 
 ````bash
 {
-  "Culture":"fr-FR", // example: en-US,  CultureInfo in .NET https://learn.microsoft.com/en-us/dotnet/api/system.globalization.cultureinfo?view=net-8.0
+  "Culture":"fr-FR", // Time zone culture, example: en-US,  CultureInfo in .NET https://learn.microsoft.com/en-us/dotnet/api/system.globalization.cultureinfo?view=net-8.0
   "Default":{
     "WakeUp":["07:00"], // Wake up your infrastructure at 07:00
     "ScaleDownTimeout":[
