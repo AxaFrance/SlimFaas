@@ -69,11 +69,11 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
                 tickLastCall = DateTime.UtcNow.Ticks;
             }
 
-            /*var lastTicksFromSchedule = GetLastTicksFromSchedule(deploymentInformation, DateTime.UtcNow);
+            var lastTicksFromSchedule = GetLastTicksFromSchedule(deploymentInformation, DateTime.UtcNow);
             if (lastTicksFromSchedule > tickLastCall)
             {
                 tickLastCall = lastTicksFromSchedule.Value;
-            }*/
+            }
 
             var allDependsOn = Deployments.Functions
                 .Where(f => f.DependsOn != null && f.DependsOn.Contains(deploymentInformation.Deployment))
