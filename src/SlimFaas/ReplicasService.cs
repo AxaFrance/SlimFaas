@@ -66,14 +66,14 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
 
             if (_isTurnOnByDefault && tickLastCall == 0)
             {
-                tickLastCall = DateTime.Now.Ticks;
+                tickLastCall = DateTime.UtcNow.Ticks;
             }
 
-            /*var lastTicksFromSchedule = GetLastTicksFromSchedule(deploymentInformation, DateTime.UtcNow);
+            var lastTicksFromSchedule = GetLastTicksFromSchedule(deploymentInformation, DateTime.UtcNow);
             if (lastTicksFromSchedule > tickLastCall)
             {
                 tickLastCall = lastTicksFromSchedule.Value;
-            }*/
+            }
 
             var allDependsOn = Deployments.Functions
                 .Where(f => f.DependsOn != null && f.DependsOn.Contains(deploymentInformation.Deployment))
@@ -87,7 +87,7 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
 
             bool timeElapsedWithoutRequest = TimeSpan.FromTicks(tickLastCall) +
                                               TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow)) <
-                                              TimeSpan.FromTicks(DateTime.Now.Ticks);
+                                              TimeSpan.FromTicks(DateTime.UtcNow.Ticks);
             int currentScale = deploymentInformation.Replicas;
 
             if (timeElapsedWithoutRequest)

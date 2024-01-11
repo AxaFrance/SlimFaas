@@ -59,7 +59,7 @@ public class ReplicasScaleWorkerShould
         Mock<IKubernetesService> kubernetesService = new();
         Mock<IMasterService> masterService = new();
         HistoryHttpMemoryService historyHttpService = new();
-        historyHttpService.SetTickLastCall("fibonacci2", DateTime.Now.Ticks);
+        historyHttpService.SetTickLastCall("fibonacci2", DateTime.UtcNow.Ticks);
         Mock<ILogger<ReplicasService>> loggerReplicasService = new();
         ReplicasService replicasService =
             new(kubernetesService.Object, historyHttpService, loggerReplicasService.Object);
@@ -92,7 +92,7 @@ public class ReplicasScaleWorkerShould
         replicaService.Setup(r => r.CheckScaleAsync(It.IsAny<string>())).Throws(new Exception());
 
         HistoryHttpMemoryService historyHttpService = new();
-        historyHttpService.SetTickLastCall("fibonacci2", DateTime.Now.Ticks);
+        historyHttpService.SetTickLastCall("fibonacci2", DateTime.UtcNow.Ticks);
 
         ScaleReplicasWorker service = new(replicaService.Object, masterService.Object, logger.Object, 10);
         Task task = service.StartAsync(CancellationToken.None);
@@ -169,17 +169,17 @@ public class ReplicasScaleWorkerShould
         var now = DateTime.UtcNow;
         now = now.AddHours(- (now.Hour - 9));
         var ticks = ReplicasService.GetLastTicksFromSchedule(deploymentInformation, now);
-        var dateTimeFromTicks = new DateTime(ticks ?? 0);
+        var dateTimeFromTicks = new DateTime(ticks ?? 0, DateTimeKind.Utc);
         Assert.True(dateTimeFromTicks.Hour < 12);
 
         now = now.AddHours(- (now.Hour - 22));
         ticks = ReplicasService.GetLastTicksFromSchedule(deploymentInformation, now);
-        var dateTimeFromTicks22 = new DateTime(ticks ?? 0);
+        var dateTimeFromTicks22 = new DateTime(ticks ?? 0, DateTimeKind.Utc);
         Assert.True(dateTimeFromTicks22.Hour > 16);
 
         now = now.AddHours(- (now.Hour - 1));
         ticks = ReplicasService.GetLastTicksFromSchedule(deploymentInformation, now);
-        var dateTimeFromTicks1 = new DateTime(ticks ?? 0);
+        var dateTimeFromTicks1 = new DateTime(ticks ?? 0, DateTimeKind.Utc);
         Assert.True(dateTimeFromTicks1.Hour > 16);
         Console.WriteLine(dateTimeFromTicks1 - dateTimeFromTicks22);
         Assert.True(dateTimeFromTicks1 - dateTimeFromTicks22 < TimeSpan.FromHours(23));
