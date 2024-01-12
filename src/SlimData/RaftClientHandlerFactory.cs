@@ -7,7 +7,12 @@ internal sealed class RaftClientHandlerFactory : IHttpMessageHandlerFactory
 {
     public HttpMessageHandler CreateHandler(string name)
     {
-        var handler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromMilliseconds(300) };
+        var slimDataUpperElectionTimeout = Environment.GetEnvironmentVariable("SLIMDATA_UPPER_ELECTION_TIMEOUT") ?? "600";
+        if (!int.TryParse(slimDataUpperElectionTimeout, out int upperElectionTimeout))
+        {
+            throw new Exception("SLIMDATA_UPPER_ELECTION_TIMEOUT is not an integer");
+        }
+        var handler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromMilliseconds(upperElectionTimeout) };
         handler.SslOptions.RemoteCertificateValidationCallback = AllowCertificate;
         handler.UseProxy = false;
         return handler;

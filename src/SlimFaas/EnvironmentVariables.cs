@@ -49,13 +49,12 @@ public static class EnvironmentVariables
     public const string SlimDataDirectory = "SLIMDATA_DIRECTORY";
     public const string SlimDataAllowColdStart = "SLIMDATA_ALLOW_COLD_START";
     public const string SlimDataHeartbeatThreshold = "SLIMDATA_HEARTBEAT_THRESHOLD";
+    public const string SlimDataHeartbeatThresholdDefault = "0.6";
     public const string SlimDataLowerElectionTimeout = "SLIMDATA_LOWER_ELECTION_TIMEOUT";
     public const string SlimDataLowerElectionTimeoutDefault = "300";
     public const string SlimDataUpperElectionTimeout = "SLIMDATA_UPPER_ELECTION_TIMEOUT";
     public const string SlimDataUpperElectionTimeoutDefault = "600";
 
-
-    public const string SlimDataHeartbeatThresholdDefault = "0.6";
     public const bool SlimDataAllowColdStartDefault = false;
     public static readonly int[] SlimFaasPortsDefault = { 5000 };
 
