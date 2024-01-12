@@ -198,9 +198,9 @@ public class KubernetesService : IKubernetesService
         }
         catch (Exception e)
         {
-            Console.WriteLine("name: " + name);
-            Console.WriteLine("annotations[Schedule]:" +annotations[Schedule]);
-            Console.WriteLine("exception : " + e);
+            Console.WriteLine($"name: {name}");
+            Console.WriteLine($"annotations[Schedule]: {annotations[Schedule]}");
+            Console.WriteLine($"exception : {e}");
         }
 
         return new ScheduleConfig();
