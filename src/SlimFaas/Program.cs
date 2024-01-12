@@ -159,21 +159,24 @@ Startup startup = new(builder.Configuration);
 int[] slimFaasPorts =
     EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts, EnvironmentVariables.SlimFaasPortsDefault);
 
+var slimDataHeartbeatThreshold = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataHeartbeatThreshold) ?? EnvironmentVariables.SlimDataHeartbeatThresholdDefault;
+var slimDataLowerElectionTimeout = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataLowerElectionTimeout) ?? EnvironmentVariables.SlimDataLowerElectionTimeoutDefault;
+var slimDataUpperElectionTimeout = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataUpperElectionTimeout) ?? EnvironmentVariables.SlimDataUpperElectionTimeoutDefault;
+
 // Node start as master if it is alone in the cluster
 string coldStart = replicasService != null && replicasService.Deployments.SlimFaas.Pods.Count == 1 ? "true" : "false";
 Dictionary<string, string> slimDataConfiguration = new()
 {
     { "partitioning", "false" },
-    { "lowerElectionTimeout", "300" },
-    { "upperElectionTimeout", "600" },
+    { "lowerElectionTimeout", slimDataLowerElectionTimeout },
+    { "upperElectionTimeout", slimDataUpperElectionTimeout },
     { "publicEndPoint", publicEndPoint },
     { "coldStart", coldStart },
     { "requestJournal:memoryLimit", "5" },
     { "requestJournal:expiration", "00:01:00" },
-    { "heartbeatThreshold", "0.6" }
+    { "heartbeatThreshold", slimDataHeartbeatThreshold }
 };
 builder.Configuration["publicEndPoint"] = slimDataConfiguration["publicEndPoint"];
-builder.Configuration["lowerElectionTimeout"] = slimDataConfiguration["lowerElectionTimeout"];
 startup.ConfigureServices(serviceCollectionSlimFaas);
 
 builder.Host

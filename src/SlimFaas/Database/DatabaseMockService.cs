@@ -74,7 +74,7 @@ public class DatabaseMockService : IDatabaseService
         return Task.CompletedTask;
     }
 
-    public Task<IList<string>> ListRightPopAsync(string key, long count = 1)
+    public Task<IList<string>> ListRightPopAsync(string key, int count = 1)
     {
         if (!queue.ContainsKey(key))
         {

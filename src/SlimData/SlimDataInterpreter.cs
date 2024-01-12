@@ -8,9 +8,8 @@ namespace RaftNode;
 [Command<ListRightPopCommand>(ListRightPopCommand.Id)]
 [Command<AddHashSetCommand>(AddHashSetCommand.Id)]
 #pragma warning restore CA2252
-public class SlimDataInterpreter(string prefix) : CommandInterpreter
+public class SlimDataInterpreter : CommandInterpreter
 {
-    private readonly string prefix = prefix;
 
     public IDictionary<string, Dictionary<string, string>> hashsets =
         new Dictionary<string, Dictionary<string, string>>();
