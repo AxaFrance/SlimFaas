@@ -55,9 +55,9 @@ public static class EnvironmentVariables
     public const string SlimDataUpperElectionTimeout = "SLIMDATA_UPPER_ELECTION_TIMEOUT";
     public const string SlimDataUpperElectionTimeoutDefault = "600";
     public const string SlimDataRequestTimeout = "SLIMDATA_REQUEST_TIMEOUT";
-    public const string SlimDataRequestTimeoutDefault = "600";
+    public const string SlimDataRequestTimeoutDefault = "00:01:00";
     public const string SlimDataRpcTimeout = "SLIMDATA_RPC_TIMEOUT";
-    public const string SlimDataRpcTimeoutDefault = "300";
+    public const string SlimDataRpcTimeoutDefault = "00:00:300";
 
     public const bool SlimDataAllowColdStartDefault = false;
     public static readonly int[] SlimFaasPortsDefault = { 5000 };

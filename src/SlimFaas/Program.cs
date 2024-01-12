@@ -174,6 +174,7 @@ Dictionary<string, string> slimDataConfiguration = new()
     { "upperElectionTimeout", slimDataUpperElectionTimeout },
     { "requestTimeout", slimDataRequestTimeout },
     { "rpcTimeout", slimDataRPCTimeout },
+    {"keepAliveTimeout", "00:02:00"},
     { "publicEndPoint", publicEndPoint },
     { "coldStart", coldStart },
     { "requestJournal:memoryLimit", "5" },
