@@ -84,7 +84,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
             logger.LogDebug("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
                 customRequest.Method, customRequest.Path, customRequest.Query);
             logger.LogDebug("{RequestJson}", requestJson);
-            historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
+            historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
             using IServiceScope scope = serviceProvider.CreateScope();
             Task<HttpResponseMessage> taskResponse = scope.ServiceProvider.GetRequiredService<ISendClient>()
                 .SendHttpRequestAsync(customRequest);
@@ -96,18 +96,18 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         Dictionary<string, int> setTickLastCallCounterDictionnary, string functionDeployment, int numberProcessingTasks)
     {
         int counterLimit = functionReplicas == 0 ? 10 : 300;
-        long queueLenght = await slimFaasQueue.CountAsync(functionDeployment);
+        long queueLength = await slimFaasQueue.CountAsync(functionDeployment);
         if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
         {
             setTickLastCallCounterDictionnary[functionDeployment] = 0;
 
-            if (queueLenght > 0 || numberProcessingTasks > 0)
+            if (queueLength > 0 || numberProcessingTasks > 0)
             {
-                historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
+                historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
             }
         }
 
-        return queueLenght;
+        return queueLength;
     }
 
     private static int? ComputeNumberLimitProcessingTasks(SlimFaasDeploymentInformation slimFaas,
@@ -153,13 +153,13 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                     processing.CustomRequest.Method, processing.CustomRequest.Path, processing.CustomRequest.Query,
                     httpResponseMessage.StatusCode);
                 httpResponseMessagesToDelete.Add(processing);
-                historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
+                historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
             }
             catch (Exception e)
             {
                 httpResponseMessagesToDelete.Add(processing);
                 logger.LogWarning("Request Error: {Message} {StackTrace}", e.Message, e.StackTrace);
-                historyHttpService.SetTickLastCall(functionDeployment, DateTime.Now.Ticks);
+                historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
             }
         }
 
