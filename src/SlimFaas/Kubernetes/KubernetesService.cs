@@ -2,7 +2,6 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using DotNext.Collections.Generic;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
@@ -162,6 +161,8 @@ public class KubernetesService : IKubernetesService
                 continue;
             }
 
+            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations);
+
             DeploymentInformation deploymentInformation = new(
                 deploymentListItem.Metadata.Name,
                 kubeNamespace,
@@ -178,10 +179,27 @@ public class KubernetesService : IKubernetesService
                     : 10, annotations.ContainsKey(
                               ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
                           annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.Deployment,
-                annotations.ContainsKey(DependsOn) ? annotations[DependsOn].Split(',').ToList() : new List<string>(),
-                annotations.ContainsKey(Schedule) ? JsonSerializer.Deserialize(annotations[Schedule], ScheduleConfigSerializerContext.Default.ScheduleConfig) : new ScheduleConfig());
+                annotations.TryGetValue(DependsOn, out string? value) ? value.Split(',').ToList() : new List<string>(),
+                scheduleConfig
+                );
             deploymentInformationList.Add(deploymentInformation);
         }
+    }
+
+    private static ScheduleConfig? GetScheduleConfig(IDictionary<string, string> annotations)
+    {
+        ScheduleConfig? scheduleConfig;
+        try
+        {
+            scheduleConfig = annotations.TryGetValue(Schedule, out string? annotation) ? JsonSerializer.Deserialize(annotation, ScheduleConfigSerializerContext.Default.ScheduleConfig) : new ScheduleConfig();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
+        return scheduleConfig;
     }
 
     private static void AddStatefulSets(string kubeNamespace, V1StatefulSetList deploymentList, IEnumerable<PodInformation> podList,
@@ -195,6 +213,8 @@ public class KubernetesService : IKubernetesService
             {
                 continue;
             }
+
+            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations);
 
             DeploymentInformation deploymentInformation = new(
                 deploymentListItem.Metadata.Name,
@@ -212,8 +232,8 @@ public class KubernetesService : IKubernetesService
                     : 10, annotations.ContainsKey(
                               ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
                           annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.StatefulSet,
-                annotations.ContainsKey(DependsOn) ? annotations[DependsOn].Split(',').ToList() : new List<string>(),
-                annotations.ContainsKey(Schedule) ? JsonSerializer.Deserialize(annotations[Schedule], ScheduleConfigSerializerContext.Default.ScheduleConfig) : new ScheduleConfig());
+                annotations.TryGetValue(DependsOn, out string? value) ? value.Split(',').ToList() : new List<string>(),
+                scheduleConfig);
 
             deploymentInformationList.Add(deploymentInformation);
         }
