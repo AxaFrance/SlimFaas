@@ -161,10 +161,11 @@ public class KubernetesService : IKubernetesService
                 continue;
             }
 
-            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations);
+            var name = deploymentListItem.Metadata.Name;
+            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name);
 
             DeploymentInformation deploymentInformation = new(
-                deploymentListItem.Metadata.Name,
+                name,
                 kubeNamespace,
                 podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
                 deploymentListItem.Spec.Replicas ?? 0,
@@ -186,7 +187,7 @@ public class KubernetesService : IKubernetesService
         }
     }
 
-    private static ScheduleConfig? GetScheduleConfig(IDictionary<string, string> annotations)
+    private static ScheduleConfig? GetScheduleConfig(IDictionary<string, string> annotations, string name)
     {
         try
         {
@@ -197,7 +198,9 @@ public class KubernetesService : IKubernetesService
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Console.WriteLine("name: " + name);
+            Console.WriteLine("annotations[Schedule]:" +annotations[Schedule]);
+            Console.WriteLine("exception : " + e);
         }
 
         return new ScheduleConfig();
@@ -214,11 +217,11 @@ public class KubernetesService : IKubernetesService
             {
                 continue;
             }
-
-            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations);
+            var name = deploymentListItem.Metadata.Name;
+            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name);
 
             DeploymentInformation deploymentInformation = new(
-                deploymentListItem.Metadata.Name,
+                name,
                 kubeNamespace,
                 podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
                 deploymentListItem.Spec.Replicas ?? 0,
