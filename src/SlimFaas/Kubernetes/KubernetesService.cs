@@ -188,18 +188,19 @@ public class KubernetesService : IKubernetesService
 
     private static ScheduleConfig? GetScheduleConfig(IDictionary<string, string> annotations)
     {
-        ScheduleConfig? scheduleConfig;
         try
         {
-            scheduleConfig = annotations.TryGetValue(Schedule, out string? annotation) ? JsonSerializer.Deserialize(annotation, ScheduleConfigSerializerContext.Default.ScheduleConfig) : new ScheduleConfig();
+            if (annotations.TryGetValue(Schedule, out string? annotation) && !string.IsNullOrEmpty(annotation.Trim()))
+            {
+               return JsonSerializer.Deserialize(annotation, ScheduleConfigSerializerContext.Default.ScheduleConfig);
+            }
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
-            throw;
         }
 
-        return scheduleConfig;
+        return new ScheduleConfig();
     }
 
     private static void AddStatefulSets(string kubeNamespace, V1StatefulSetList deploymentList, IEnumerable<PodInformation> podList,
