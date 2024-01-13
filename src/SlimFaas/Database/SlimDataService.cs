@@ -16,6 +16,11 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task<string> GetAsync(string key)
     {
+        return await Retry.Do(() =>DoGetAsync(key), TimeSpan.FromSeconds(1), 5);
+    }
+
+    private async Task<string> DoGetAsync(string key)
+    {
         await GetAndWaitForLeader();
         if (cluster.LeadershipToken.IsCancellationRequested)
         {
@@ -29,6 +34,11 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
     }
 
     public async Task SetAsync(string key, string value)
+    {
+        await Retry.Do(() =>DoSetAsync(key, value), TimeSpan.FromSeconds(1), 5);
+    }
+
+    private async Task DoSetAsync(string key, string value)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
@@ -51,6 +61,11 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
     }
 
     public async Task HashSetAsync(string key, IDictionary<string, string> values)
+    {
+        await Retry.Do(() =>DoHashSetAsync(key, values), TimeSpan.FromSeconds(1), 5);
+    }
+
+    private async Task DoHashSetAsync(string key, IDictionary<string, string> values)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
@@ -76,7 +91,13 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         }
     }
 
+
     public async Task<IDictionary<string, string>> HashGetAllAsync(string key)
+    {
+        return await Retry.Do(() =>DoHashGetAllAsync(key), TimeSpan.FromSeconds(1), 5);
+    }
+
+    private async Task<IDictionary<string, string>> DoHashGetAllAsync(string key)
     {
         await GetAndWaitForLeader();
         if (cluster.LeadershipToken.IsCancellationRequested)
@@ -94,6 +115,11 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
     }
 
     public async Task ListLeftPushAsync(string key, string field)
+    {
+        await Retry.Do(() =>DoListLeftPushAsync(key, field), TimeSpan.FromSeconds(1), 5);
+    }
+
+    private async Task DoListLeftPushAsync(string key, string field)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
@@ -116,6 +142,11 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
     }
 
     public async Task<IList<string>> ListRightPopAsync(string key, int count = 1)
+    {
+        return await Retry.Do(() =>DoListRightPopAsync(key, count), TimeSpan.FromSeconds(1), 5);
+    }
+
+    private async Task<IList<string>> DoListRightPopAsync(string key, int count = 1)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
@@ -149,6 +180,11 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task<long> ListLengthAsync(string key)
     {
+        return await Retry.Do(() =>DoListLengthAsync(key), TimeSpan.FromSeconds(1), 5);
+    }
+
+    private async Task<long> DoListLengthAsync(string key)
+    {
         await GetAndWaitForLeader();
         if (cluster.LeadershipToken.IsCancellationRequested)
         {
@@ -180,3 +216,32 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
     }
 }
 #pragma warning restore CA2252
+public static class Retry
+{
+
+
+    public static T Do<T>(
+        Func<T> action,
+        TimeSpan retryInterval,
+        int maxAttemptCount = 3)
+    {
+        var exceptions = new List<Exception>();
+
+        for (int attempted = 0; attempted < maxAttemptCount; attempted++)
+        {
+            try
+            {
+                if (attempted > 0)
+                {
+                    Thread.Sleep(retryInterval);
+                }
+                return action();
+            }
+            catch (Exception ex)
+            {
+                exceptions.Add(ex);
+            }
+        }
+        throw new AggregateException(exceptions);
+    }
+}
