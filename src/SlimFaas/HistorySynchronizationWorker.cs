@@ -38,7 +38,7 @@ public class HistorySynchronizationWorker(IReplicasService replicasService,
             }
             catch (Exception e)
             {
-                logger.LogError(e, "Global Error in ScaleReplicasWorker");
+                logger.LogError(e, "Global Error in HistorySynchronizationWorker");
             }
         }
     }

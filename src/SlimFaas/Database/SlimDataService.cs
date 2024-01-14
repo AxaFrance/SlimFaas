@@ -16,7 +16,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task<string> GetAsync(string key)
     {
-        return await Retry.Do(() =>DoGetAsync(key), TimeSpan.FromSeconds(1), 5);
+        return await await Retry.DoAsync(() =>DoGetAsync(key), TimeSpan.FromSeconds(1), 5);
     }
 
     private async Task<string> DoGetAsync(string key)
@@ -35,7 +35,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task SetAsync(string key, string value)
     {
-        await Retry.Do(() =>DoSetAsync(key, value), TimeSpan.FromSeconds(1), 5);
+        await Retry.DoAsync(() =>DoSetAsync(key, value), TimeSpan.FromSeconds(1), 5);
     }
 
     private async Task DoSetAsync(string key, string value)
@@ -62,7 +62,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task HashSetAsync(string key, IDictionary<string, string> values)
     {
-        await Retry.Do(() =>DoHashSetAsync(key, values), TimeSpan.FromSeconds(1), 5);
+        await Retry.DoAsync(() =>DoHashSetAsync(key, values), TimeSpan.FromSeconds(1), 5);
     }
 
     private async Task DoHashSetAsync(string key, IDictionary<string, string> values)
@@ -94,7 +94,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task<IDictionary<string, string>> HashGetAllAsync(string key)
     {
-        return await Retry.Do(() =>DoHashGetAllAsync(key), TimeSpan.FromSeconds(1), 5);
+        return await await Retry.DoAsync(() =>DoHashGetAllAsync(key), TimeSpan.FromSeconds(1), 5);
     }
 
     private async Task<IDictionary<string, string>> DoHashGetAllAsync(string key)
@@ -116,7 +116,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task ListLeftPushAsync(string key, string field)
     {
-        await Retry.Do(() =>DoListLeftPushAsync(key, field), TimeSpan.FromSeconds(1), 5);
+        await Retry.DoAsync(() => DoListLeftPushAsync(key, field), TimeSpan.FromSeconds(1), 5);
     }
 
     private async Task DoListLeftPushAsync(string key, string field)
@@ -143,7 +143,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task<IList<string>> ListRightPopAsync(string key, int count = 1)
     {
-        return await Retry.Do(() =>DoListRightPopAsync(key, count), TimeSpan.FromSeconds(1), 5);
+        return await await Retry.DoAsync(() =>DoListRightPopAsync(key, count), TimeSpan.FromSeconds(1), 5);
     }
 
     private async Task<IList<string>> DoListRightPopAsync(string key, int count = 1)
@@ -180,7 +180,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task<long> ListLengthAsync(string key)
     {
-        return await Retry.Do(() =>DoListLengthAsync(key), TimeSpan.FromSeconds(1), 5);
+        return await await Retry.DoAsync(() => DoListLengthAsync(key), TimeSpan.FromSeconds(1), 5);
     }
 
     private async Task<long> DoListLengthAsync(string key)
@@ -220,7 +220,7 @@ public static class Retry
 {
 
 
-    public static T Do<T>(
+    public static async Task<T> DoAsync<T>(
         Func<T> action,
         TimeSpan retryInterval,
         int maxAttemptCount = 3)
@@ -233,7 +233,7 @@ public static class Retry
             {
                 if (attempted > 0)
                 {
-                    Thread.Sleep(retryInterval);
+                    await Task.Delay(retryInterval);
                 }
                 return action();
             }
