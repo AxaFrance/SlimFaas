@@ -11,7 +11,7 @@ public class SlimfaasSerializer
         return bytes;
     }
 
-    // DoAsync NOT use on arbitrary bytes; only use on GetBytes's output on the SAME system
+    // Do NOT use on arbitrary bytes; only use on GetBytes's output on the SAME system
     public static string GetString(byte[] bytes)
     {
         char[] chars = new char[bytes.Length / sizeof(char)];
