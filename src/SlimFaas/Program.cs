@@ -191,6 +191,7 @@ Uri uri = new(publicEndPoint);
 
 builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 {
+    serverOptions.Limits.MaxRequestBodySize = 524288000;
     serverOptions.ListenAnyIP(uri.Port);
     foreach (int slimFaasPort in slimFaasPorts)
     {
