@@ -200,7 +200,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     private async Task<EndPoint> GetAndWaitForLeader()
     {
-        int numberWaitMaximum = 6;
+        int numberWaitMaximum = 10;
         while (cluster.Leader == null && numberWaitMaximum > 0)
         {
             await Task.Delay(500);
