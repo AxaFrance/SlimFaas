@@ -234,6 +234,7 @@ public static class Retry
                 if (attempted > 0)
                 {
                     Task.Delay(retryInterval).Wait();
+                    Console.WriteLine($"SlimDataService Retry number {retryInterval}");
                 }
                 return action();
             }
