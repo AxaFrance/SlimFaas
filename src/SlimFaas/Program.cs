@@ -13,9 +13,25 @@ using SlimFaas.Kubernetes;
 
 string slimDataDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataDirectory) ??
                            EnvironmentVariables.GetTemporaryDirectory();
+
+string slimDataConfigurationString =  Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataConfiguration) ?? "";
+DictionnaryString slimDataConfiguration= new DictionnaryString();
+
+if (!string.IsNullOrEmpty(slimDataConfigurationString))
+{
+    var dictionnaryDeserialize = JsonSerializer.Deserialize(slimDataConfigurationString,
+        DictionnaryStringSerializerContext.Default.DictionnaryString);
+    if (dictionnaryDeserialize != null)
+    {
+        slimDataConfiguration = dictionnaryDeserialize;
+    }
+}
+
+
+const string coldstart = "coldStart";
 bool slimDataAllowColdStart =
-    bool.Parse(Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataAllowColdStart) ??
-               EnvironmentVariables.SlimDataAllowColdStartDefault.ToString());
+    bool.Parse(slimDataConfiguration.GetValueOrDefault(coldstart) ??
+                                                                EnvironmentVariables.SlimDataAllowColdStartDefault.ToString());
 
 ServiceCollection serviceCollectionStarter = new();
 serviceCollectionStarter.AddSingleton<IReplicasService, ReplicasService>();
@@ -162,19 +178,6 @@ int[] slimFaasPorts =
 // Node start as master if it is alone in the cluster
 string coldStart = replicasService != null && replicasService.Deployments.SlimFaas.Pods.Count == 1 ? "true" : "false";
 
-string slimDataConfigurationString =  Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataConfiguration) ?? "";
-DictionnaryString slimDataConfiguration= new DictionnaryString();
-
-if (!string.IsNullOrEmpty(slimDataConfigurationString))
-{
-    var dictionnaryDeserialize = JsonSerializer.Deserialize(slimDataConfigurationString,
-        DictionnaryStringSerializerContext.Default.DictionnaryString);
-    if (dictionnaryDeserialize != null)
-    {
-        slimDataConfiguration = dictionnaryDeserialize;
-    }
-}
-
 Dictionary<string, string> slimDataDefaultConfiguration = new()
 {
     { "partitioning", "false" },
@@ -183,7 +186,7 @@ Dictionary<string, string> slimDataDefaultConfiguration = new()
     { "requestTimeout", "00:01:20.0000000" },
     { "rpcTimeout", "00:00:40.0000000" },
     { "publicEndPoint", publicEndPoint },
-    { "coldStart", coldStart },
+    { coldstart, coldStart },
     { "requestJournal:memoryLimit", "5" },
     { "requestJournal:expiration", "00:01:00" },
     { "heartbeatThreshold", "0.2" }
@@ -195,6 +198,12 @@ foreach (KeyValuePair<string,string> keyValuePair in slimDataDefaultConfiguratio
         slimDataConfiguration.Add(keyValuePair.Key, keyValuePair.Value);
     }
 }
+Console.WriteLine("Configuration: ");
+foreach (KeyValuePair<string,string> keyValuePair in slimDataConfiguration)
+{
+    Console.WriteLine($"{keyValuePair.Key}:{keyValuePair.Value}");
+}
+
 builder.Configuration["publicEndPoint"] = slimDataConfiguration["publicEndPoint"];
 startup.ConfigureServices(serviceCollectionSlimFaas);
 

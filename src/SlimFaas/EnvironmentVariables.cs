@@ -47,7 +47,6 @@ public static class EnvironmentVariables
     public const string MockKubernetesFunctionsDefault = "";
 
     public const string SlimDataDirectory = "SLIMDATA_DIRECTORY";
-    public const string SlimDataAllowColdStart = "SLIMDATA_ALLOW_COLD_START";
     public const string SlimDataConfiguration = "SLIMDATA_CONFIGURATION";
 
     public const bool SlimDataAllowColdStartDefault = false;
