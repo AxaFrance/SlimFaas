@@ -343,7 +343,7 @@ By default **SlimData** use a second HTTP port 3262 to expose its API. Don't exp
 
 SlimFaas require a least 3 nodes in production. 2 nodes are requires to keep the database in a consistent state.
 If you want to use just one pod for testing purpose, you can use this env variable:
-- SLIMDATA_ALLOW_COLD_START: "true"
+- SLIMDATA_CONFIGURATION: '{"coldStart":"true"}'
 
 This will allow to start a pod alone as a leader.
 SlimFaas can to scale up and down by using classic Horizontal Pod Autoscaler (HPA).
