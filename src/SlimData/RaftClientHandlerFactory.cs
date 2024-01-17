@@ -1,5 +1,6 @@
 ﻿using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using SlimData;
 
 namespace RaftNode;
 
@@ -7,7 +8,12 @@ internal sealed class RaftClientHandlerFactory : IHttpMessageHandlerFactory
 {
     public HttpMessageHandler CreateHandler(string name)
     {
-        var handler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromMilliseconds(300) };
+        var slimDataUpperElectionTimeout = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataSocketsHttpHandlerTimeout) ?? EnvironmentVariables.SlimDataSocketsHttpHandlerTimeoutDefault;
+        if (!int.TryParse(slimDataUpperElectionTimeout, out int upperElectionTimeout))
+        {
+            throw new Exception("SLIMDATA_SOCKETS_HTTP_HANDLER_TIMEOUT is not an integer");
+        }
+        var handler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromMilliseconds(upperElectionTimeout)};
         handler.SslOptions.RemoteCertificateValidationCallback = AllowCertificate;
         handler.UseProxy = false;
         return handler;

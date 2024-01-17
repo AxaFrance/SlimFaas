@@ -232,24 +232,26 @@ public class RaftClusterTests
         Assert.True(await GetLocalClusterView(host1).AddMemberAsync(GetLocalClusterView(host3).LocalMemberAddress));
         await GetLocalClusterView(host3).Readiness.WaitAsync(DefaultTimeout);
 
-        IDatabaseService databaseService = host3.Services.GetRequiredService<IDatabaseService>();
+        IDatabaseService databaseServiceSlave = host3.Services.GetRequiredService<IDatabaseService>();
+        IDatabaseService databaseServiceMaster = host1.Services.GetRequiredService<IDatabaseService>();
 
-        await databaseService.SetAsync("key1", "value1");
-        Assert.Equal("value1", await databaseService.GetAsync("key1"));
+        await databaseServiceSlave.SetAsync("key1", "value1");
+        Assert.Equal("value1", await databaseServiceMaster.GetAsync("key1"));
+        Assert.Equal("value1", await databaseServiceSlave.GetAsync("key1"));
 
-        await databaseService.HashSetAsync("hashsetKey1",
+        await databaseServiceSlave.HashSetAsync("hashsetKey1",
             new Dictionary<string, string> { { "field1", "value1" }, { "field2", "value2" } });
-        IDictionary<string, string> hashGet = await databaseService.HashGetAllAsync("hashsetKey1");
+        IDictionary<string, string> hashGet = await databaseServiceSlave.HashGetAllAsync("hashsetKey1");
 
         Assert.Equal("value1", hashGet["field1"]);
         Assert.Equal("value2", hashGet["field2"]);
 
-        await databaseService.ListLeftPushAsync("listKey1", "value1");
+        await databaseServiceSlave.ListLeftPushAsync("listKey1", "value1");
 
-        long listLength = await databaseService.ListLengthAsync("listKey1");
+        long listLength = await databaseServiceSlave.ListLengthAsync("listKey1");
         Assert.Equal(1, listLength);
 
-        IList<string> listRightPop = await databaseService.ListRightPopAsync("listKey1");
+        IList<string> listRightPop = await databaseServiceSlave.ListRightPopAsync("listKey1");
         Assert.Equal("value1", listRightPop[0]);
 
         await host1.StopAsync();

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 using OpenTelemetry.Trace;
 using Polly;
@@ -12,9 +13,25 @@ using SlimFaas.Kubernetes;
 
 string slimDataDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataDirectory) ??
                            EnvironmentVariables.GetTemporaryDirectory();
+
+string slimDataConfigurationString =  Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataConfiguration) ?? "";
+DictionnaryString slimDataConfiguration= new DictionnaryString();
+
+if (!string.IsNullOrEmpty(slimDataConfigurationString))
+{
+    var dictionnaryDeserialize = JsonSerializer.Deserialize(slimDataConfigurationString,
+        DictionnaryStringSerializerContext.Default.DictionnaryString);
+    if (dictionnaryDeserialize != null)
+    {
+        slimDataConfiguration = dictionnaryDeserialize;
+    }
+}
+
+
+const string coldstart = "coldStart";
 bool slimDataAllowColdStart =
-    bool.Parse(Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataAllowColdStart) ??
-               EnvironmentVariables.SlimDataAllowColdStartDefault.ToString());
+    bool.Parse(slimDataConfiguration.GetValueOrDefault(coldstart) ??
+                                                                EnvironmentVariables.SlimDataAllowColdStartDefault.ToString());
 
 ServiceCollection serviceCollectionStarter = new();
 serviceCollectionStarter.AddSingleton<IReplicasService, ReplicasService>();
@@ -154,26 +171,40 @@ if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
     builder.Configuration[SlimPersistentState.LogLocation] = podDataDirectoryPersistantStorage;
 }
 
-
 Startup startup = new(builder.Configuration);
 int[] slimFaasPorts =
     EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts, EnvironmentVariables.SlimFaasPortsDefault);
 
 // Node start as master if it is alone in the cluster
 string coldStart = replicasService != null && replicasService.Deployments.SlimFaas.Pods.Count == 1 ? "true" : "false";
-Dictionary<string, string> slimDataConfiguration = new()
+
+Dictionary<string, string> slimDataDefaultConfiguration = new()
 {
     { "partitioning", "false" },
-    { "lowerElectionTimeout", "300" },
-    { "upperElectionTimeout", "600" },
+    { "lowerElectionTimeout", "400" },
+    { "upperElectionTimeout", "800" },
+    { "requestTimeout", "00:01:20.0000000" },
+    { "rpcTimeout", "00:00:40.0000000" },
     { "publicEndPoint", publicEndPoint },
-    { "coldStart", coldStart },
+    { coldstart, coldStart },
     { "requestJournal:memoryLimit", "5" },
     { "requestJournal:expiration", "00:01:00" },
-    { "heartbeatThreshold", "0.6" }
+    { "heartbeatThreshold", "0.2" }
 };
+foreach (KeyValuePair<string,string> keyValuePair in slimDataDefaultConfiguration)
+{
+    if (!slimDataConfiguration.ContainsKey(keyValuePair.Key))
+    {
+        slimDataConfiguration.Add(keyValuePair.Key, keyValuePair.Value);
+    }
+}
+Console.WriteLine("Configuration: ");
+foreach (KeyValuePair<string,string> keyValuePair in slimDataConfiguration)
+{
+    Console.WriteLine($"{keyValuePair.Key}:{keyValuePair.Value}");
+}
+
 builder.Configuration["publicEndPoint"] = slimDataConfiguration["publicEndPoint"];
-builder.Configuration["lowerElectionTimeout"] = slimDataConfiguration["lowerElectionTimeout"];
 startup.ConfigureServices(serviceCollectionSlimFaas);
 
 builder.Host
@@ -184,6 +215,7 @@ Uri uri = new(publicEndPoint);
 
 builder.WebHost.ConfigureKestrel((context, serverOptions) =>
 {
+    serverOptions.Limits.MaxRequestBodySize = EnvironmentVariables.ReadLong<long>(null, EnvironmentVariables.SlimFaasMaxRequestBodySize, EnvironmentVariables.SlimFaasMaxRequestBodySizeDefault);
     serverOptions.ListenAnyIP(uri.Port);
     foreach (int slimFaasPort in slimFaasPorts)
     {

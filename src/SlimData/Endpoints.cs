@@ -68,12 +68,18 @@ public class Endpoints
                 return;
             }
 
-            var logEntry =
-                provider.interpreter.CreateLogEntry(
-                    new AddHashSetCommand { Key = key, Value = dictionary }, cluster.Term);
-            await provider.AppendAsync(logEntry, source.Token);
-            await provider.CommitAsync(source.Token);
+            await AddHashSetCommand(provider, key, dictionary, cluster, source);
         });
+    }
+
+    public static async Task AddHashSetCommand(SlimPersistentState provider, string key, Dictionary<string, string> dictionary,
+        IRaftCluster cluster, CancellationTokenSource source)
+    {
+        var logEntry =
+            provider.interpreter.CreateLogEntry(
+                new AddHashSetCommand { Key = key, Value = dictionary }, cluster.Term);
+        await provider.AppendAsync(logEntry, source.Token);
+        await provider.CommitAsync(source.Token);
     }
 
     public static Task ListRigthPop(HttpContext context)
@@ -92,31 +98,38 @@ public class Endpoints
                 return;
             }
 
-            await cluster.ApplyReadBarrierAsync(context.RequestAborted);
+            //await cluster.ApplyReadBarrierAsync(context.RequestAborted);
 
-            var values = new ListString();
-            var queues = ((ISupplier<SupplierPayload>)provider).Invoke().Queues;
-            if (queues.ContainsKey(key))
-            {
-                var queue = ((ISupplier<SupplierPayload>)provider).Invoke().Queues[key];
-                for (var i = 0; i < count; i++)
-                {
-                    if (queue.Count <= i) break;
-
-                    values.Add(queue[i]);
-                }
-
-                await context.Response.WriteAsync(
-                    JsonSerializer.Serialize(values, ListStringSerializerContext.Default.ListString),
-                    context.RequestAborted);
-                var logEntry =
-                    provider.interpreter.CreateLogEntry(
-                        new ListRightPopCommand { Key = key, Count = count },
-                        cluster.Term);
-                await provider.AppendAsync(logEntry, source.Token);
-                await provider.CommitAsync(source.Token);
-            }
+            var values = await ListRightPopCommand(provider, key, count, cluster, source);
+            await context.Response.WriteAsync(
+                JsonSerializer.Serialize(values, ListStringSerializerContext.Default.ListString),
+                context.RequestAborted);
         });
+    }
+
+    public static async Task<ListString> ListRightPopCommand(SlimPersistentState provider, string key, int count, IRaftCluster cluster,
+        CancellationTokenSource source)
+    {
+        var values = new ListString();
+        var queues = ((ISupplier<SupplierPayload>)provider).Invoke().Queues;
+        if (queues.TryGetValue(key, out var queue))
+        {
+            for (var i = 0; i < count; i++)
+            {
+                if (queue.Count <= i) break;
+
+                values.Add(queue[i]);
+            }
+                
+            var logEntry =
+                provider.interpreter.CreateLogEntry(
+                    new ListRightPopCommand { Key = key, Count = count },
+                    cluster.Term);
+            await provider.AppendAsync(logEntry, source.Token);
+            await provider.CommitAsync(source.Token);
+        }
+
+        return values;
     }
 
     public static Task ListLeftPush(HttpContext context)
@@ -134,12 +147,18 @@ public class Endpoints
                 return;
             }
 
-            var logEntry =
-                provider.interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
-                    cluster.Term);
-            await provider.AppendAsync(logEntry, source.Token);
-            await provider.CommitAsync(source.Token);
+            await ListLeftPushCommand(provider, key, value, cluster, source);
         });
+    }
+
+    public static async Task ListLeftPushCommand(SlimPersistentState provider, string key, string value,
+        IRaftCluster cluster, CancellationTokenSource source)
+    {
+        var logEntry =
+            provider.interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
+                cluster.Term);
+        await provider.AppendAsync(logEntry, source.Token);
+        await provider.CommitAsync(source.Token);
     }
 
     private static (string key, string value) GetKeyValue(IFormCollection form)
@@ -172,11 +191,17 @@ public class Endpoints
                 return;
             }
 
-            var logEntry =
-                provider.interpreter.CreateLogEntry(new AddKeyValueCommand { Key = key, Value = value },
-                    cluster.Term);
-            await provider.AppendAsync(logEntry, source.Token);
-            await provider.CommitAsync(source.Token);
+            await AddKeyValueCommand(provider, key, value, cluster, source);
         });
+    }
+
+    public static async Task AddKeyValueCommand(SlimPersistentState provider, string key, string value,
+        IRaftCluster cluster, CancellationTokenSource source)
+    {
+        var logEntry =
+            provider.interpreter.CreateLogEntry(new AddKeyValueCommand { Key = key, Value = value },
+                cluster.Term);
+        await provider.AppendAsync(logEntry, source.Token);
+        await provider.CommitAsync(source.Token);
     }
 }

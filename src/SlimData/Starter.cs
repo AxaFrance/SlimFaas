@@ -7,7 +7,8 @@ public class Starter
 {
     private static IServiceProvider ServiceProvider { get; set; } = null!;
 
-    private static Task UseAspNetCoreHost(string publicEndPoint, string? persistentStorage = null)
+    private static Task UseAspNetCoreHost(string publicEndPoint, 
+        string? persistentStorage = null)
     {
         var uri = new Uri(publicEndPoint);
 

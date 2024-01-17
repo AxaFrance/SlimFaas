@@ -5,6 +5,7 @@ namespace SlimFaas.Tests;
 
 public class EnvironmentVariablesTests
 {
+
     [Fact]
     public void ReadBooleanValue()
     {

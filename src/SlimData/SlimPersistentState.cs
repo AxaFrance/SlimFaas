@@ -10,7 +10,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
 {
     public const string LogLocation = "logLocation";
 
-    public SlimDataInterpreter interpreter = new("SlimPersistentState");
+    public SlimDataInterpreter interpreter = new();
 
 
     public SlimPersistentState(string path)
@@ -50,7 +50,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
 
     private sealed class SimpleSnapshotBuilder : IncrementalSnapshotBuilder
     {
-        public readonly SlimDataInterpreter interpreter = new("SimpleSnapshotBuilder");
+        public readonly SlimDataInterpreter interpreter = new();
 
         public SimpleSnapshotBuilder(in SnapshotBuilderContext context)
             : base(context)

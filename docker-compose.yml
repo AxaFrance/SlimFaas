@@ -13,7 +13,7 @@ services:
       - MOCK_KUBERNETES_FUNCTIONS={"Functions":[{"Name":"fibonacci","NumberParallelRequest":1}],"Slimfaas":[{"Name":"slimfaas-1"}]}
       - BASE_SLIMDATA_URL=http://localhost:3262/
       - HOSTNAME=slimfaas-1
-      - SLIMDATA_ALLOW_COLD_START=true
+      - SLIMDATA_CONFIGURATION={"coldStart":"true"}
       - SLIMFAAS_PORTS=5000,5020
   fibonacci:
     #image: docker.io/axaguildev/fibonacci:latest
