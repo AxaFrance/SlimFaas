@@ -41,6 +41,21 @@ spec:
               value: "/database"
             - name: SLIMFAAS_PORTS
               value: "5000,30021"
+            - name: SLIMDATA_CONFIGURATION
+              value: |-
+                {
+                  { "partitioning": "false" },
+                  { "lowerElectionTimeout": slimDataLowerElectionTimeout },
+                  { "upperElectionTimeout": slimDataUpperElectionTimeout },
+                  { "requestTimeout", slimDataRequestTimeout },
+                  { "rpcTimeout", slimDataRPCTimeout },
+                  { "publicEndPoint", publicEndPoint },
+                  { "coldStart", coldStart },
+                  { "requestJournal:memoryLimit", "5" },
+                  { "requestJournal:expiration", "00:01:00" },
+                  { "heartbeatThreshold", slimDataHeartbeatThreshold }
+              }
+
           volumeMounts:
             - name: slimfaas-volume
               mountPath: /database

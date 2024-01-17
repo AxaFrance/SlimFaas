@@ -135,8 +135,8 @@ public class KubernetesService : IKubernetesService
                             podList.Where(p => p.Name.StartsWith(deploymentListItem.Metadata.Name)).ToList()))
                 .FirstOrDefault();
 
-            AddDeployments(kubeNamespace, deploymentList, podList, deploymentInformationList);
-            AddStatefulSets(kubeNamespace, statefulSetList, podList, deploymentInformationList);
+            AddDeployments(kubeNamespace, deploymentList, podList, deploymentInformationList, _logger);
+            AddStatefulSets(kubeNamespace, statefulSetList, podList, deploymentInformationList, _logger);
 
             return new DeploymentsInformations(deploymentInformationList,
                 slimFaasDeploymentInformation ?? new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
@@ -150,7 +150,7 @@ public class KubernetesService : IKubernetesService
     }
 
     private static void AddDeployments(string kubeNamespace, V1DeploymentList deploymentList, IEnumerable<PodInformation> podList,
-        IList<DeploymentInformation> deploymentInformationList)
+        IList<DeploymentInformation> deploymentInformationList, ILogger<KubernetesService> logger)
     {
         foreach (V1Deployment? deploymentListItem in deploymentList.Items)
         {
@@ -162,7 +162,7 @@ public class KubernetesService : IKubernetesService
             }
 
             var name = deploymentListItem.Metadata.Name;
-            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name);
+            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
 
             DeploymentInformation deploymentInformation = new(
                 name,
@@ -187,7 +187,7 @@ public class KubernetesService : IKubernetesService
         }
     }
 
-    private static ScheduleConfig? GetScheduleConfig(IDictionary<string, string> annotations, string name)
+    private static ScheduleConfig? GetScheduleConfig(IDictionary<string, string> annotations, string name, ILogger<KubernetesService> logger)
     {
         try
         {
@@ -198,16 +198,14 @@ public class KubernetesService : IKubernetesService
         }
         catch (Exception e)
         {
-            Console.WriteLine($"name: {name}");
-            Console.WriteLine($"annotations[Schedule]: {annotations[Schedule]}");
-            Console.WriteLine($"exception : {e}");
+            logger.LogError( e, "name: {Name}\\n annotations[Schedule]: {Annotation}", name, annotations[Schedule]);
         }
 
         return new ScheduleConfig();
     }
 
     private static void AddStatefulSets(string kubeNamespace, V1StatefulSetList deploymentList, IEnumerable<PodInformation> podList,
-        IList<DeploymentInformation> deploymentInformationList)
+        IList<DeploymentInformation> deploymentInformationList, ILogger<KubernetesService> logger)
     {
         foreach (V1StatefulSet? deploymentListItem in deploymentList.Items)
         {
@@ -218,7 +216,7 @@ public class KubernetesService : IKubernetesService
                 continue;
             }
             var name = deploymentListItem.Metadata.Name;
-            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name);
+            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
 
             DeploymentInformation deploymentInformation = new(
                 name,

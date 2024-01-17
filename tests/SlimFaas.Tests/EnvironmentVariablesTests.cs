@@ -1,10 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace SlimFaas.Tests;
 
 public class EnvironmentVariablesTests
 {
+
     [Fact]
     public void ReadBooleanValue()
     {

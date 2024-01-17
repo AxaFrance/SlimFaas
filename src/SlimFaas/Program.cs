@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 using OpenTelemetry.Trace;
 using Polly;
@@ -154,32 +155,46 @@ if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
     builder.Configuration[SlimPersistentState.LogLocation] = podDataDirectoryPersistantStorage;
 }
 
-
 Startup startup = new(builder.Configuration);
 int[] slimFaasPorts =
     EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts, EnvironmentVariables.SlimFaasPortsDefault);
 
-var slimDataHeartbeatThreshold = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataHeartbeatThreshold) ?? EnvironmentVariables.SlimDataHeartbeatThresholdDefault;
-var slimDataLowerElectionTimeout = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataLowerElectionTimeout) ?? EnvironmentVariables.SlimDataLowerElectionTimeoutDefault;
-var slimDataUpperElectionTimeout = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataUpperElectionTimeout) ?? EnvironmentVariables.SlimDataUpperElectionTimeoutDefault;
-var slimDataRequestTimeout = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataRequestTimeout) ?? EnvironmentVariables.SlimDataRequestTimeoutDefault;
-var slimDataRPCTimeout = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataRpcTimeout) ?? EnvironmentVariables.SlimDataRpcTimeoutDefault;
-
 // Node start as master if it is alone in the cluster
 string coldStart = replicasService != null && replicasService.Deployments.SlimFaas.Pods.Count == 1 ? "true" : "false";
-Dictionary<string, string> slimDataConfiguration = new()
+
+string slimDataConfigurationString =  Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataConfiguration) ?? "";
+DictionnaryString slimDataConfiguration= new DictionnaryString();
+
+if (!string.IsNullOrEmpty(slimDataConfigurationString))
+{
+    var dictionnaryDeserialize = JsonSerializer.Deserialize(slimDataConfigurationString,
+        DictionnaryStringSerializerContext.Default.DictionnaryString);
+    if (dictionnaryDeserialize != null)
+    {
+        slimDataConfiguration = dictionnaryDeserialize;
+    }
+}
+
+Dictionary<string, string> slimDataDefaultConfiguration = new()
 {
     { "partitioning", "false" },
-    { "lowerElectionTimeout", slimDataLowerElectionTimeout },
-    { "upperElectionTimeout", slimDataUpperElectionTimeout },
-    { "requestTimeout", slimDataRequestTimeout },
-    { "rpcTimeout", slimDataRPCTimeout },
+    { "lowerElectionTimeout", "400" },
+    { "upperElectionTimeout", "800" },
+    { "requestTimeout", "00:01:20.0000000" },
+    { "rpcTimeout", "00:00:40.0000000" },
     { "publicEndPoint", publicEndPoint },
     { "coldStart", coldStart },
     { "requestJournal:memoryLimit", "5" },
     { "requestJournal:expiration", "00:01:00" },
-    { "heartbeatThreshold", slimDataHeartbeatThreshold }
+    { "heartbeatThreshold", "0.4" }
 };
+foreach (KeyValuePair<string,string> keyValuePair in slimDataDefaultConfiguration)
+{
+    if (!slimDataConfiguration.ContainsKey(keyValuePair.Key))
+    {
+        slimDataConfiguration.Add(keyValuePair.Key, keyValuePair.Value);
+    }
+}
 builder.Configuration["publicEndPoint"] = slimDataConfiguration["publicEndPoint"];
 startup.ConfigureServices(serviceCollectionSlimFaas);
 
