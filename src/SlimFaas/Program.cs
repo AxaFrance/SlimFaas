@@ -198,10 +198,10 @@ foreach (KeyValuePair<string,string> keyValuePair in slimDataDefaultConfiguratio
         slimDataConfiguration.Add(keyValuePair.Key, keyValuePair.Value);
     }
 }
-Console.WriteLine("Configuration: ");
+Console.WriteLine(">> Configuration: ");
 foreach (KeyValuePair<string,string> keyValuePair in slimDataConfiguration)
 {
-    Console.WriteLine($"{keyValuePair.Key}:{keyValuePair.Value}");
+    Console.WriteLine($"- {keyValuePair.Key}:{keyValuePair.Value}");
 }
 
 builder.Configuration["publicEndPoint"] = slimDataConfiguration["publicEndPoint"];
