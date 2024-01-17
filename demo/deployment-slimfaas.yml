@@ -22,7 +22,7 @@ spec:
       serviceAccountName: slimfaas
       containers:
         - name: slimfaas
-          image: axaguildev/slimfaas:pr-30-333
+          image: axaguildev/slimfaas:lastest
           livenessProbe:
             httpGet:
               path: /health
@@ -42,30 +42,18 @@ spec:
             - name: SLIMFAAS_PORTS
               value: "5000,30021"
             - name: SLIMDATA_CONFIGURATION
-              value: |-
-                {
-                  { "partitioning": "false" },
-                  { "lowerElectionTimeout": slimDataLowerElectionTimeout },
-                  { "upperElectionTimeout": slimDataUpperElectionTimeout },
-                  { "requestTimeout", slimDataRequestTimeout },
-                  { "rpcTimeout", slimDataRPCTimeout },
-                  { "publicEndPoint", publicEndPoint },
-                  { "coldStart", coldStart },
-                  { "requestJournal:memoryLimit", "5" },
-                  { "requestJournal:expiration", "00:01:00" },
-                  { "heartbeatThreshold", slimDataHeartbeatThreshold }
-              }
-
+              value: |
+                {"lowerElectionTimeout":"400","upperElectionTimeout":"800","requestTimeout":"00:01:20.0000000","rpcTimeout":"00:00:40.0000000","heartbeatThreshold":"0.2"}
           volumeMounts:
             - name: slimfaas-volume
               mountPath: /database
           resources:
             limits:
-              memory: "160Mi"
+              memory: "180Mi"
               cpu: "1000m"
             requests:
-              memory: "76Mi"
-              cpu: "600m"
+              memory: "160Mi"
+              cpu: "400m"
           ports:
             - containerPort: 5000
               name: slimfaas

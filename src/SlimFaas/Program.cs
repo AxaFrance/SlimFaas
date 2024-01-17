@@ -186,7 +186,7 @@ Dictionary<string, string> slimDataDefaultConfiguration = new()
     { "coldStart", coldStart },
     { "requestJournal:memoryLimit", "5" },
     { "requestJournal:expiration", "00:01:00" },
-    { "heartbeatThreshold", "0.4" }
+    { "heartbeatThreshold", "0.2" }
 };
 foreach (KeyValuePair<string,string> keyValuePair in slimDataDefaultConfiguration)
 {

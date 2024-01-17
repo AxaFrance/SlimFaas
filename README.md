@@ -195,8 +195,9 @@ spec:
             - name: SLIMDATA_DIRECTORY
               value: "/database"
             # If you want to use just one pod for testing purpose, you can use this env variable
-            #- name: SLIMDATA_ALLOW_COLD_START
-            #  value: "true" # default equivalent to false, but allow to start a pod alone as a leader
+            #- name: SLIMDATA_CONFIGURATION
+            #  value: |
+            #      {"coldStart":"true"}
             # If your are not on kubernetes for example docker-compose, you can use this env variable, but you will lose auto-scale
             #- name: MOCK_KUBERNETES_FUNCTIONS
             #  value: "{"Functions":[{"Name":"fibonacci","NumberParallelRequest":1}],"Slimfaas":[{"Name":"slimfaas-1"}]}"
@@ -221,6 +222,20 @@ spec:
             # Optional
             # name : POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED
             # value : "false" # default equivalent to false
+
+            # name : SLIMDATA_CONFIGURATION # represent SlimData internal configuration, more documentation here: https://dotnet.github.io/dotNext/features/cluster/raft.html
+            # value : | #default values
+            #    {
+            #      "partitioning":"false",
+            #      "lowerElectionTimeout":"400",
+            #      "upperElectionTimeout":"800",
+            #      "requestTimeout":"00:01:20.0000000",
+            #      "rpcTimeout":"00:00:40.0000000",
+            #      "coldStart":"false",
+            #      "requestJournal:memoryLimit":"5",
+            #      "requestJournal:expiration":"00:01:00",
+            #      "heartbeatThreshold":"0.4",
+            #   }
           volumeMounts:
             - name: slimfaas-volume
               mountPath: /database

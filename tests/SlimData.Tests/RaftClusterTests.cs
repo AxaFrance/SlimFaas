@@ -174,18 +174,6 @@ public class RaftClusterTests
         return tempDirectory;
     }
 
-
-    [Fact(Timeout = 20000)]
-    public static async Task Time()
-    {
-        var timeout = TimeSpan.FromMilliseconds(8000);
-        var s = timeout.ToString();
-        Console.WriteLine(s);
-
-        var d = TimeSpan.Parse(s);
-        Console.WriteLine(d);
-    }
-
     [Fact(Timeout = 20000)]
     public static async Task MessageExchange()
     {
