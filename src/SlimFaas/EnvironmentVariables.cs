@@ -6,6 +6,9 @@ public static class EnvironmentVariables
     public const string SlimFaasCorsAllowOrigin = "SLIMFAAS_CORS_ALLOW_ORIGIN";
     public const string SlimFaasCorsAllowOriginDefault = "*";
 
+    public const string SlimFaasMaxRequestBodySize = "SLIMFASS_MAX_REQUEST_BODY_SIZE";
+    public const long SlimFaasMaxRequestBodySizeDefault = 524288000;
+
     public const string SlimWorkerDelayMilliseconds = "SLIM_WORKER_DELAY_MILLISECONDS";
     public const int SlimWorkerDelayMillisecondsDefault = 50;
 
@@ -80,6 +83,21 @@ public static class EnvironmentVariables
             "Cannot parse to int the environment variable {EnvironmentVariableName} with value {EnvironmentVariableValue}. Using default value {DefaultDelay}",
             environmentVariableName, valueString, defaultInteger);
         return defaultInteger;
+    }
+
+    public static long ReadLong<T>(ILogger<T>? logger, string environmentVariableName, long defaultLong)
+    {
+        string valueString = Environment.GetEnvironmentVariable(environmentVariableName) ?? defaultLong.ToString();
+        if (long.TryParse(valueString, out long value))
+        {
+            return value;
+        }
+
+        logger?.LogWarning(
+            "Cannot parse to int the environment variable {EnvironmentVariableName} with value {EnvironmentVariableValue}. Using default value {DefaultDelay}",
+            environmentVariableName, valueString, defaultLong);
+
+        return defaultLong;
     }
 
     public static bool ReadBoolean<T>(ILogger<T> logger, string environmentVariableName, bool defaultBoolean)
