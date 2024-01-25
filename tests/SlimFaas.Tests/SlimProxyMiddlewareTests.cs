@@ -20,11 +20,11 @@ internal class MemoryReplicasService : IReplicasService
                     Pods: new List<PodInformation> { new("", true, true, "", "") })
             }, new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
 
-    public Task SyncDeploymentsAsync(string kubeNamespace) => throw new NotImplementedException();
+    public Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace) => throw new NotImplementedException();
 
     public Task CheckScaleAsync(string kubeNamespace) => throw new NotImplementedException();
 
-    public async Task SyncDeploymentsFromSlimData()
+    public async Task SyncDeploymentsFromSlimData(DeploymentsInformations deploymentsInformations)
     {
         await Task.Delay(100);
     }

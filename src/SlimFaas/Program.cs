@@ -15,7 +15,7 @@ string slimDataDirectory = Environment.GetEnvironmentVariable(EnvironmentVariabl
                            EnvironmentVariables.GetTemporaryDirectory();
 
 string slimDataConfigurationString =  Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataConfiguration) ?? "";
-DictionnaryString slimDataConfiguration= new DictionnaryString();
+DictionnaryString slimDataConfiguration= new();
 
 if (!string.IsNullOrEmpty(slimDataConfigurationString))
 {
@@ -26,7 +26,6 @@ if (!string.IsNullOrEmpty(slimDataConfigurationString))
         slimDataConfiguration = dictionnaryDeserialize;
     }
 }
-
 
 const string coldstart = "coldStart";
 bool slimDataAllowColdStart =

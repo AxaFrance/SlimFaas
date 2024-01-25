@@ -8,14 +8,13 @@ namespace SlimFaas;
 public interface IReplicasService
 {
     DeploymentsInformations Deployments { get; }
-    Task SyncDeploymentsFromSlimData();
-    Task SyncDeploymentsAsync(string kubeNamespace);
+    Task SyncDeploymentsFromSlimData(DeploymentsInformations deploymentsInformations);
+    Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace);
     Task CheckScaleAsync(string kubeNamespace);
 }
 
 public class ReplicasService(IKubernetesService kubernetesService,
         HistoryHttpMemoryService historyHttpService,
-        IDatabaseService slimDataService,
         ILogger<ReplicasService> logger)
     : IReplicasService
 {
@@ -42,38 +41,22 @@ public class ReplicasService(IKubernetesService kubernetesService,
         }
     }
 
-    public async Task SyncDeploymentsFromSlimData()
+    public async Task SyncDeploymentsFromSlimData(DeploymentsInformations deploymentsInformations)
     {
-        var currentDeploymentsJson = await slimDataService.GetAsync(kubernetesDeployments);
-        if (string.IsNullOrEmpty(currentDeploymentsJson))
-        {
-            return;
-        }
-        var deployments = JsonSerializer.Deserialize<DeploymentsInformations>(currentDeploymentsJson, DeploymentsInformationsSerializerContext.Default.DeploymentsInformations);
-        if (deployments == null)
-        {
-            return;
-        }
         lock (Lock)
         {
-            _deployments = deployments;
+            _deployments = deploymentsInformations;
         }
     }
 
-    const string kubernetesDeployments = "kubernetes-deployments";
-    public async Task SyncDeploymentsAsync(string kubeNamespace)
+    public async Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace)
     {
         DeploymentsInformations deployments = await kubernetesService.ListFunctionsAsync(kubeNamespace);
-        var currentDeploymentsJson = await slimDataService.GetAsync(kubernetesDeployments);
-        var newDeploymentsJson = JsonSerializer.Serialize(deployments, DeploymentsInformationsSerializerContext.Default.DeploymentsInformations);
-        if (currentDeploymentsJson != newDeploymentsJson)
-        {
-            await slimDataService.SetAsync(kubernetesDeployments, newDeploymentsJson);
-        }
         lock (Lock)
         {
             _deployments = deployments;
         }
+        return deployments;
     }
 
     public async Task CheckScaleAsync(string kubeNamespace)
