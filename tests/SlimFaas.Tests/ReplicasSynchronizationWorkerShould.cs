@@ -34,7 +34,7 @@ public class ReplicasSynchronizationWorkerShould
 {
     [Theory]
     [ClassData(typeof(DeploymentsTestData))]
-    public async Task SynchroniseDeployments(DeploymentsInformations deploymentsInformations)
+    public async Task SynchroniseDeploymentsShouldCallKubernetesApiWhenMaster(DeploymentsInformations deploymentsInformations)
     {
         Mock<ILogger<ReplicasSynchronizationWorker>> logger = new();
         Mock<IKubernetesService> kubernetesService = new();
@@ -48,12 +48,16 @@ public class ReplicasSynchronizationWorkerShould
         Mock<IMasterService> masterServiceMock = new();
         masterServiceMock.Setup(ms => ms.IsMaster).Returns(true);
         Mock<IDatabaseService> databaseServiceMock = new ();
+        databaseServiceMock.Setup(db => db.GetAsync(ReplicasSynchronizationWorker.kubernetesDeployments)).ReturnsAsync(String.Empty);
+        databaseServiceMock.Setup(db => db.SetAsync(ReplicasSynchronizationWorker.kubernetesDeployments, It.IsAny<string>()));
+
         ReplicasSynchronizationWorker service = new(replicasService, masterServiceMock.Object, databaseServiceMock.Object, logger.Object, 100);
         Task task = service.StartAsync(CancellationToken.None);
         await Task.Delay(300);
 
         Assert.True(task.IsCompleted);
         kubernetesService.Verify(v => v.ListFunctionsAsync(It.IsAny<string>()));
+        databaseServiceMock.Verify(v => v.SetAsync(It.IsAny<string>(), It.IsAny<string>()));
     }
 
     [Fact]

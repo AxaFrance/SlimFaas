@@ -15,7 +15,7 @@ public class ReplicasSynchronizationWorker(IReplicasService replicasService,
 
     private readonly string _namespace = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ??
                                          EnvironmentVariables.NamespaceDefault;
-    const string kubernetesDeployments = "kubernetes-deployments";
+    public const string kubernetesDeployments = "kubernetes-deployments";
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (stoppingToken.IsCancellationRequested == false)
