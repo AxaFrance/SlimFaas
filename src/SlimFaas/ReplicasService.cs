@@ -1,16 +1,21 @@
 ﻿using System.Globalization;
 using SlimFaas.Kubernetes;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace SlimFaas;
 
 public interface IReplicasService
 {
     DeploymentsInformations Deployments { get; }
+    Task SyncDeploymentsFromSlimData();
     Task SyncDeploymentsAsync(string kubeNamespace);
     Task CheckScaleAsync(string kubeNamespace);
 }
 
-public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService,
+public class ReplicasService(IKubernetesService kubernetesService,
+        HistoryHttpMemoryService historyHttpService,
+        IDatabaseService slimDataService,
         ILogger<ReplicasService> logger)
     : IReplicasService
 {
@@ -37,9 +42,34 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
         }
     }
 
+    public async Task SyncDeploymentsFromSlimData()
+    {
+        var currentDeploymentsJson = await slimDataService.GetAsync(kubernetesDeployments);
+        if (string.IsNullOrEmpty(currentDeploymentsJson))
+        {
+            return;
+        }
+        var deployments = JsonSerializer.Deserialize<DeploymentsInformations>(currentDeploymentsJson, DeploymentsInformationsSerializerContext.Default.DeploymentsInformations);
+        if (deployments == null)
+        {
+            return;
+        }
+        lock (Lock)
+        {
+            _deployments = deployments;
+        }
+    }
+
+    const string kubernetesDeployments = "kubernetes-deployments";
     public async Task SyncDeploymentsAsync(string kubeNamespace)
     {
         DeploymentsInformations deployments = await kubernetesService.ListFunctionsAsync(kubeNamespace);
+        var currentDeploymentsJson = await slimDataService.GetAsync(kubernetesDeployments);
+        var newDeploymentsJson = JsonSerializer.Serialize(deployments, DeploymentsInformationsSerializerContext.Default.DeploymentsInformations);
+        if (currentDeploymentsJson != newDeploymentsJson)
+        {
+            await slimDataService.SetAsync(kubernetesDeployments, newDeploymentsJson);
+        }
         lock (Lock)
         {
             _deployments = deployments;

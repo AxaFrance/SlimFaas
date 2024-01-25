@@ -28,9 +28,7 @@ public record ScaleDownTimeout
 
 [JsonSerializable(typeof(ScheduleConfig))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-public partial class ScheduleConfigSerializerContext : JsonSerializerContext
-{
-}
+public partial class ScheduleConfigSerializerContext : JsonSerializerContext;
 
 
 public enum PodType
@@ -44,6 +42,10 @@ public record ReplicaRequest(string Deployment, string Namespace, int Replicas, 
 public record SlimFaasDeploymentInformation(int Replicas, IList<PodInformation> Pods);
 
 public record DeploymentsInformations(IList<DeploymentInformation> Functions, SlimFaasDeploymentInformation SlimFaas);
+
+[JsonSerializable(typeof(DeploymentsInformations))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class DeploymentsInformationsSerializerContext : JsonSerializerContext;
 
 public record DeploymentInformation(string Deployment, string Namespace, IList<PodInformation> Pods, int Replicas,
     int ReplicasAtStart = 1,
@@ -270,7 +272,7 @@ public class KubernetesService : IKubernetesService
             return string.Empty;
         }
 
-        StringBuilder realName = new StringBuilder(names[0]);
+        StringBuilder realName = new(names[0]);
         for (int i = 1; i < names.Length - 2; i++)
         {
             realName.Append($"-{names[i]}");

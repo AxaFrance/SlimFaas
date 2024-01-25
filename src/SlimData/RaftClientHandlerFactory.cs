@@ -9,7 +9,7 @@ internal sealed class RaftClientHandlerFactory : IHttpMessageHandlerFactory
     public HttpMessageHandler CreateHandler(string name)
     {
         Console.WriteLine($"RaftClientHandlerFactory.CreateHandler({name})");
-        if (name != "RaftClient")
+        if (string.Equals(name, "RaftClient", StringComparison.CurrentCultureIgnoreCase))
         {
             var slimDataSocketsHttpHandlerTimeoutDefault =
                 Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataSocketsHttpHandlerTimeout) ??

@@ -1,6 +1,7 @@
 ﻿namespace SlimFaas;
 
 public class ReplicasSynchronizationWorker(IReplicasService replicasService,
+        IMasterService masterService,
         ILogger<ReplicasSynchronizationWorker> logger,
         int delay = EnvironmentVariables.ReplicasSynchronizationWorkerDelayMillisecondsDefault)
     : BackgroundService
@@ -17,8 +18,16 @@ public class ReplicasSynchronizationWorker(IReplicasService replicasService,
         {
             try
             {
-                await Task.Delay(_delay, stoppingToken);
-                await replicasService.SyncDeploymentsAsync(_namespace);
+                if(masterService.IsMaster == false)
+                {
+                    await Task.Delay(_delay/10, stoppingToken);
+                    await replicasService.SyncDeploymentsFromSlimData();
+                }
+                else
+                {
+                    await Task.Delay(_delay, stoppingToken);
+                    await replicasService.SyncDeploymentsAsync(_namespace);
+                }
             }
             catch (Exception e)
             {

@@ -23,6 +23,11 @@ internal class MemoryReplicasService : IReplicasService
     public Task SyncDeploymentsAsync(string kubeNamespace) => throw new NotImplementedException();
 
     public Task CheckScaleAsync(string kubeNamespace) => throw new NotImplementedException();
+
+    public async Task SyncDeploymentsFromSlimData()
+    {
+        await Task.Delay(100);
+    }
 }
 
 internal class MemorySlimFaasQueue : ISlimFaasQueue

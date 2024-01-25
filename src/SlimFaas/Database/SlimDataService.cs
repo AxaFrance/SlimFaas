@@ -16,7 +16,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task<string> GetAsync(string key)
     {
-        return await Retry.Do(() =>DoGetAsync(key), TimeSpan.FromSeconds(1), logger, 5);
+        return await Retry.Do(() => DoGetAsync(key), TimeSpan.FromSeconds(1), logger, 5);
     }
 
     private async Task<string> DoGetAsync(string key)
@@ -41,6 +41,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
     private async Task DoSetAsync(string key, string value)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
+
         if (!cluster.LeadershipToken.IsCancellationRequested)
         {
             var simplePersistentState = serviceProvider.GetRequiredService<SlimPersistentState>();

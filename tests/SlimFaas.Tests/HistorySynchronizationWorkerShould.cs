@@ -23,7 +23,10 @@ public class HistorySynchronizationWorkerShould
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).ReturnsAsync(deploymentsInformations);
         HistoryHttpMemoryService historyHttpMemoryService = new HistoryHttpMemoryService();
         Mock<ILogger<ReplicasService>> loggerReplicasService = new Mock<ILogger<ReplicasService>>();
-        ReplicasService replicasService = new ReplicasService(kubernetesService.Object, historyHttpMemoryService,
+        Mock<IDatabaseService> databaseServiceMock = new ();
+        ReplicasService replicasService = new ReplicasService(kubernetesService.Object,
+            historyHttpMemoryService,
+            databaseServiceMock.Object,
             loggerReplicasService.Object);
 
         Mock<ISlimDataStatus> slimDataStatus = new Mock<ISlimDataStatus>();
