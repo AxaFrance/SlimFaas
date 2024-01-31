@@ -24,7 +24,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         await GetAndWaitForLeader();
         if (cluster.LeadershipToken.IsCancellationRequested)
         {
-            if (cluster.Lease is null or { IsExpired: true })
+            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
             {
                 await cluster.ApplyReadBarrierAsync();
             }
@@ -103,7 +103,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         await GetAndWaitForLeader();
         if (cluster.LeadershipToken.IsCancellationRequested)
         {
-            if (cluster.Lease is null or { IsExpired: true })
+            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
             {
                 await cluster.ApplyReadBarrierAsync();
             }
@@ -189,7 +189,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         await GetAndWaitForLeader();
         if (cluster.LeadershipToken.IsCancellationRequested)
         {
-            if (cluster.Lease is null or { IsExpired: true })
+            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
             {
                 await cluster.ApplyReadBarrierAsync();
             }

@@ -69,37 +69,37 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
             var queues = interpreter.queues;
             var hashsets = interpreter.hashsets;
 
-            await writer.WriteInt32Async(keysValues.Count, true, token);
+            await writer.WriteLittleEndianAsync(keysValues.Count, token).ConfigureAwait(false);
             // write the entries
             var context = new EncodingContext(Encoding.UTF8, true);
             foreach (var (key, value) in keysValues)
             {
-                await writer.WriteStringAsync(key.AsMemory(), context, LengthFormat.Plain, token);
-                await writer.WriteStringAsync(value.AsMemory(), context, LengthFormat.Plain, token);
+                await writer.EncodeAsync(key.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                await writer.EncodeAsync(value.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
             }
 
             // write the number of entries
-            await writer.WriteInt32Async(queues.Count, true, token);
+            await writer.WriteLittleEndianAsync(keysValues.Count, token).ConfigureAwait(false);
             // write the entries
             foreach (var queue in queues)
             {
-                await writer.WriteStringAsync(queue.Key.AsMemory(), context, LengthFormat.Plain, token);
-                await writer.WriteInt32Async(queue.Value.Count, true, token);
+                await writer.EncodeAsync(queue.Key.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                await writer.WriteLittleEndianAsync(queue.Value.Count, token).ConfigureAwait(false);
                 foreach (var value in queue.Value)
-                    await writer.WriteStringAsync(value.AsMemory(), context, LengthFormat.Plain, token);
+                    await writer.EncodeAsync(value.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
             }
 
             // write the number of entries
-            await writer.WriteInt32Async(hashsets.Count, true, token);
+            await writer.WriteLittleEndianAsync(hashsets.Count, token).ConfigureAwait(false);
             // write the entries
             foreach (var hashset in hashsets)
             {
-                await writer.WriteStringAsync(hashset.Key.AsMemory(), context, LengthFormat.Plain, token);
-                await writer.WriteInt32Async(hashset.Value.Count, true, token);
+                await writer.EncodeAsync(hashset.Key.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                await writer.WriteLittleEndianAsync(hashset.Value.Count, token).ConfigureAwait(false);
                 foreach (var (key, value) in hashset.Value)
                 {
-                    await writer.WriteStringAsync(key.AsMemory(), context, LengthFormat.Plain, token);
-                    await writer.WriteStringAsync(value.AsMemory(), context, LengthFormat.Plain, token);
+                    await writer.EncodeAsync(key.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                    await writer.EncodeAsync(value.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
                 }
             }
         }
