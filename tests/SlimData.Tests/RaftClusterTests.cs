@@ -60,7 +60,7 @@ internal sealed class AdvancedDebugProvider : Disposable, ILoggerProvider
             }
 
             BufferWriterSlim<char> buffer = new BufferWriterSlim<char>(stackalloc char[128]);
-            buffer.WriteString($"[{prefix}]({new Timestamp()}){logLevel}: {message}");
+            //buffer.WriteString($"[{prefix}]({new Timestamp()}){logLevel}: {message}");
 
             if (exception is not null)
             {
