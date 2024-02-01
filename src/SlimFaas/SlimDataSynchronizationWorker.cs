@@ -15,7 +15,7 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("SlimDataSynchronizationWorker: Start");
+        Console.WriteLine("SlimDataSynchronizationWorker: Start");
         await slimDataStatus.WaitForReadyAsync();
         logger.LogInformation("SlimDataSynchronizationWorker: Leader Ready");
         while (stoppingToken.IsCancellationRequested == false)
@@ -29,7 +29,7 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
                 {
                     continue;
                 }
-                logger.LogInformation("SlimDataSynchronizationWorker: Current node is Leader");
+                Console.WriteLine("SlimDataSynchronizationWorker: Current node is Leader");
                 foreach (PodInformation slimFaasPod in replicasService.Deployments.SlimFaas.Pods.Where(p =>
                              p.Started == true))
                 {
@@ -39,7 +39,7 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
                         continue;
                     }
 
-                    logger.LogInformation("SlimDataSynchronizationWorker: SlimFaas pod {PodName} has to be added in the cluster",
+                    Console.WriteLine("SlimDataSynchronizationWorker: SlimFaas pod {PodName} has to be added in the cluster",
                         slimFaasPod.Name);
                     await ((IRaftHttpCluster)cluster).AddMemberAsync(new Uri(url), stoppingToken);
                 }
@@ -52,7 +52,7 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
                         continue;
                     }
 
-                    logger.LogInformation("SlimDataSynchronizationWorker: SlimFaas pod {PodName} need to be remove from the cluster",
+                    Console.WriteLine("SlimDataSynchronizationWorker: SlimFaas pod {PodName} need to be remove from the cluster",
                         raftClusterMember.EndPoint.ToString());
                     await ((IRaftHttpCluster)cluster).RemoveMemberAsync(
                         new Uri(raftClusterMember.EndPoint.ToString() ?? string.Empty), stoppingToken);
