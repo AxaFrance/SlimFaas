@@ -2,10 +2,10 @@
 
 services:
   slimfaas:
-    #image: docker.io/axaguildev/slimfaas:latest
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+    image: docker.io/axaguildev/slimfaas:latest
+    #build:
+    #  context: .
+    #  dockerfile: ./Dockerfile
     ports:
       - 5020:5000
     environment:

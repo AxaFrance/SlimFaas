@@ -15,7 +15,9 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        logger.LogInformation("SlimDataSynchronizationWorker: Start");
         await slimDataStatus.WaitForReadyAsync();
+        logger.LogInformation("SlimDataSynchronizationWorker: Leader Ready");
         while (stoppingToken.IsCancellationRequested == false)
         {
             try
@@ -23,36 +25,37 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
                 await Task.Delay(_delay, stoppingToken);
                 // Start SlimData only when 2 replicas are in ready state
 
-                CancellationToken leadershipToken = cluster.LeadershipToken;
-                if (!leadershipToken.IsCancellationRequested)
+                if (cluster.LeadershipToken.IsCancellationRequested)
                 {
-                    foreach (PodInformation slimFaasPod in replicasService.Deployments.SlimFaas.Pods.Where(p =>
-                                 p.Started == true))
+                    continue;
+                }
+                logger.LogInformation("SlimDataSynchronizationWorker: Current node is Leader");
+                foreach (PodInformation slimFaasPod in replicasService.Deployments.SlimFaas.Pods.Where(p =>
+                             p.Started == true))
+                {
+                    string url = SlimDataEndpoint.Get(slimFaasPod);
+                    if (cluster.Members.ToList().Any(m => m.EndPoint.ToString() == url))
                     {
-                        string url = SlimDataEndpoint.Get(slimFaasPod);
-                        if (cluster.Members.ToList().Any(m => m.EndPoint.ToString() == url))
-                        {
-                            continue;
-                        }
-
-                        logger.LogInformation("SlimFaas pod {PodName} has to be added in the cluster",
-                            slimFaasPod.Name);
-                        await ((IRaftHttpCluster)cluster).AddMemberAsync(new Uri(url), stoppingToken);
+                        continue;
                     }
 
-                    foreach (IRaftClusterMember raftClusterMember in cluster.Members)
-                    {
-                        if (replicasService.Deployments.SlimFaas.Pods.ToList().Any(slimFaasPod =>
-                                SlimDataEndpoint.Get(slimFaasPod) == raftClusterMember.EndPoint.ToString()))
-                        {
-                            continue;
-                        }
+                    logger.LogInformation("SlimDataSynchronizationWorker: SlimFaas pod {PodName} has to be added in the cluster",
+                        slimFaasPod.Name);
+                    await ((IRaftHttpCluster)cluster).AddMemberAsync(new Uri(url), stoppingToken);
+                }
 
-                        logger.LogInformation("SlimFaas pod {PodName} need to be remove from the cluster",
-                            raftClusterMember.EndPoint.ToString());
-                        await ((IRaftHttpCluster)cluster).RemoveMemberAsync(
-                            new Uri(raftClusterMember.EndPoint.ToString() ?? string.Empty), stoppingToken);
+                foreach (IRaftClusterMember raftClusterMember in cluster.Members)
+                {
+                    if (replicasService.Deployments.SlimFaas.Pods.ToList().Any(slimFaasPod =>
+                            SlimDataEndpoint.Get(slimFaasPod) == raftClusterMember.EndPoint.ToString()))
+                    {
+                        continue;
                     }
+
+                    logger.LogInformation("SlimDataSynchronizationWorker: SlimFaas pod {PodName} need to be remove from the cluster",
+                        raftClusterMember.EndPoint.ToString());
+                    await ((IRaftHttpCluster)cluster).RemoveMemberAsync(
+                        new Uri(raftClusterMember.EndPoint.ToString() ?? string.Empty), stoppingToken);
                 }
             }
             catch (Exception e)

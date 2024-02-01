@@ -25,7 +25,7 @@ public static class EnvironmentVariables
     public const string ReplicasSynchronisationWorkerDelayMilliseconds =
         "REPLICAS_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS";
 
-    public const int ReplicasSynchronizationWorkerDelayMillisecondsDefault = 2000;
+    public const int ReplicasSynchronizationWorkerDelayMillisecondsDefault = 1000;
 
     public const string HistorySynchronisationWorkerDelayMilliseconds =
         "HISTORY_SYNCHRONISATION_WORKER_DELAY_MILLISECONDS";
