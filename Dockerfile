@@ -12,6 +12,8 @@ RUN dotnet restore "./src/SlimFaas/SlimFaas.csproj"
 RUN dotnet build "./src/SlimFaas/SlimFaas.csproj" -c Release -o /app/build
 
 FROM build AS publish
+RUN apt update
+RUN apt install -y clang zlib1g-dev
 RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -r linux-musl-x64 --self-contained=true -o /app/publish
 RUN rm /app/publish/*.pdb
 RUN rm /app/publish/SlimData
