@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using DotNext.Net.Cluster.Consensus.Raft;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SlimFaas.Kubernetes;
@@ -45,13 +46,14 @@ public class ReplicasSynchronizationWorkerShould
         ReplicasService replicasService =
             new(kubernetesService.Object, historyHttpService, loggerReplicasService.Object);
         masterService.Setup(ms => ms.IsMaster).Returns(true);
-        Mock<IMasterService> masterServiceMock = new();
-        masterServiceMock.Setup(ms => ms.IsMaster).Returns(true);
+        Mock<IRaftCluster> raftCluster = new();
+        raftCluster.Setup(ms => ms.LeadershipToken.IsCancellationRequested).Returns(false);
+        raftCluster.Setup(ms => ms.Leader).Returns((new Mock<RaftClusterMember>()).Object);
         Mock<IDatabaseService> databaseServiceMock = new ();
         databaseServiceMock.Setup(db => db.GetAsync(ReplicasSynchronizationWorker.kubernetesDeployments)).ReturnsAsync(String.Empty);
         databaseServiceMock.Setup(db => db.SetAsync(ReplicasSynchronizationWorker.kubernetesDeployments, It.IsAny<string>()));
 
-        ReplicasSynchronizationWorker service = new(replicasService, masterServiceMock.Object, databaseServiceMock.Object, logger.Object, 100);
+        ReplicasSynchronizationWorker service = new(replicasService, raftCluster.Object, databaseServiceMock.Object, logger.Object, 100);
         Task task = service.StartAsync(CancellationToken.None);
         await Task.Delay(300);
 
@@ -66,18 +68,19 @@ public class ReplicasSynchronizationWorkerShould
         Mock<ILogger<ReplicasSynchronizationWorker>> logger = new Mock<ILogger<ReplicasSynchronizationWorker>>();
         Mock<IKubernetesService> kubernetesService = new Mock<IKubernetesService>();
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).Throws(new Exception());
-        Mock<IMasterService> masterService = new Mock<IMasterService>();
-        masterService.Setup(ms => ms.IsMaster).Returns(true);
+        Mock<IRaftCluster> raftCluster = new();
+        raftCluster.Setup(ms => ms.LeadershipToken.IsCancellationRequested).Returns(false);
+        raftCluster.Setup(ms => ms.Leader).Returns((new Mock<RaftClusterMember>()).Object);
         HistoryHttpMemoryService historyHttpService = new HistoryHttpMemoryService();
         Mock<ILogger<ReplicasService>> loggerReplicasService = new Mock<ILogger<ReplicasService>>();
         ReplicasService replicasService =
             new ReplicasService(kubernetesService.Object,
                 historyHttpService,
                 loggerReplicasService.Object);
-        masterService.Setup(ms => ms.IsMaster).Returns(true);
+
 
         Mock<IDatabaseService> databaseService = new Mock<IDatabaseService>();
-        ReplicasSynchronizationWorker service = new ReplicasSynchronizationWorker(replicasService, masterService.Object, databaseService.Object, logger.Object, 10);
+        ReplicasSynchronizationWorker service = new ReplicasSynchronizationWorker(replicasService, raftCluster.Object, databaseService.Object, logger.Object, 10);
         Task task = service.StartAsync(CancellationToken.None);
         await Task.Delay(100);
 
