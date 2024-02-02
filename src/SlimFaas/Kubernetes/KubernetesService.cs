@@ -91,7 +91,7 @@ public class KubernetesService : IKubernetesService
         try
         {
             using k8s.Kubernetes client = new(_k8SConfig);
-            string patchString = $"{{\"spec\": {{\"replicas\": {request.Replicas}}}}}";
+            string patchString = $"{{\"spec\":{{\"replicas\":{request.Replicas}}}}}";
             V1Patch patch = new(patchString, V1Patch.PatchType.MergePatch);
             switch (request.PodType)
             {
