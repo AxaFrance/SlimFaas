@@ -10,10 +10,10 @@ WORKDIR /src
 COPY . .
 RUN dotnet restore "./src/SlimFaas/SlimFaas.csproj"
 RUN dotnet build "./src/SlimFaas/SlimFaas.csproj" -c Release -o /app/build
-RUN apt update && apt install -y clang zlib1g-dev
+#RUN apt update && apt install -y clang zlib1g-dev
 
 FROM build AS publish
-RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -r linux-musl-x64 --self-contained=true -o /app/publish
+RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -r linux-musl-x64 --self-contained=true -p:PublishSingleFile=true  -o /app/publish
 RUN rm /app/publish/*.pdb
 RUN rm /app/publish/SlimData
 
