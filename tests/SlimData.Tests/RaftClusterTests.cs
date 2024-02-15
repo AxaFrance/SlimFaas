@@ -177,7 +177,7 @@ public class RaftClusterTests
     [Fact(Timeout = 20000)]
     public static async Task MessageExchange()
     {
-        Dictionary<string, string> config1 = new Dictionary<string, string>
+        Dictionary<string, string> config1 = new()
         {
             { "partitioning", "false" },
             { "lowerElectionTimeout", "600" },
@@ -188,7 +188,7 @@ public class RaftClusterTests
             { SlimPersistentState.LogLocation, GetTemporaryDirectory() }
         };
 
-        Dictionary<string, string> config2 = new Dictionary<string, string>
+        Dictionary<string, string> config2 = new()
         {
             { "partitioning", "false" },
             { "lowerElectionTimeout", "600" },
@@ -199,7 +199,7 @@ public class RaftClusterTests
             { SlimPersistentState.LogLocation, GetTemporaryDirectory() }
         };
 
-        Dictionary<string, string> config3 = new Dictionary<string, string>
+        Dictionary<string, string> config3 = new()
         {
             { "partitioning", "false" },
             { "lowerElectionTimeout", "600" },

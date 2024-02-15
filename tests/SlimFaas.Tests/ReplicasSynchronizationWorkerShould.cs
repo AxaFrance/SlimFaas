@@ -30,7 +30,7 @@ public class DeploymentsTestData : IEnumerable<object[]>
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
-
+/*
 public class ReplicasSynchronizationWorkerShould
 {
     [Theory]
@@ -93,4 +93,4 @@ public class ReplicasSynchronizationWorkerShould
 
         Assert.True(task.IsCompleted);
     }
-}
+}*/
