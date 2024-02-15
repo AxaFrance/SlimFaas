@@ -33,7 +33,7 @@ public class DeploymentsTestData : IEnumerable<object[]>
 
 public class ReplicasSynchronizationWorkerShould
 {
-   /* [Theory]
+    [Theory]
     [ClassData(typeof(DeploymentsTestData))]
     public async Task SynchroniseDeploymentsShouldCallKubernetesApiWhenMaster(DeploymentsInformations deploymentsInformations)
     {
@@ -69,7 +69,7 @@ public class ReplicasSynchronizationWorkerShould
         Mock<IKubernetesService> kubernetesService = new Mock<IKubernetesService>();
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).Throws(new Exception());
         Mock<IRaftCluster> raftCluster = new();
-        raftCluster.Setup(ms => ms.LeadershipToken.IsCancellationRequested).Returns(false);
+        raftCluster.Setup(ms => ms.LeadershipToken).Returns(() => new CancellationToken());
         raftCluster.Setup(ms => ms.Leader).Returns((new Mock<RaftClusterMember>()).Object);
         HistoryHttpMemoryService historyHttpService = new HistoryHttpMemoryService();
         Mock<ILogger<ReplicasService>> loggerReplicasService = new Mock<ILogger<ReplicasService>>();
@@ -92,5 +92,5 @@ public class ReplicasSynchronizationWorkerShould
             (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()), Times.AtLeastOnce);
 
         Assert.True(task.IsCompleted);
-    }*/
+    }
 }

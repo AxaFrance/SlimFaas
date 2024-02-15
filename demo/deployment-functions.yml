@@ -19,13 +19,13 @@ spec:
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest: "10"
         SlimFaas/DependsOn: "fibonacci2"
-        SlimFaas/Schedule: |
-                  {"Culture":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time": "21:00","Value":20},{"Time":"07:00","Value": 10}]}}
+        #SlimFaas/Schedule: |
+        #          {"Culture":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time": "21:00","Value":20},{"Time":"07:00","Value": 10}]}}
     spec:
       serviceAccountName: default
       containers:
         - name: fibonacci1
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:0.16.2
           livenessProbe:
             httpGet:
               path: /health
