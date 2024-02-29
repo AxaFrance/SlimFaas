@@ -112,35 +112,35 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
             Console.WriteLine("1");
             var keysValues = new Dictionary<string, string>(count);
             Console.WriteLine("2");
-            // deserialize entries
-            var context = new DecodingContext(Encoding.UTF8, true);
+            // deserialize entries;
             Console.WriteLine("3");
             while (count-- > 0)
             {
-                var key = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
+                var key = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
                     .ConfigureAwait(false);
-                var value = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
+                var value = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
                     .ConfigureAwait(false);
                 keysValues.Add(key.ToString(), value.ToString());
-                Console.WriteLine("4");
+                Console.WriteLine("4:" + key.ToString() + " " + value.ToString());
             }
 
             var countQueues = await reader.ReadLittleEndianAsync<Int32>(token).ConfigureAwait(false);
-            Console.WriteLine("5");
+            Console.WriteLine("5:" + countQueues);
             var queues = new Dictionary<string, List<string>>(countQueues);
             Console.WriteLine("6");
             // deserialize entries
             while (countQueues-- > 0)
             {
                 Console.WriteLine("7");
-                var key = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
+                var key = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
                     .ConfigureAwait(false);
+                Console.WriteLine("7:"+key.ToString());
                 var countQueue = await reader.ReadLittleEndianAsync<Int32>(token);
-                Console.WriteLine("8");
+                Console.WriteLine("8:"+countQueue);
                 var queue = new List<string>(countQueue);
                 while (countQueue-- > 0)
                 {
-                    var value = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
+                    var value = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
                         .ConfigureAwait(false);
                     queue.Add(value.ToString());
                     Console.WriteLine("9");
@@ -156,7 +156,7 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
             // deserialize entries
             while (countHashsets-- > 0)
             {
-                var key = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
+                var key = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
                     .ConfigureAwait(false);
                 Console.WriteLine("12");
                 var countHashset = await reader.ReadLittleEndianAsync<Int32>(token).ConfigureAwait(false);
@@ -164,10 +164,10 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
                 var hashset = new Dictionary<string, string>(countHashset);
                 while (countHashset-- > 0)
                 {
-                    var keyHashset = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
+                    var keyHashset = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
                         .ConfigureAwait(false);
                     Console.WriteLine("14");
-                    var valueHashset = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
+                    var valueHashset = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
                         .ConfigureAwait(false);
                     Console.WriteLine("15");
                     hashset.Add(keyHashset.ToString(), valueHashset.ToString());
