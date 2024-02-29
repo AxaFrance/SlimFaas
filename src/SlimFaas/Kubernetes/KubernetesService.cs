@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -110,7 +111,6 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
                 case PodType.Deployment:
                     {
                         var url = string.Concat( client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
-                        Console.WriteLine(url);
                         HttpRequestMessage httpRequest = new(HttpMethod.Patch,
                             new Uri(url));
                         httpRequest.Content = httpContent;
@@ -118,15 +118,16 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
                         {
                             await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
                         }
-                        var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
-                        Console.WriteLine(response.StatusCode);
-                        Console.WriteLine(await response.Content.ReadAsStringAsync());
+                        var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
+                        if(response.StatusCode != HttpStatusCode.OK)
+                        {
+                            throw new Exception("Error while scaling deployment");
+                        }
                         break;
                     }
                 case PodType.StatefulSet:
                     {
                         var url = string.Concat( client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
-                        Console.WriteLine(url);
                         HttpRequestMessage httpRequest = new(HttpMethod.Patch,
                             new Uri(url));
                         httpRequest.Content = httpContent;
@@ -135,8 +136,10 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
                             await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
                         }
                         var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
-                        Console.WriteLine(response.StatusCode);
-                        Console.WriteLine(await response.Content.ReadAsStringAsync());
+                        if(response.StatusCode != HttpStatusCode.OK)
+                        {
+                            throw new Exception("Error while scaling deployment");
+                        }
                         break;
                     }
                 default:
