@@ -24,7 +24,7 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
             {
                 await Task.Delay(_delay, stoppingToken);
                 // Start SlimData only when 2 replicas are in ready state
-                if (cluster.LeadershipToken.IsCancellationRequested)
+                if (cluster.LeadershipToken.IsCancellationRequested && cluster.Leader != null)
                 {
                     continue;
                 }

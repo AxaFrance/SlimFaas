@@ -99,19 +99,32 @@ curl  -H 'Accept: application/json' $API_URL > scale.json
 curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
              */
             string patchString = $"{{\"spec\":{{\"replicas\":{request.Replicas}}}}}";
-            V1Patch patch = new(patchString, V1Patch.PatchType.MergePatch);
+            //V1Patch patch = new(patchString, V1Patch.PatchType.MergePatch);
             var httpContent = new StringContent(patchString, Encoding.UTF8, "application/json");
             switch (request.PodType)
             {
                 case PodType.Deployment:
-                    await client.HttpClient.PostAsync(new Uri($"/apis/extensions/v1beta1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale"), httpContent);
-                    break;
+                    {
+                        HttpRequestMessage httpRequest = new(HttpMethod.Post,
+                            new Uri($"/apis/extensions/v1beta1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale"));
+                        httpRequest.Content = httpContent;
+                        await client.HttpClient.SendAsync(httpRequest);
+                        break;
+                    }
                 case PodType.StatefulSet:
-                    await client.HttpClient.PostAsync(new Uri($"/apis/apps/v1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale"), httpContent);
-                    break;
+                    {
+                        HttpRequestMessage httpRequest = new(HttpMethod.Post,
+                            new Uri(
+                                $"/apis/extensions/v1beta1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale"));
+                        httpRequest.Content = httpContent;
+                        await client.HttpClient.SendAsync(httpRequest);
+                        break;
+                    }
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
+
         }
         catch (HttpOperationException e)
         {

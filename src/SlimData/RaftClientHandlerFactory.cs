@@ -9,7 +9,6 @@ internal sealed class RaftClientHandlerFactory : IHttpMessageHandlerFactory
     public HttpMessageHandler CreateHandler(string name)
     {
         Console.WriteLine($"RaftClientHandlerFactory.CreateHandler({name})");
-        //if (string.Equals(name, "RaftClient", StringComparison.CurrentCultureIgnoreCase))
         {
             var slimDataSocketsHttpHandlerTimeoutDefault =
                 Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataSocketsHttpHandlerTimeout) ??
@@ -24,10 +23,6 @@ internal sealed class RaftClientHandlerFactory : IHttpMessageHandlerFactory
             handler.UseProxy = false;
             return handler;
         } 
-      /*  var handlerDefault = new SocketsHttpHandler();
-        handlerDefault.SslOptions.RemoteCertificateValidationCallback = AllowCertificate;
-        handlerDefault.UseProxy = false;
-        return handlerDefault;*/
     }
 
     internal static bool AllowCertificate(object sender, X509Certificate? certificate, X509Chain? chain,
