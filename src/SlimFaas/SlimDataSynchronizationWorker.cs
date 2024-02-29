@@ -17,18 +17,18 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
     {
         Console.WriteLine("SlimDataSynchronizationWorker: Start");
         await slimDataStatus.WaitForReadyAsync();
-        logger.LogInformation("SlimDataSynchronizationWorker: Leader Ready");
+        //logger.LogInformation("SlimDataSynchronizationWorker: Leader Ready");
         while (stoppingToken.IsCancellationRequested == false)
         {
             try
             {
                 await Task.Delay(_delay, stoppingToken);
                 // Start SlimData only when 2 replicas are in ready state
-
                 if (cluster.LeadershipToken.IsCancellationRequested)
                 {
                     continue;
                 }
+
                 Console.WriteLine("SlimDataSynchronizationWorker: Current node is Leader");
                 foreach (PodInformation slimFaasPod in replicasService.Deployments.SlimFaas.Pods.Where(p =>
                              p.Started == true))
