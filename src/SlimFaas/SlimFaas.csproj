@@ -7,7 +7,7 @@
     <RootNamespace>SlimFaas</RootNamespace>
     <WarningsAsErrors>Nullable</WarningsAsErrors>
     <PublishTrimmed>true</PublishTrimmed>
-    <TrimMode>full</TrimMode>
+    <TrimMode>partial</TrimMode>
   </PropertyGroup>
 
 
