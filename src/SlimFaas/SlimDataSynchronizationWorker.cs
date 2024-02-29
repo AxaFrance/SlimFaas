@@ -17,7 +17,6 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
     {
         Console.WriteLine("SlimDataSynchronizationWorker: Start");
         await slimDataStatus.WaitForReadyAsync();
-        //logger.LogInformation("SlimDataSynchronizationWorker: Leader Ready");
         while (stoppingToken.IsCancellationRequested == false)
         {
             try
@@ -29,7 +28,6 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
                     continue;
                 }
 
-                Console.WriteLine("SlimDataSynchronizationWorker: Current node is Leader");
                 foreach (PodInformation slimFaasPod in replicasService.Deployments.SlimFaas.Pods.Where(p =>
                              p.Started == true))
                 {
