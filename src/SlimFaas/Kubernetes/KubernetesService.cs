@@ -101,23 +101,35 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
             string patchString = $"{{\"spec\":{{\"replicas\":{request.Replicas}}}}}";
             //V1Patch patch = new(patchString, V1Patch.PatchType.MergePatch);
             var httpContent = new StringContent(patchString, Encoding.UTF8, "application/json");
+            // we need to get the base uri, as it's not set on the HttpClient
+
+
             switch (request.PodType)
             {
                 case PodType.Deployment:
                     {
+                        var url = string.Concat( client.BaseUri, $"apis/extensions/v1beta1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
                         HttpRequestMessage httpRequest = new(HttpMethod.Post,
-                            new Uri($"/apis/extensions/v1beta1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale"));
+                            new Uri(url));
                         httpRequest.Content = httpContent;
-                        await client.HttpClient.SendAsync(httpRequest);
+                        if ( client.Credentials != null )
+                        {
+                            await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
+                        }
+                        await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
                         break;
                     }
                 case PodType.StatefulSet:
                     {
+                        var url = string.Concat( client.BaseUri, $"apis/extensions/v1beta1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
                         HttpRequestMessage httpRequest = new(HttpMethod.Post,
-                            new Uri(
-                                $"/apis/extensions/v1beta1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale"));
+                            new Uri(url));
                         httpRequest.Content = httpContent;
-                        await client.HttpClient.SendAsync(httpRequest);
+                        if ( client.Credentials != null )
+                        {
+                            await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
+                        }
+                        await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
                         break;
                     }
                 default:
