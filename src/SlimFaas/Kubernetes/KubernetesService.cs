@@ -109,6 +109,7 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
                 case PodType.Deployment:
                     {
                         var url = string.Concat( client.BaseUri, $"apis/extensions/v1beta1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
+                        Console.WriteLine(url);
                         HttpRequestMessage httpRequest = new(HttpMethod.Post,
                             new Uri(url));
                         httpRequest.Content = httpContent;
@@ -116,12 +117,15 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
                         {
                             await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
                         }
-                        await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
+                        var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
+                        Console.WriteLine(response.StatusCode);
+                        Console.WriteLine(await response.Content.ReadAsStringAsync());
                         break;
                     }
                 case PodType.StatefulSet:
                     {
                         var url = string.Concat( client.BaseUri, $"apis/extensions/v1beta1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
+                        Console.WriteLine(url);
                         HttpRequestMessage httpRequest = new(HttpMethod.Post,
                             new Uri(url));
                         httpRequest.Content = httpContent;
@@ -129,7 +133,9 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
                         {
                             await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
                         }
-                        await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
+                        var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
+                        Console.WriteLine(response.StatusCode);
+                        Console.WriteLine(await response.Content.ReadAsStringAsync());
                         break;
                     }
                 default:
