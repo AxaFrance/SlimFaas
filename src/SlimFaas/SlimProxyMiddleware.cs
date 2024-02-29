@@ -100,7 +100,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         }
     }
 
-    private static async Task BuildWakeResponse(IReplicasService replicasService, IWakeUpFunction wakeUpFunction,
+    private static void BuildWakeResponse(IReplicasService replicasService, IWakeUpFunction wakeUpFunction,
         string functionName, HttpResponse contextResponse)
     {
         DeploymentInformation? function = SearchFunction(replicasService, functionName);

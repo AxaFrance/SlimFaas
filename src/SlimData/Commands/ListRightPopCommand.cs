@@ -18,9 +18,9 @@ public struct ListRightPopCommand : ISerializable<ListRightPopCommand>
         where TWriter : notnull, IAsyncBinaryWriter
     {
         var command = this;
-        await writer.WriteStringAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false),
-            LengthFormat.Plain, token);
-        await writer.WriteInt32Async(Count, true, token);
+        await writer.EncodeAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false),
+            LengthFormat.LittleEndian, token).ConfigureAwait(false);
+        await writer.WriteLittleEndianAsync(Count, token).ConfigureAwait(false);
     }
 
 #pragma warning disable CA2252
@@ -28,10 +28,11 @@ public struct ListRightPopCommand : ISerializable<ListRightPopCommand>
 #pragma warning restore CA2252
         where TReader : notnull, IAsyncBinaryReader
     {
+        var key = await reader.DecodeAsync( new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token).ConfigureAwait(false);
         return new ListRightPopCommand
         {
-            Key = await reader.ReadStringAsync(LengthFormat.Plain, new DecodingContext(Encoding.UTF8, false), token),
-            Count = await reader.ReadInt32Async(true, token)
+            Key = key.ToString(),
+            Count = await reader.ReadLittleEndianAsync<Int32>(token).ConfigureAwait(false)
         };
     }
 }

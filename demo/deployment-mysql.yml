@@ -34,8 +34,8 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "60"
+        #SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
     spec:
       containers:
         - image: mysql:5.6

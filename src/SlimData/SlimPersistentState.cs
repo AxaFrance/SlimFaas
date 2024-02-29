@@ -66,42 +66,11 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
         public override async ValueTask WriteToAsync<TWriter>(TWriter writer, CancellationToken token)
         {
             var keysValues = interpreter.keyValues;
-            var queues = interpreter.queues;
+            var queues =  interpreter.queues;
             var hashsets = interpreter.hashsets;
-
-            await writer.WriteInt32Async(keysValues.Count, true, token);
-            // write the entries
-            var context = new EncodingContext(Encoding.UTF8, true);
-            foreach (var (key, value) in keysValues)
-            {
-                await writer.WriteStringAsync(key.AsMemory(), context, LengthFormat.Plain, token);
-                await writer.WriteStringAsync(value.AsMemory(), context, LengthFormat.Plain, token);
-            }
-
-            // write the number of entries
-            await writer.WriteInt32Async(queues.Count, true, token);
-            // write the entries
-            foreach (var queue in queues)
-            {
-                await writer.WriteStringAsync(queue.Key.AsMemory(), context, LengthFormat.Plain, token);
-                await writer.WriteInt32Async(queue.Value.Count, true, token);
-                foreach (var value in queue.Value)
-                    await writer.WriteStringAsync(value.AsMemory(), context, LengthFormat.Plain, token);
-            }
-
-            // write the number of entries
-            await writer.WriteInt32Async(hashsets.Count, true, token);
-            // write the entries
-            foreach (var hashset in hashsets)
-            {
-                await writer.WriteStringAsync(hashset.Key.AsMemory(), context, LengthFormat.Plain, token);
-                await writer.WriteInt32Async(hashset.Value.Count, true, token);
-                foreach (var (key, value) in hashset.Value)
-                {
-                    await writer.WriteStringAsync(key.AsMemory(), context, LengthFormat.Plain, token);
-                    await writer.WriteStringAsync(value.AsMemory(), context, LengthFormat.Plain, token);
-                }
-            }
+            
+            LogSnapshotCommand command = new(keysValues, hashsets, queues);
+            await command.WriteToAsync(writer, token).ConfigureAwait(false);
         }
     }
 }

@@ -16,7 +16,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task<string> GetAsync(string key)
     {
-        return await Retry.Do(() =>DoGetAsync(key), TimeSpan.FromSeconds(1), logger, 5);
+        return await Retry.Do(() => DoGetAsync(key), TimeSpan.FromSeconds(1), logger, 5);
     }
 
     private async Task<string> DoGetAsync(string key)
@@ -24,7 +24,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         await GetAndWaitForLeader();
         if (cluster.LeadershipToken.IsCancellationRequested)
         {
-            if (cluster.Lease is null or { IsExpired: true })
+            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
             {
                 await cluster.ApplyReadBarrierAsync();
             }
@@ -41,6 +41,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
     private async Task DoSetAsync(string key, string value)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
+
         if (!cluster.LeadershipToken.IsCancellationRequested)
         {
             var simplePersistentState = serviceProvider.GetRequiredService<SlimPersistentState>();
@@ -102,7 +103,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         await GetAndWaitForLeader();
         if (cluster.LeadershipToken.IsCancellationRequested)
         {
-            if (cluster.Lease is null or { IsExpired: true })
+            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
             {
                 await cluster.ApplyReadBarrierAsync();
             }
@@ -188,7 +189,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         await GetAndWaitForLeader();
         if (cluster.LeadershipToken.IsCancellationRequested)
         {
-            if (cluster.Lease is null or { IsExpired: true })
+            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
             {
                 await cluster.ApplyReadBarrierAsync();
             }

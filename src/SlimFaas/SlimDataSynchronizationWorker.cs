@@ -15,6 +15,7 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        Console.WriteLine("SlimDataSynchronizationWorker: Start");
         await slimDataStatus.WaitForReadyAsync();
         while (stoppingToken.IsCancellationRequested == false)
         {
@@ -22,37 +23,35 @@ public class SlimDataSynchronizationWorker(IReplicasService replicasService, IRa
             {
                 await Task.Delay(_delay, stoppingToken);
                 // Start SlimData only when 2 replicas are in ready state
-
-                CancellationToken leadershipToken = cluster.LeadershipToken;
-                if (!leadershipToken.IsCancellationRequested)
+                if (cluster.LeadershipToken.IsCancellationRequested)
                 {
-                    foreach (PodInformation slimFaasPod in replicasService.Deployments.SlimFaas.Pods.Where(p =>
-                                 p.Started == true))
-                    {
-                        string url = SlimDataEndpoint.Get(slimFaasPod);
-                        if (cluster.Members.ToList().Any(m => m.EndPoint.ToString() == url))
-                        {
-                            continue;
-                        }
+                    continue;
+                }
 
-                        logger.LogInformation("SlimFaas pod {PodName} has to be added in the cluster",
-                            slimFaasPod.Name);
-                        await ((IRaftHttpCluster)cluster).AddMemberAsync(new Uri(url), stoppingToken);
+                foreach (PodInformation slimFaasPod in replicasService.Deployments.SlimFaas.Pods.Where(p =>
+                             p.Started == true))
+                {
+                    string url = SlimDataEndpoint.Get(slimFaasPod);
+                    if (cluster.Members.ToList().Any(m => m.EndPoint.ToString() == url))
+                    {
+                        continue;
                     }
 
-                    foreach (IRaftClusterMember raftClusterMember in cluster.Members)
-                    {
-                        if (replicasService.Deployments.SlimFaas.Pods.ToList().Any(slimFaasPod =>
-                                SlimDataEndpoint.Get(slimFaasPod) == raftClusterMember.EndPoint.ToString()))
-                        {
-                            continue;
-                        }
+                    Console.WriteLine($"SlimDataSynchronizationWorker: SlimFaas pod {slimFaasPod.Name} has to be added in the cluster");
+                    await ((IRaftHttpCluster)cluster).AddMemberAsync(new Uri(url), stoppingToken);
+                }
 
-                        logger.LogInformation("SlimFaas pod {PodName} need to be remove from the cluster",
-                            raftClusterMember.EndPoint.ToString());
-                        await ((IRaftHttpCluster)cluster).RemoveMemberAsync(
-                            new Uri(raftClusterMember.EndPoint.ToString() ?? string.Empty), stoppingToken);
+                foreach (IRaftClusterMember raftClusterMember in cluster.Members)
+                {
+                    if (replicasService.Deployments.SlimFaas.Pods.ToList().Any(slimFaasPod =>
+                            SlimDataEndpoint.Get(slimFaasPod) == raftClusterMember.EndPoint.ToString()))
+                    {
+                        continue;
                     }
+
+                    Console.WriteLine($"SlimDataSynchronizationWorker: SlimFaas pod {raftClusterMember.EndPoint.ToString()} need to be remove from the cluster");
+                    await ((IRaftHttpCluster)cluster).RemoveMemberAsync(
+                        new Uri(raftClusterMember.EndPoint.ToString() ?? string.Empty), stoppingToken);
                 }
             }
             catch (Exception e)

@@ -16,8 +16,8 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await slimDataStatus.WaitForReadyAsync();
-        Dictionary<string, IList<RequestToWait>> processingTasks = new Dictionary<string, IList<RequestToWait>>();
-        Dictionary<string, int> setTickLastCallCounterDictionary = new Dictionary<string, int>();
+        Dictionary<string, IList<RequestToWait>> processingTasks = new();
+        Dictionary<string, int> setTickLastCallCounterDictionary = new();
         while (stoppingToken.IsCancellationRequested == false)
         {
             await DoOneCycle(stoppingToken, setTickLastCallCounterDictionary, processingTasks);

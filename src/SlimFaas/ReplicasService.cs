@@ -1,16 +1,20 @@
 ﻿using System.Globalization;
 using SlimFaas.Kubernetes;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace SlimFaas;
 
 public interface IReplicasService
 {
     DeploymentsInformations Deployments { get; }
-    Task SyncDeploymentsAsync(string kubeNamespace);
+    Task SyncDeploymentsFromSlimData(DeploymentsInformations deploymentsInformations);
+    Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace);
     Task CheckScaleAsync(string kubeNamespace);
 }
 
-public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMemoryService historyHttpService,
+public class ReplicasService(IKubernetesService kubernetesService,
+        HistoryHttpMemoryService historyHttpService,
         ILogger<ReplicasService> logger)
     : IReplicasService
 {
@@ -37,13 +41,22 @@ public class ReplicasService(IKubernetesService kubernetesService, HistoryHttpMe
         }
     }
 
-    public async Task SyncDeploymentsAsync(string kubeNamespace)
+    public async Task SyncDeploymentsFromSlimData(DeploymentsInformations deploymentsInformations)
+    {
+        lock (Lock)
+        {
+            _deployments = deploymentsInformations;
+        }
+    }
+
+    public async Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace)
     {
         DeploymentsInformations deployments = await kubernetesService.ListFunctionsAsync(kubeNamespace);
         lock (Lock)
         {
             _deployments = deployments;
         }
+        return deployments;
     }
 
     public async Task CheckScaleAsync(string kubeNamespace)

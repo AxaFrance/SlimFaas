@@ -18,10 +18,10 @@ public struct AddKeyValueCommand : ISerializable<AddKeyValueCommand>
         where TWriter : notnull, IAsyncBinaryWriter
     {
         var command = this;
-        await writer.WriteStringAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false),
-            LengthFormat.Plain, token);
-        await writer.WriteStringAsync(command.Value.AsMemory(), new EncodingContext(Encoding.UTF8, false),
-            LengthFormat.Plain, token);
+        await writer.EncodeAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false),
+            LengthFormat.LittleEndian, token).ConfigureAwait(false);
+        await writer.EncodeAsync(command.Value.AsMemory(), new EncodingContext(Encoding.UTF8, false),
+            LengthFormat.LittleEndian, token).ConfigureAwait(false);
     }
 
 #pragma warning disable CA2252
@@ -29,10 +29,14 @@ public struct AddKeyValueCommand : ISerializable<AddKeyValueCommand>
 #pragma warning restore CA2252
         where TReader : notnull, IAsyncBinaryReader
     {
+        var key = await reader
+            .DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
+            .ConfigureAwait(false);
+        var value = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token:token).ConfigureAwait(false);
         return new AddKeyValueCommand
         {
-            Key = await reader.ReadStringAsync(LengthFormat.Plain, new DecodingContext(Encoding.UTF8, false), token),
-            Value = await reader.ReadStringAsync(LengthFormat.Plain, new DecodingContext(Encoding.UTF8, false), token)
+            Key = key.ToString(),
+            Value = value.ToString()
         };
     }
 }

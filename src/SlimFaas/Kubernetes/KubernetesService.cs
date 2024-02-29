@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -28,9 +29,7 @@ public record ScaleDownTimeout
 
 [JsonSerializable(typeof(ScheduleConfig))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-public partial class ScheduleConfigSerializerContext : JsonSerializerContext
-{
-}
+public partial class ScheduleConfigSerializerContext : JsonSerializerContext;
 
 
 public enum PodType
@@ -44,6 +43,10 @@ public record ReplicaRequest(string Deployment, string Namespace, int Replicas, 
 public record SlimFaasDeploymentInformation(int Replicas, IList<PodInformation> Pods);
 
 public record DeploymentsInformations(IList<DeploymentInformation> Functions, SlimFaasDeploymentInformation SlimFaas);
+
+[JsonSerializable(typeof(DeploymentsInformations))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class DeploymentsInformationsSerializerContext : JsonSerializerContext;
 
 public record DeploymentInformation(string Deployment, string Namespace, IList<PodInformation> Pods, int Replicas,
     int ReplicasAtStart = 1,
@@ -90,15 +93,44 @@ public class KubernetesService : IKubernetesService
         {
             using k8s.Kubernetes client = new(_k8SConfig);
             string patchString = $"{{\"spec\": {{\"replicas\": {request.Replicas}}}}}";
-            V1Patch patch = new(patchString, V1Patch.PatchType.MergePatch);
+            var httpContent = new StringContent(patchString, Encoding.UTF8, "application/merge-patch+json");
+            // we need to get the base uri, as it's not set on the HttpClient
             switch (request.PodType)
             {
                 case PodType.Deployment:
-                    await client.PatchNamespacedDeploymentScaleAsync(patch, request.Deployment, request.Namespace);
-                    break;
+                    {
+                        var url = string.Concat(client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
+                        HttpRequestMessage httpRequest = new(HttpMethod.Patch,
+                            new Uri(url));
+                        httpRequest.Content = httpContent;
+                        if ( client.Credentials != null )
+                        {
+                            await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
+                        }
+                        var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
+                        if(response.StatusCode != HttpStatusCode.OK)
+                        {
+                            throw new HttpOperationException("Error while scaling deployment");
+                        }
+                        break;
+                    }
                 case PodType.StatefulSet:
-                    await client.PatchNamespacedStatefulSetScaleAsync(patch, request.Deployment, request.Namespace);
-                    break;
+                    {
+                        var url = string.Concat(client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
+                        HttpRequestMessage httpRequest = new(HttpMethod.Patch,
+                            new Uri(url));
+                        httpRequest.Content = httpContent;
+                        if ( client.Credentials != null )
+                        {
+                            await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
+                        }
+                        var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
+                        if(response.StatusCode != HttpStatusCode.OK)
+                        {
+                            throw new HttpOperationException("Error while scaling deployment");
+                        }
+                        break;
+                    }
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -108,7 +140,6 @@ public class KubernetesService : IKubernetesService
             _logger.LogError(e, "Error while scaling kubernetes deployment {RequestDeployment}", request.Deployment);
             return request;
         }
-
         return request;
     }
 
@@ -270,7 +301,7 @@ public class KubernetesService : IKubernetesService
             return string.Empty;
         }
 
-        StringBuilder realName = new StringBuilder(names[0]);
+        StringBuilder realName = new(names[0]);
         for (int i = 1; i < names.Length - 2; i++)
         {
             realName.Append($"-{names[i]}");
