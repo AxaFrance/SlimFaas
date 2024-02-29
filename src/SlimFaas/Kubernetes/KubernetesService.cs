@@ -109,7 +109,7 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
                     {
                         var url = string.Concat( client.BaseUri, $"apis/extensions/v1beta1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
                         Console.WriteLine(url);
-                        HttpRequestMessage httpRequest = new(HttpMethod.Post,
+                        HttpRequestMessage httpRequest = new(HttpMethod.Put,
                             new Uri(url));
                         httpRequest.Content = httpContent;
                         if ( client.Credentials != null )
@@ -125,7 +125,7 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
                     {
                         var url = string.Concat( client.BaseUri, $"apis/extensions/v1beta1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
                         Console.WriteLine(url);
-                        HttpRequestMessage httpRequest = new(HttpMethod.Post,
+                        HttpRequestMessage httpRequest = new(HttpMethod.Put,
                             new Uri(url));
                         httpRequest.Content = httpContent;
                         if ( client.Credentials != null )
