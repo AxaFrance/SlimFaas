@@ -59,11 +59,10 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
             // write the number of entries
             await writer.WriteLittleEndianAsync(keysValues.Count, token).ConfigureAwait(false);
             // write the entries
-            var context = new EncodingContext(Encoding.UTF8, true);
             foreach (var (key, value) in keysValues)
             {
-                await writer.EncodeAsync(key.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
-                await writer.EncodeAsync(value.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                await writer.EncodeAsync(key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                await writer.EncodeAsync(value.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
             }
 
             // write the number of entries
@@ -71,10 +70,10 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
             // write the entries
             foreach (var queue in queues)
             {
-                await writer.EncodeAsync(queue.Key.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                await writer.EncodeAsync(queue.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
                 await writer.WriteLittleEndianAsync(queue.Value.Count, token).ConfigureAwait(false);
                 foreach (var value in queue.Value)
-                    await writer.EncodeAsync(value.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                    await writer.EncodeAsync(value.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
             }
 
             // write the number of entries
@@ -82,12 +81,12 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
             // write the entries
             foreach (var hashset in hashsets)
             {
-                await writer.EncodeAsync(hashset.Key.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                await writer.EncodeAsync(hashset.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
                 await writer.WriteLittleEndianAsync(hashset.Value.Count, token).ConfigureAwait(false);
                 foreach (var (key, value) in hashset.Value)
                 {
-                    await writer.EncodeAsync(key.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
-                    await writer.EncodeAsync(value.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                    await writer.EncodeAsync(key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                    await writer.EncodeAsync(value.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
                 }
             }
             Console.WriteLine("Finished Writing LogSnapshotCommand");
