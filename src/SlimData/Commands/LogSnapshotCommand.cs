@@ -55,7 +55,7 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
     {
         try
         {
-
+            Console.WriteLine("Writing LogSnapshotCommand");
             // write the number of entries
             await writer.WriteLittleEndianAsync(keysValues.Count, token).ConfigureAwait(false);
             // write the entries
@@ -90,10 +90,12 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
                     await writer.EncodeAsync(value.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
                 }
             }
+            Console.WriteLine("Finished Writing LogSnapshotCommand");
         
         }
         catch (Exception e)
         {
+            Console.WriteLine("Error Writing LogSnapshotCommand");
             Console.WriteLine(e);
             throw;
         }
@@ -106,6 +108,7 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
     {
         try
         {
+            Console.WriteLine("Reading LogSnapshotCommand");
             var count = await reader.ReadLittleEndianAsync<Int32>(token);
             var keysValues = new Dictionary<string, string>(count);
             // deserialize entries
@@ -158,11 +161,12 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
 
                 hashsets.Add(key.ToString(), hashset);
             }
-
+            Console.WriteLine("Finished Reading LogSnapshotCommand");
             return new LogSnapshotCommand(keysValues, hashsets, queues);
         }
         catch (Exception e)
         {
+            Console.WriteLine("Error Reading LogSnapshotCommand");
             Console.WriteLine(e);
             throw;
         }
