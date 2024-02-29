@@ -107,7 +107,7 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
             {
                 case PodType.Deployment:
                     {
-                        var url = string.Concat( client.BaseUri, $"apis/extensions/v1beta1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
+                        var url = string.Concat( client.BaseUri, $"apis/extensions/v1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
                         Console.WriteLine(url);
                         HttpRequestMessage httpRequest = new(HttpMethod.Put,
                             new Uri(url));
@@ -123,7 +123,7 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
                     }
                 case PodType.StatefulSet:
                     {
-                        var url = string.Concat( client.BaseUri, $"apis/extensions/v1beta1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
+                        var url = string.Concat( client.BaseUri, $"apis/extensions/v1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
                         Console.WriteLine(url);
                         HttpRequestMessage httpRequest = new(HttpMethod.Put,
                             new Uri(url));
