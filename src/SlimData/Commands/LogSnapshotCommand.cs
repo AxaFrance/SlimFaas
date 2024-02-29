@@ -5,7 +5,7 @@ using DotNext.Text;
 
 namespace RaftNode;
 
-public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
+public readonly struct LogSnapshotCommand(Dictionary<string, string> keysValues,
         Dictionary<string, Dictionary<string, string>> hashsets, Dictionary<string, List<string>> queues)
     : ISerializable<LogSnapshotCommand>
 {
@@ -20,6 +20,7 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
     {
         get
         {
+            Console.WriteLine("Length LogSnapshotCommand");
             // compute length of the serialized data, in bytes
             long result = sizeof(Int32); // 4 bytes for count
             foreach (var keyValuePair in keysValues)
@@ -44,7 +45,7 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
                     result += Encoding.UTF8.GetByteCount(keyValuePair.Key) +
                               Encoding.UTF8.GetByteCount(keyValuePair.Value);
             }
-
+            Console.WriteLine("Length LogSnapshotCommand: " + result);
             return result;
         }
     }
