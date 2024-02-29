@@ -29,12 +29,13 @@ public struct AddHashSetCommand : ISerializable<AddHashSetCommand>
         where TWriter : notnull, IAsyncBinaryWriter
     {
         var command = this;
-        await writer.EncodeAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false),
-            LengthFormat.LittleEndian, token).ConfigureAwait(false);;
+        var context = new EncodingContext(Encoding.UTF8, true);
+        await writer.EncodeAsync(command.Key.AsMemory(), context,
+            LengthFormat.LittleEndian, token).ConfigureAwait(false);
         // write the number of entries
         await writer.WriteLittleEndianAsync(Value.Count, token).ConfigureAwait(false);
         // write the entries
-        var context = new EncodingContext(Encoding.UTF8, true);
+        
         foreach (var (key, value) in Value)
         {
             await writer.EncodeAsync(key.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);;
