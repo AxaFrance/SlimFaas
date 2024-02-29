@@ -103,7 +103,6 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
             var httpContent = new StringContent(patchString, Encoding.UTF8, "application/json");
             // we need to get the base uri, as it's not set on the HttpClient
 
-
             switch (request.PodType)
             {
                 case PodType.Deployment:
