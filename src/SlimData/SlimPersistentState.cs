@@ -69,42 +69,8 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
             var queues =  interpreter.queues;
             var hashsets = interpreter.hashsets;
             
-            Console.WriteLine("Writing LogSnapshotCommand in SimpleSnapshotBuilder");
             LogSnapshotCommand command = new(keysValues, hashsets, queues);
             await command.WriteToAsync(writer, token).ConfigureAwait(false);
-            /*await writer.WriteLittleEndianAsync(keysValues.Count, token).ConfigureAwait(false);
-            // write the entries
-            foreach (var (key, value) in keysValues)
-            {
-                await writer.EncodeAsync(key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
-                await writer.EncodeAsync(value.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
-            }
-
-            // write the number of entries
-            await writer.WriteLittleEndianAsync(keysValues.Count, token).ConfigureAwait(false);
-            // write the entries
-            foreach (var queue in queues)
-            {
-                await writer.EncodeAsync(queue.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
-                await writer.WriteLittleEndianAsync(queue.Value.Count, token).ConfigureAwait(false);
-                foreach (var value in queue.Value)
-                    await writer.EncodeAsync(value.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
-            }
-
-            // write the number of entries
-            await writer.WriteLittleEndianAsync(hashsets.Count, token).ConfigureAwait(false);
-            // write the entries
-            foreach (var hashset in hashsets)
-            {
-                await writer.EncodeAsync(hashset.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
-                await writer.WriteLittleEndianAsync(hashset.Value.Count, token).ConfigureAwait(false);
-                foreach (var (key, value) in hashset.Value)
-                {
-                    await writer.EncodeAsync(key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
-                    await writer.EncodeAsync(value.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
-                }
-            }*/
-            Console.WriteLine("End Wrinting LogSnapshotCommand in SimpleSnapshotBuilder");
         }
     }
 }
