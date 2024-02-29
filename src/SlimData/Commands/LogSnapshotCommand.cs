@@ -110,9 +110,12 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
         {
             Console.WriteLine("Reading LogSnapshotCommand");
             var count = await reader.ReadLittleEndianAsync<Int32>(token);
+            Console.WriteLine("1");
             var keysValues = new Dictionary<string, string>(count);
+            Console.WriteLine("2");
             // deserialize entries
             var context = new DecodingContext(Encoding.UTF8, true);
+            Console.WriteLine("3");
             while (count-- > 0)
             {
                 var key = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
@@ -120,46 +123,59 @@ public struct LogSnapshotCommand(Dictionary<string, string> keysValues,
                 var value = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
                     .ConfigureAwait(false);
                 keysValues.Add(key.ToString(), value.ToString());
+                Console.WriteLine("4");
             }
 
             var countQueues = await reader.ReadLittleEndianAsync<Int32>(token).ConfigureAwait(false);
+            Console.WriteLine("5");
             var queues = new Dictionary<string, List<string>>(countQueues);
+            Console.WriteLine("6");
             // deserialize entries
             while (countQueues-- > 0)
             {
+                Console.WriteLine("7");
                 var key = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
                     .ConfigureAwait(false);
                 var countQueue = await reader.ReadLittleEndianAsync<Int32>(token);
+                Console.WriteLine("8");
                 var queue = new List<string>(countQueue);
                 while (countQueue-- > 0)
                 {
                     var value = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
                         .ConfigureAwait(false);
                     queue.Add(value.ToString());
+                    Console.WriteLine("9");
                 }
 
                 queues.Add(key.ToString(), queue);
+                Console.WriteLine("10");
             }
 
             var countHashsets = await reader.ReadLittleEndianAsync<Int32>(token).ConfigureAwait(false);
             var hashsets = new Dictionary<string, Dictionary<string, string>>(countHashsets);
+            Console.WriteLine("11");
             // deserialize entries
             while (countHashsets-- > 0)
             {
                 var key = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
                     .ConfigureAwait(false);
+                Console.WriteLine("12");
                 var countHashset = await reader.ReadLittleEndianAsync<Int32>(token).ConfigureAwait(false);
+                Console.WriteLine("13");
                 var hashset = new Dictionary<string, string>(countHashset);
                 while (countHashset-- > 0)
                 {
                     var keyHashset = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
                         .ConfigureAwait(false);
+                    Console.WriteLine("14");
                     var valueHashset = await reader.DecodeAsync(context, LengthFormat.LittleEndian, token: token)
                         .ConfigureAwait(false);
+                    Console.WriteLine("15");
                     hashset.Add(keyHashset.ToString(), valueHashset.ToString());
                 }
 
                 hashsets.Add(key.ToString(), hashset);
+                Console.WriteLine("16");
             }
             Console.WriteLine("Finished Reading LogSnapshotCommand");
             return new LogSnapshotCommand(keysValues, hashsets, queues);
