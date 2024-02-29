@@ -98,7 +98,7 @@ curl  -H 'Accept: application/json' $API_URL > scale.json
 # edit scale.json
 curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
              */
-            string patchString = $"{{\"spec\":{{\"replicas\":{request.Replicas}}}}}";
+            string patchString = $@"{{""kind"":""Scale"",""apiVersion"":""apps/v1"",""metadata"":{{""name"":""{request.Deployment}"",""namespace"":""{request.Namespace}""}},""spec"":{{""replicas"":{request.Replicas}}}}}";
             //V1Patch patch = new(patchString, V1Patch.PatchType.MergePatch);
             var httpContent = new StringContent(patchString, Encoding.UTF8, "application/json");
             // we need to get the base uri, as it's not set on the HttpClient
