@@ -92,25 +92,14 @@ public class KubernetesService : IKubernetesService
         try
         {
             using k8s.Kubernetes client = new(_k8SConfig);
-            /*
-             *
-             * API_URL="http://kubernetes:8080/apis/extensions/v1beta1/namespaces/{namespace}/deployments/{name}/scale"
-curl  -H 'Accept: application/json' $API_URL > scale.json
-# edit scale.json
-curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
-             */
-
             string patchString = $"{{\"spec\": {{\"replicas\": {request.Replicas}}}}}";
-            //string patchString = $@"{{""kind"":""Scale"",""apiVersion"":""apps/v1"",""metadata"":{{""name"":""{request.Deployment}"",""namespace"":""{request.Namespace}""}},""spec"":{{""replicas"":{request.Replicas}}}}}";
-            //V1Patch patch = new(patchString, V1Patch.PatchType.MergePatch);
             var httpContent = new StringContent(patchString, Encoding.UTF8, "application/merge-patch+json");
             // we need to get the base uri, as it's not set on the HttpClient
-
             switch (request.PodType)
             {
                 case PodType.Deployment:
                     {
-                        var url = string.Concat( client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
+                        var url = string.Concat(client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
                         HttpRequestMessage httpRequest = new(HttpMethod.Patch,
                             new Uri(url));
                         httpRequest.Content = httpContent;
@@ -121,13 +110,13 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
                         var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
                         if(response.StatusCode != HttpStatusCode.OK)
                         {
-                            throw new Exception("Error while scaling deployment");
+                            throw new HttpOperationException("Error while scaling deployment");
                         }
                         break;
                     }
                 case PodType.StatefulSet:
                     {
-                        var url = string.Concat( client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
+                        var url = string.Concat(client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
                         HttpRequestMessage httpRequest = new(HttpMethod.Patch,
                             new Uri(url));
                         httpRequest.Content = httpContent;
@@ -138,22 +127,19 @@ curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
                         var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
                         if(response.StatusCode != HttpStatusCode.OK)
                         {
-                            throw new Exception("Error while scaling deployment");
+                            throw new HttpOperationException("Error while scaling deployment");
                         }
                         break;
                     }
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
-
         }
         catch (HttpOperationException e)
         {
             _logger.LogError(e, "Error while scaling kubernetes deployment {RequestDeployment}", request.Deployment);
             return request;
         }
-
         return request;
     }
 

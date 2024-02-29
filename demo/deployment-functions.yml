@@ -25,7 +25,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci1
-          image: axaguildev/fibonacci:0.16.2
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health
