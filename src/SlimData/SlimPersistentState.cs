@@ -66,11 +66,13 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
         public override async ValueTask WriteToAsync<TWriter>(TWriter writer, CancellationToken token)
         {
             var keysValues = interpreter.keyValues;
-            var queues = interpreter.queues;
+            var queues =  interpreter.queues;
             var hashsets = interpreter.hashsets;
-
+            
             Console.WriteLine("Writing LogSnapshotCommand in SimpleSnapshotBuilder");
-            await writer.WriteLittleEndianAsync(keysValues.Count, token).ConfigureAwait(false);
+            LogSnapshotCommand command = new(keysValues, hashsets, queues);
+            await command.WriteToAsync(writer, token).ConfigureAwait(false);
+            /*await writer.WriteLittleEndianAsync(keysValues.Count, token).ConfigureAwait(false);
             // write the entries
             foreach (var (key, value) in keysValues)
             {
@@ -101,7 +103,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
                     await writer.EncodeAsync(key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
                     await writer.EncodeAsync(value.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
                 }
-            }
+            }*/
             Console.WriteLine("End Wrinting LogSnapshotCommand in SimpleSnapshotBuilder");
         }
     }

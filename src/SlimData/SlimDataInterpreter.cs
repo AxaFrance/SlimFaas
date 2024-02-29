@@ -11,11 +11,11 @@ namespace RaftNode;
 public class SlimDataInterpreter : CommandInterpreter
 {
 
-    public IDictionary<string, Dictionary<string, string>> hashsets =
+    public Dictionary<string, Dictionary<string, string>> hashsets =
         new Dictionary<string, Dictionary<string, string>>();
 
-    public IDictionary<string, string> keyValues = new Dictionary<string, string>();
-    public IDictionary<string, List<string>> queues = new Dictionary<string, List<string>>();
+    public Dictionary<string, string> keyValues = new Dictionary<string, string>();
+    public Dictionary<string, List<string>> queues = new Dictionary<string, List<string>>();
 
     [CommandHandler]
     public ValueTask ListRightPopAsync(ListRightPopCommand addHashSetCommand, CancellationToken token)
