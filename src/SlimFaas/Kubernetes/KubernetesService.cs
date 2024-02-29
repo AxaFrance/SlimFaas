@@ -91,15 +91,23 @@ public class KubernetesService : IKubernetesService
         try
         {
             using k8s.Kubernetes client = new(_k8SConfig);
+            /*
+             *
+             * API_URL="http://kubernetes:8080/apis/extensions/v1beta1/namespaces/{namespace}/deployments/{name}/scale"
+curl  -H 'Accept: application/json' $API_URL > scale.json
+# edit scale.json
+curl -X PUT -d@scale.json -H 'Content-Type: application/json' $API_URL
+             */
             string patchString = $"{{\"spec\":{{\"replicas\":{request.Replicas}}}}}";
             V1Patch patch = new(patchString, V1Patch.PatchType.MergePatch);
+            var httpContent = new StringContent(patchString, Encoding.UTF8, "application/json");
             switch (request.PodType)
             {
                 case PodType.Deployment:
-                    await client.PatchNamespacedDeploymentScaleAsync(patch, request.Deployment, request.Namespace);
+                    await client.HttpClient.PostAsync(new Uri($"/apis/extensions/v1beta1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale"), httpContent);
                     break;
                 case PodType.StatefulSet:
-                    await client.PatchNamespacedStatefulSetScaleAsync(patch, request.Deployment, request.Namespace);
+                    await client.HttpClient.PostAsync(new Uri($"/apis/apps/v1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale"), httpContent);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

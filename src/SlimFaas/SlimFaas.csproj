@@ -6,12 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>SlimFaas</RootNamespace>
     <WarningsAsErrors>Nullable</WarningsAsErrors>
-    <PublishTrimmed>false</PublishTrimmed>
+    <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
 
-  <ItemGroup>
-
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="KubernetesClient.Aot" Version="13.0.12" />
