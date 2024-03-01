@@ -144,7 +144,6 @@ public readonly struct LogSnapshotCommand(Dictionary<string, string> keysValues,
 
                 hashsets.Add(key.ToString(), hashset);
             }
-            Console.WriteLine("Finished Reading LogSnapshotCommand");
             return new LogSnapshotCommand(keysValues, hashsets, queues);
     }
 }
