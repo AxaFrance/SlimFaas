@@ -11,13 +11,13 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
 {
     public const string LogLocation = "logLocation";
 
-    private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, string>(), new Dictionary<string, List<string>>());   
-    private readonly CommandInterpreter _interpreter;
+    private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, string>(), new Dictionary<string, List<string>>());
+    public CommandInterpreter Interpreter { get; }
 
     public SlimPersistentState(string path)
         : base(path, 50, new Options { InitialPartitionSize = 50 * 8, UseCaching = true })
     {
-        _interpreter = SlimDataInterpreter.InitInterpreter(_state);
+        Interpreter = SlimDataInterpreter.InitInterpreter(_state);
     }
 
     public SlimPersistentState(IConfiguration configuration)
@@ -37,7 +37,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
 
     private async ValueTask UpdateValue(LogEntry entry)
     {
-        await _interpreter.InterpretAsync(entry);
+        await Interpreter.InterpretAsync(entry);
     }
 
     protected override ValueTask ApplyAsync(LogEntry entry)
