@@ -8,6 +8,7 @@
     <WarningsAsErrors>Nullable</WarningsAsErrors>
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>full</TrimMode>
+    <StripSymbols>false</StripSymbols>
   </PropertyGroup>
 
 

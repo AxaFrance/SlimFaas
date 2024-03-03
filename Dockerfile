@@ -2,6 +2,8 @@
 WORKDIR /app
 RUN apk add --no-cache icu-libs
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+#RUN apk add clang build-base zlib-dev
+
 EXPOSE 80
 EXPOSE 443
 

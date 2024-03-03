@@ -23,7 +23,7 @@ public class Startup(IConfiguration configuration)
         const string ListLeftPushResource = "/SlimData/ListLeftPush";
         const string AddKeyValueResource = "/SlimData/AddKeyValue";
         const string ListLengthResource = "/SlimData/ListLength";
-        const string HealthResource = "/SlimData/ListLength";
+        const string HealthResource = "/health";
 
         app.UseConsensusProtocolHandler()
             .RedirectToLeader(LeaderResource)
