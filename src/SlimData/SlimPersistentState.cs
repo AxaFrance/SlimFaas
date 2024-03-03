@@ -2,6 +2,7 @@
 using DotNext;
 using DotNext.IO;
 using DotNext.Net.Cluster.Consensus.Raft;
+using DotNext.Net.Cluster.Consensus.Raft.Commands;
 using DotNext.Text;
 
 namespace RaftNode;
@@ -10,12 +11,13 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
 {
     public const string LogLocation = "logLocation";
 
-    public SlimDataInterpreter interpreter = new();
-
+    private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, string>(), new Dictionary<string, List<string>>());
+    public CommandInterpreter Interpreter { get; }
 
     public SlimPersistentState(string path)
         : base(path, 50, new Options { InitialPartitionSize = 50 * 8, UseCaching = true })
     {
+        Interpreter = SlimDataInterpreter.InitInterpreter(_state);
     }
 
     public SlimPersistentState(IConfiguration configuration)
@@ -27,15 +29,15 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
     {
         return new SupplierPayload()
         {
-            KeyValues = interpreter.keyValues,
-            Queues = interpreter.queues,
-            Hashsets = interpreter.hashsets
+            KeyValues = _state.keyValues,
+            Queues = _state.queues,
+            Hashsets = _state.hashsets
         };
     }
 
     private async ValueTask UpdateValue(LogEntry entry)
     {
-        await interpreter.InterpretAsync(entry);
+        await Interpreter.InterpretAsync(entry);
     }
 
     protected override ValueTask ApplyAsync(LogEntry entry)
@@ -50,24 +52,26 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
 
     private sealed class SimpleSnapshotBuilder : IncrementalSnapshotBuilder
     {
-        public readonly SlimDataInterpreter interpreter = new();
+        private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, string>(), new Dictionary<string, List<string>>());   
+        private readonly CommandInterpreter _interpreter;
 
         public SimpleSnapshotBuilder(in SnapshotBuilderContext context)
             : base(context)
         {
+            _interpreter = SlimDataInterpreter.InitInterpreter(_state);
         }
 
 
         protected override async ValueTask ApplyAsync(LogEntry entry)
         {
-            await interpreter.InterpretAsync(entry);
+            await _interpreter.InterpretAsync(entry);
         }
 
         public override async ValueTask WriteToAsync<TWriter>(TWriter writer, CancellationToken token)
         {
-            var keysValues = interpreter.keyValues;
-            var queues =  interpreter.queues;
-            var hashsets = interpreter.hashsets;
+            var keysValues = _state.keyValues;
+            var queues =  _state.queues;
+            var hashsets = _state.hashsets;
             
             LogSnapshotCommand command = new(keysValues, hashsets, queues);
             await command.WriteToAsync(writer, token).ConfigureAwait(false);

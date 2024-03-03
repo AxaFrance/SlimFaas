@@ -76,7 +76,7 @@ public class Endpoints
         IRaftCluster cluster, CancellationTokenSource source)
     {
         var logEntry =
-            provider.interpreter.CreateLogEntry(
+            provider.Interpreter.CreateLogEntry(
                 new AddHashSetCommand { Key = key, Value = dictionary }, cluster.Term);
         await provider.AppendAsync(logEntry, source.Token);
         await provider.CommitAsync(source.Token);
@@ -122,7 +122,7 @@ public class Endpoints
             }
                 
             var logEntry =
-                provider.interpreter.CreateLogEntry(
+                provider.Interpreter.CreateLogEntry(
                     new ListRightPopCommand { Key = key, Count = count },
                     cluster.Term);
             await provider.AppendAsync(logEntry, source.Token);
@@ -155,7 +155,7 @@ public class Endpoints
         IRaftCluster cluster, CancellationTokenSource source)
     {
         var logEntry =
-            provider.interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
+            provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
                 cluster.Term);
         await provider.AppendAsync(logEntry, source.Token);
         await provider.CommitAsync(source.Token);
@@ -199,7 +199,7 @@ public class Endpoints
         IRaftCluster cluster, CancellationTokenSource source)
     {
         var logEntry =
-            provider.interpreter.CreateLogEntry(new AddKeyValueCommand { Key = key, Value = value },
+            provider.Interpreter.CreateLogEntry(new AddKeyValueCommand { Key = key, Value = value },
                 cluster.Term);
         await provider.AppendAsync(logEntry, source.Token);
         await provider.CommitAsync(source.Token);
