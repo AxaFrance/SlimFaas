@@ -9,6 +9,7 @@
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>full</TrimMode>
     <StripSymbols>false</StripSymbols>
+    <PublishAot>true</PublishAot>
   </PropertyGroup>
 
 

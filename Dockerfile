@@ -1,25 +1,29 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine AS base
+﻿FROM alpine:3.18 AS base
 WORKDIR /app
+RUN adduser -u 1000 --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser
 RUN apk add --no-cache icu-libs
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
-#RUN apk add clang build-base zlib-dev
 
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.18 AS build
+RUN apk update && apk upgrade
+RUN apk add --no-cache clang build-base zlib-dev
 WORKDIR /src
-COPY . .
-RUN dotnet restore "./src/SlimFaas/SlimFaas.csproj"
-RUN dotnet build "./src/SlimFaas/SlimFaas.csproj" -c Release -o /app/build
-#RUN apt update && apt install -y clang zlib1g-dev
 
 FROM build AS publish
-RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -r linux-musl-x64 --self-contained=true -p:PublishSingleFile=true  -o /app/publish
+COPY . .
+ARG RUNTIME_ID=linux-musl-x64
+RUN dotnet restore -r $RUNTIME_ID
+RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -r $RUNTIME_ID  -o /app/publish --no-restore
 RUN rm /app/publish/*.pdb
 RUN rm /app/publish/SlimData
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --chown=appuser --from=publish /app/publish .
 ENTRYPOINT ["./SlimFaas"]
+
+
