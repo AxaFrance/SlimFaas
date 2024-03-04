@@ -1,9 +1,10 @@
 ﻿FROM alpine:3.18 AS base
+RUN apk add --no-cache icu-libs
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 WORKDIR /app
 RUN adduser -u 1000 --disabled-password --gecos "" appuser && chown -R appuser /app
 USER appuser
-RUN apk add --no-cache icu-libs
-ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
 
 EXPOSE 80
 EXPOSE 443
