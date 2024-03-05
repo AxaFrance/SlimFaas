@@ -8,8 +8,18 @@
     <WarningsAsErrors>Nullable</WarningsAsErrors>
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>full</TrimMode>
+    <TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
     <StripSymbols>false</StripSymbols>
     <PublishAot>true</PublishAot>
+    <DebuggerSupport>false</DebuggerSupport>
+    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+    <EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
+    <EventSourceSupport>false</EventSourceSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+    <StackTraceSupport>false</StackTraceSupport>
+    <UseSystemResourceKeys>false</UseSystemResourceKeys>
+    <UseNativeHttpHandler>false</UseNativeHttpHandler>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
   </PropertyGroup>
 
 

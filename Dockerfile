@@ -25,6 +25,7 @@ RUN rm /app/publish/SlimData
 FROM base AS final
 WORKDIR /app
 COPY --chown=appuser --from=publish /app/publish .
+RUN ls -la
 ENTRYPOINT ["./SlimFaas"]
 
 
