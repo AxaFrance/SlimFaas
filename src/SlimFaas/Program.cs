@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text.Json;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
-using OpenTelemetry.Trace;
 using Polly;
 using Polly.Extensions.Http;
 using Prometheus;
@@ -160,10 +159,6 @@ serviceCollectionSlimFaas.AddScoped<ISendClient, SendClient>();
 serviceCollectionSlimFaas.AddHttpClient<ISendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
-serviceCollectionSlimFaas.AddOpenTelemetry()
-    .WithTracing(builder => builder
-        .AddHttpClientInstrumentation()
-        .AddAspNetCoreInstrumentation());
 
 if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
 {
