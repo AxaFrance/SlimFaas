@@ -18,6 +18,7 @@
     <UseSystemResourceKeys>false</UseSystemResourceKeys>
     <UseNativeHttpHandler>false</UseNativeHttpHandler>
     <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+
   </PropertyGroup>
 
 

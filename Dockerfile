@@ -2,7 +2,8 @@
 WORKDIR /app
 RUN apk add --no-cache icu-libs
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
-
+RUN adduser -u 1000 --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser
 EXPOSE 80
 EXPOSE 443
 
@@ -14,8 +15,8 @@ RUN dotnet build "./src/SlimFaas/SlimFaas.csproj" -c Release -o /app/build
 
 FROM build AS publish
 RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -r linux-musl-x64 --self-contained=true -p:PublishSingleFile=true  -o /app/publish
-RUN ls /app/publish
-RUN rm /app/publish/*.pdb
+#RUN ls /app/publish
+#RUN rm /app/publish/*.pdb
 RUN rm /app/publish/SlimData
 
 FROM base AS final
