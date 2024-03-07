@@ -7,7 +7,7 @@
         <ImplicitUsings>true</ImplicitUsings>
         <EnablePreviewFeatures>true</EnablePreviewFeatures>
         <PublishTrimmed>true</PublishTrimmed>
-        <TrimMode>partial</TrimMode>
+        <TrimMode>full</TrimMode>
     </PropertyGroup>
 
     <ItemGroup>

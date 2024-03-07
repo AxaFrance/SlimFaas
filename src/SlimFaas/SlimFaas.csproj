@@ -8,14 +8,6 @@
     <WarningsAsErrors>Nullable</WarningsAsErrors>
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>full</TrimMode>
-    <StripSymbols>false</StripSymbols>
-    <DebuggerSupport>false</DebuggerSupport>
-    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
-    <EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
-    <EventSourceSupport>false</EventSourceSupport>
-    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
-    <StackTraceSupport>false</StackTraceSupport>
-    <UseSystemResourceKeys>false</UseSystemResourceKeys>
   </PropertyGroup>
 
 

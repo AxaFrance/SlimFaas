@@ -19,9 +19,9 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
     {
         var command = this;
         await writer.EncodeAsync(command.Key.AsMemory(), new EncodingContext(Encoding.UTF8, false),
-            LengthFormat.LittleEndian, token).ConfigureAwait(false);;
+            LengthFormat.LittleEndian, token).ConfigureAwait(false);
         await writer.EncodeAsync(command.Value.AsMemory(), new EncodingContext(Encoding.UTF8, false),
-            LengthFormat.LittleEndian, token).ConfigureAwait(false);;
+            LengthFormat.LittleEndian, token).ConfigureAwait(false);
     }
 
 #pragma warning disable CA2252
