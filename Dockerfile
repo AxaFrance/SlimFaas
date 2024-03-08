@@ -3,9 +3,8 @@ RUN apk update && apk upgrade
 RUN apk add --no-cache icu-libs
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 WORKDIR /app
-#RUN adduser -u 1000 --disabled-password --gecos "" appuser && chown -R appuser /app
-#USER appuser
-
+RUN adduser -u 1000 --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser
 
 EXPOSE 80
 EXPOSE 443

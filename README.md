@@ -358,7 +358,7 @@ Why .NET ?
 ## Videos
 
 - French : https://www.youtube.com/watch?v=Lvd6FCuCZPI
-- English: https://www.youtube.com/watch?hxRfvJhWW1w
+- English: https://youtu.be/hxRfvJhWW1w?si=4LuPgHVsuEVhlhpF
 
 ## What Next ?
 
