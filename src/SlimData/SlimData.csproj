@@ -14,7 +14,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DotNext.AspNetCore.Cluster" Version="5.1.0" />
+        <PackageReference Include="DotNext.AspNetCore.Cluster" Version="5.2.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
     </ItemGroup>
 
