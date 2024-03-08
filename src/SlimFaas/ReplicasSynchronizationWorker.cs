@@ -23,7 +23,7 @@ public class ReplicasSynchronizationWorker(IReplicasService replicasService,
         {
             try
             {
-                if(cluster is { Leader: not null, LeadershipToken.IsCancellationRequested: true } )
+                /*if(cluster is { Leader: not null, LeadershipToken.IsCancellationRequested: true } )
                 {
                     await Task.Delay(_delay/10, stoppingToken);
                     var currentDeploymentsJson = await slimDataService.GetAsync(kubernetesDeployments);
@@ -39,10 +39,11 @@ public class ReplicasSynchronizationWorker(IReplicasService replicasService,
                     await replicasService.SyncDeploymentsFromSlimData(deployments);
                 }
                 else
-                {
+                {*/
                     await Task.Delay(_delay, stoppingToken);
-                    var deployments = await replicasService.SyncDeploymentsAsync(_namespace);
-                    if (cluster.Leader == null)
+                    /*var deployments = */
+                    await replicasService.SyncDeploymentsAsync(_namespace);
+                    /*if (cluster.Leader == null)
                     {
                         continue;
                     }
@@ -52,7 +53,7 @@ public class ReplicasSynchronizationWorker(IReplicasService replicasService,
                     {
                         await slimDataService.SetAsync(kubernetesDeployments, newDeploymentsJson);
                     }
-                }
+                }*/
             }
             catch (Exception e)
             {
