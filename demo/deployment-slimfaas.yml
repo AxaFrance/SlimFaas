@@ -22,7 +22,7 @@ spec:
       serviceAccountName: slimfaas
       containers:
         - name: slimfaas
-          image: axaguildev/slimfaas:pr-37-433
+          image: axaguildev/slimfaas:pr-37-442
           livenessProbe:
             httpGet:
               path: /health
@@ -42,7 +42,7 @@ spec:
             - name: SLIMFAAS_PORTS
               value: "5000,30021"
             - name: DOTNET_GCHeapHardLimit
-              value: "73400320"
+              value: "03200000"
             - name: DOTNET_gcServer
               value: "1"
             #- name: SLIMDATA_CONFIGURATION
