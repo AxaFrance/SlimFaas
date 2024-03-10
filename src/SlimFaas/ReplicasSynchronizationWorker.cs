@@ -39,11 +39,12 @@ public class ReplicasSynchronizationWorker(IReplicasService replicasService,
                     await replicasService.SyncDeploymentsFromSlimData(deployments);
                 }
                 else
-                {*/
-                    await Task.Delay(_delay, stoppingToken);
-                    /*var deployments = */
-                    await replicasService.SyncDeploymentsAsync(_namespace);
-                    /*if (cluster.Leader == null)
+                {
+                    */
+                await Task.Delay(_delay, stoppingToken);
+                   /* var deployments = */
+                await replicasService.SyncDeploymentsAsync(_namespace);
+                /*    if (cluster.Leader == null)
                     {
                         continue;
                     }
