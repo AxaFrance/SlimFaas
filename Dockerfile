@@ -19,7 +19,9 @@ COPY . .
 ARG RUNTIME_ID=linux-musl-x64
 RUN dotnet restore -r $RUNTIME_ID
 RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -r $RUNTIME_ID  -o /app/publish --no-restore
+RUN ls -la /app/publish
 RUN rm /app/publish/*.pdb
+RUN rm /app/publish/*.dbg
 RUN rm /app/publish/SlimData
 
 FROM base AS final

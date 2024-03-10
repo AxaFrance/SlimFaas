@@ -9,7 +9,7 @@
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>full</TrimMode>
     <TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
-    <StripSymbols>false</StripSymbols>
+    <StripSymbols>true</StripSymbols>
     <PublishAot>true</PublishAot>
     <DebuggerSupport>false</DebuggerSupport>
     <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
