@@ -8,10 +8,6 @@ using RaftNode;
 using SlimFaas;
 using SlimFaas.Kubernetes;
 
-// Attempt to refresh the memory limit to 500MB
-AppContext.SetData("GCHeapHardLimit", (ulong) 50 * 1024 * 1024);
-GC.RefreshMemoryLimit();
-
 #pragma warning disable CA2252
 
 string slimDataDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.SlimDataDirectory) ??
