@@ -1,4 +1,4 @@
-﻿FROM alpine:3.18 AS base
+﻿FROM alpine:3.19 AS base
 RUN apk update && apk upgrade
 RUN apk add --no-cache icu-libs
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
@@ -9,7 +9,7 @@ USER appuser
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.18 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.19 AS build
 RUN apk update && apk upgrade
 RUN apk add --no-cache clang build-base zlib-dev
 WORKDIR /src
