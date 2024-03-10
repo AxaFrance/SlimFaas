@@ -75,23 +75,23 @@ public class KubernetesService : IKubernetesService
     private const string TimeoutSecondBeforeSetReplicasMin = "SlimFaas/TimeoutSecondBeforeSetReplicasMin";
     private const string NumberParallelRequest = "SlimFaas/NumberParallelRequest";
     private const string SlimfaasDeploymentName = "slimfaas";
-    private readonly KubernetesClientConfiguration _k8SConfig;
     private readonly ILogger<KubernetesService> _logger;
+    private readonly k8s.Kubernetes _client;
 
     public KubernetesService(ILogger<KubernetesService> logger, bool useKubeConfig)
     {
         _logger = logger;
-        _k8SConfig = !useKubeConfig
+        KubernetesClientConfiguration k8SConfig = !useKubeConfig
             ? KubernetesClientConfiguration.InClusterConfig()
             : KubernetesClientConfiguration.BuildConfigFromConfigFile();
-        _k8SConfig.SkipTlsVerify = true;
+        k8SConfig.SkipTlsVerify = true;
+        _client = new(k8SConfig);
     }
 
     public async Task<ReplicaRequest?> ScaleAsync(ReplicaRequest request)
     {
         try
         {
-            using k8s.Kubernetes client = new(_k8SConfig);
             string patchString = $"{{\"spec\": {{\"replicas\": {request.Replicas}}}}}";
             var httpContent = new StringContent(patchString, Encoding.UTF8, "application/merge-patch+json");
             // we need to get the base uri, as it's not set on the HttpClient
@@ -99,15 +99,15 @@ public class KubernetesService : IKubernetesService
             {
                 case PodType.Deployment:
                     {
-                        var url = string.Concat(client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
+                        var url = string.Concat(_client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
                         HttpRequestMessage httpRequest = new(HttpMethod.Patch,
                             new Uri(url));
                         httpRequest.Content = httpContent;
-                        if ( client.Credentials != null )
+                        if ( _client.Credentials != null )
                         {
-                            await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
+                            await _client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
                         }
-                        var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
+                        var response = await _client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
                         if(response.StatusCode != HttpStatusCode.OK)
                         {
                             throw new HttpOperationException("Error while scaling deployment");
@@ -116,15 +116,15 @@ public class KubernetesService : IKubernetesService
                     }
                 case PodType.StatefulSet:
                     {
-                        var url = string.Concat(client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
+                        var url = string.Concat(_client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
                         HttpRequestMessage httpRequest = new(HttpMethod.Patch,
                             new Uri(url));
                         httpRequest.Content = httpContent;
-                        if ( client.Credentials != null )
+                        if ( _client.Credentials != null )
                         {
-                            await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
+                            await _client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
                         }
-                        var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
+                        var response = await _client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
                         if(response.StatusCode != HttpStatusCode.OK)
                         {
                             throw new HttpOperationException("Error while scaling deployment");
@@ -149,10 +149,10 @@ public class KubernetesService : IKubernetesService
         try
         {
             IList<DeploymentInformation>? deploymentInformationList = new List<DeploymentInformation>();
-            using k8s.Kubernetes client = new(_k8SConfig);
-            Task<V1DeploymentList>? deploymentListTask = client.ListNamespacedDeploymentAsync(kubeNamespace);
-            Task<V1PodList>? podListTask = client.ListNamespacedPodAsync(kubeNamespace);
-            Task<V1StatefulSetList>? statefulSetListTask = client.ListNamespacedStatefulSetAsync(kubeNamespace);
+
+            Task<V1DeploymentList>? deploymentListTask = _client.ListNamespacedDeploymentAsync(kubeNamespace);
+            Task<V1PodList>? podListTask = _client.ListNamespacedPodAsync(kubeNamespace);
+            Task<V1StatefulSetList>? statefulSetListTask = _client.ListNamespacedStatefulSetAsync(kubeNamespace);
 
             await Task.WhenAll(deploymentListTask, podListTask, statefulSetListTask);
             V1DeploymentList? deploymentList = deploymentListTask.Result;
