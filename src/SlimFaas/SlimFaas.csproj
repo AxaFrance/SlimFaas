@@ -15,7 +15,7 @@
     <EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
     <EventSourceSupport>false</EventSourceSupport>
     <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
-    <StackTraceSupport>false</StackTraceSupport>
+    <StackTraceSupport>true</StackTraceSupport>
     <UseSystemResourceKeys>false</UseSystemResourceKeys>
     <UseNativeHttpHandler>false</UseNativeHttpHandler>
     <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
@@ -23,7 +23,7 @@
 
 
   <ItemGroup>
-    <PackageReference Include="KubernetesClient.Aot" Version="13.0.12" />
+    <PackageReference Include="KubernetesClient.Aot" Version="13.0.26" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.2" />
     <PackageReference Include="prometheus-net" Version="8.2.1" />
     <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
