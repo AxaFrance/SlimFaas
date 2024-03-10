@@ -43,7 +43,7 @@ public class ReplicasSynchronizationWorker(IReplicasService replicasService,
                     */
                 await Task.Delay(_delay, stoppingToken);
                    /* var deployments = */
-                //await replicasService.SyncDeploymentsAsync(_namespace);
+                await replicasService.SyncDeploymentsAsync(_namespace);
                 /*    if (cluster.Leader == null)
                     {
                         continue;
