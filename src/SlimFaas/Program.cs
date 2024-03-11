@@ -64,7 +64,7 @@ ServiceProvider serviceProviderStarter = serviceCollectionStarter.BuildServicePr
 IReplicasService? replicasService = serviceProviderStarter.GetService<IReplicasService>();
 
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateSlimBuilder(args);
 
 IServiceCollection serviceCollectionSlimFaas = builder.Services;
 serviceCollectionSlimFaas.AddHostedService<SlimWorker>();

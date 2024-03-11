@@ -55,10 +55,10 @@ spec:
               mountPath: /database
           resources:
             limits:
-              memory: "80Mi"
-              cpu: "600m"
+              memory: "60Mi"
+              cpu: "400m"
             requests:
-              memory: "80Mi"
+              memory: "60Mi"
               cpu: "200m"
           ports:
             - containerPort: 5000
