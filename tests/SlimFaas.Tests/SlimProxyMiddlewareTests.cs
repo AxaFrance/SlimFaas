@@ -37,6 +37,10 @@ internal class MemorySlimFaasQueue : ISlimFaasQueue
     public Task<IList<string>> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
 
     public Task<long> CountAsync(string key) => throw new NotImplementedException();
+
+    public Task EnqueueAsync(string key, byte[] message)=> throw new NotImplementedException();
+
+    public Task<IList<byte[]>> DequeueBinAsync(string key, long count = 1)=> throw new NotImplementedException();
 }
 
 internal class SendClientMock : ISendClient
