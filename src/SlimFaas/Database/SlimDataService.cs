@@ -3,6 +3,7 @@ using System.Net;
 using System.Text.Json;
 using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
+using MemoryPack;
 using RaftNode;
 using SlimData;
 
@@ -11,8 +12,8 @@ namespace SlimFaas;
 public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProvider, IRaftCluster cluster, ILogger<SlimDataService> logger)
     : IDatabaseService
 {
-    private ISupplier<SupplierPayload> SimplePersistentState =>
-        serviceProvider.GetRequiredService<ISupplier<SupplierPayload>>();
+    private ISupplier<SlimDataPayload> SimplePersistentState =>
+        serviceProvider.GetRequiredService<ISupplier<SlimDataPayload>>();
 
     public async Task<string> GetAsync(string key)
     {
@@ -29,7 +30,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
                 await cluster.ApplyReadBarrierAsync();
             }
         }
-        SupplierPayload data = SimplePersistentState.Invoke();
+        SlimDataPayload data = SimplePersistentState.Invoke();
         return data.KeyValues.TryGetValue(key, out string? value) ? value : string.Empty;
     }
 
@@ -109,7 +110,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
             }
         }
 
-        SupplierPayload data = SimplePersistentState.Invoke();
+        SlimDataPayload data = SimplePersistentState.Invoke();
         return data.Hashsets.TryGetValue(key, out Dictionary<string, string>? value)
             ? (IDictionary<string, string>)value
             : new Dictionary<string, string>();
@@ -154,7 +155,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         {
             var simplePersistentState = serviceProvider.GetRequiredService<SlimPersistentState>();
             var result = await Endpoints.ListRightPopCommand(simplePersistentState, key, count, cluster, new CancellationTokenSource());
-            return result;
+            return result.Items;
         }
         else
         {
@@ -169,13 +170,15 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
                 throw new DataException("Error in calling SlimData HTTP Service");
             }
 
-            string json = await response.Content.ReadAsStringAsync();
-            List<string>? result = !string.IsNullOrEmpty(json)
-                ? JsonSerializer.Deserialize(json,
-                    ListStringSerializerContext.Default.ListString)
-                : new List<string>();
+            var bin = await response.Content.ReadAsByteArrayAsync();
+            ListString? result = MemoryPackSerializer.Deserialize<ListString>(bin);
+            //string json = await response.Content.ReadAsStringAsync();
+            //List<string>? result = !string.IsNullOrEmpty(json)
+             //   ? JsonSerializer.Deserialize(json,
+              //      ListStringSerializerContext.Default.ListString)
+               // : new List<string>();
 
-            return result ?? new List<string>();
+            return result?.Items ?? new List<string>();
         }
     }
 
@@ -194,7 +197,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
                 await cluster.ApplyReadBarrierAsync();
             }
         }
-        SupplierPayload data = SimplePersistentState.Invoke();
+        SlimDataPayload data = SimplePersistentState.Invoke();
         long result = data.Queues.TryGetValue(key, out List<string>? value) ? value.Count : 0L;
         return result;
     }

@@ -5,7 +5,8 @@ namespace RaftNode;
 public record SlimDataState(
     Dictionary<string, Dictionary<string, string>> hashsets,
     Dictionary<string, string> keyValues,
-    Dictionary<string, List<string>> queues);
+    Dictionary<string, List<string>> queues,
+    Dictionary<string, List<ReadOnlyMemory<byte>>> queuesBin);
 
 [Command<LogSnapshotCommand>(LogSnapshotCommand.Id)]
 [Command<AddKeyValueCommand>(AddKeyValueCommand.Id)]
@@ -50,6 +51,16 @@ public class SlimDataInterpreter : CommandInterpreter
             queues[addHashSetCommand.Key].Add(addHashSetCommand.Value);
         else
             queues.Add(addHashSetCommand.Key, new List<string> { addHashSetCommand.Value });
+
+        return default;
+    }
+    
+    internal static ValueTask DoListLeftBinPushAsync(ListLeftBinPushCommand addHashSetCommand, Dictionary<string, List<ReadOnlyMemory<byte>>> queues)
+    {
+        if (queues.ContainsKey(addHashSetCommand.Key))
+            queues[addHashSetCommand.Key].Add(addHashSetCommand.Value);
+        else
+            queues.Add(addHashSetCommand.Key, new List<ReadOnlyMemory<byte>> { addHashSetCommand.Value });
 
         return default;
     }
@@ -113,13 +124,15 @@ public class SlimDataInterpreter : CommandInterpreter
     {
         ValueTask ListRightPopHandler(ListRightPopCommand command, CancellationToken token) => DoListRightPopAsync(command, state.queues);
         ValueTask ListLeftPushHandler(ListLeftPushCommand command, CancellationToken token) => DoListLeftPushAsync(command, state.queues);
+        ValueTask ListLeftBienPushHandler(ListLeftBinPushCommand command, CancellationToken token) => DoListLeftBinPushAsync(command, state.queuesBin);
         ValueTask AddHashSetHandler(AddHashSetCommand command, CancellationToken token) => DoAddHashSetAsync(command, state.hashsets);
         ValueTask AddKeyValueHandler(AddKeyValueCommand command, CancellationToken token) => DoAddKeyValueAsync(command, state.keyValues);
         ValueTask SnapshotHandler(LogSnapshotCommand command, CancellationToken token) => DoHandleSnapshotAsync(command, state.keyValues, state.hashsets, state.queues);
 
-        var interpreter =  new Builder()
+        var interpreter = new Builder()
             .Add(ListRightPopCommand.Id, (Func<ListRightPopCommand, CancellationToken, ValueTask>)ListRightPopHandler)
             .Add(ListLeftPushCommand.Id, (Func<ListLeftPushCommand, CancellationToken, ValueTask>)ListLeftPushHandler)
+            .Add(ListLeftBinPushCommand.Id, (Func<ListLeftBinPushCommand, CancellationToken, ValueTask>)ListLeftBienPushHandler)
             .Add(AddHashSetCommand.Id, (Func<AddHashSetCommand, CancellationToken, ValueTask>)AddHashSetHandler)
             .Add(AddKeyValueCommand.Id, (Func<AddKeyValueCommand, CancellationToken, ValueTask>)AddKeyValueHandler)
             .Add(LogSnapshotCommand.Id, (Func<LogSnapshotCommand, CancellationToken, ValueTask>)SnapshotHandler, true)

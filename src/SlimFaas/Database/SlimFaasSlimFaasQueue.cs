@@ -13,5 +13,9 @@ public class SlimFaasSlimFaasQueue(IDatabaseService databaseService) : ISlimFaas
         return data;
     }
 
+    public Task EnqueueAsync(string key, byte[] message) => throw new NotImplementedException();
+
+    public Task<IList<byte[]>> DequeueBinAsync(string key, long count = 1) => throw new NotImplementedException();
+
     public async Task<long> CountAsync(string key) => await databaseService.ListLengthAsync($"{KeyPrefix}{key}");
 }

@@ -54,7 +54,7 @@ public class Startup(IConfiguration configuration)
             .AddRouting();
         var path = configuration[SlimPersistentState.LogLocation];
         if (!string.IsNullOrWhiteSpace(path))
-            services.UsePersistenceEngine<ISupplier<SupplierPayload>, SlimPersistentState>();
+            services.UsePersistenceEngine<ISupplier<SlimDataPayload>, SlimPersistentState>();
         var endpoint = configuration["publicEndPoint"];
         if (!string.IsNullOrEmpty(endpoint))
         {

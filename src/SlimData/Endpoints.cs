@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
-using DotNext;
+﻿using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
+using MemoryPack;
 using RaftNode;
 
 namespace SlimData;
@@ -101,9 +101,12 @@ public class Endpoints
             //await cluster.ApplyReadBarrierAsync(context.RequestAborted);
 
             var values = await ListRightPopCommand(provider, key, count, cluster, source);
-            await context.Response.WriteAsync(
-                JsonSerializer.Serialize(values, ListStringSerializerContext.Default.ListString),
-                context.RequestAborted);
+            var bin = MemoryPackSerializer.Serialize(values);
+            await context.Response.Body.WriteAsync(bin, context.RequestAborted);
+            
+           // await context.Response.WriteAsync(
+            //    JsonSerializer.Serialize(values, ListStringSerializerContext.Default.ListString),
+              //  context.RequestAborted);
         });
     }
 
@@ -111,16 +114,16 @@ public class Endpoints
         CancellationTokenSource source)
     {
         var values = new ListString();
-        var queues = ((ISupplier<SupplierPayload>)provider).Invoke().Queues;
+        values.Items = new List<string>();
+        var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
         if (queues.TryGetValue(key, out var queue))
         {
             for (var i = 0; i < count; i++)
             {
                 if (queue.Count <= i) break;
-
-                values.Add(queue[i]);
+                values.Items.Add(queue[i]);
             }
-                
+            
             var logEntry =
                 provider.Interpreter.CreateLogEntry(
                     new ListRightPopCommand { Key = key, Count = count },
@@ -137,7 +140,6 @@ public class Endpoints
         return DoAsync(context, async (cluster, provider, source) =>
         {
             var form = await context.Request.ReadFormAsync(source.Token);
-
             var (key, value) = GetKeyValue(form);
 
             if (string.IsNullOrEmpty(key))
@@ -181,7 +183,6 @@ public class Endpoints
         return DoAsync(context, async (cluster, provider, source) =>
         {
             var form = await context.Request.ReadFormAsync(source.Token);
-
             var (key, value) = GetKeyValue(form);
 
             if (string.IsNullOrEmpty(key))

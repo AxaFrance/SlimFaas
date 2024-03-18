@@ -136,7 +136,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
             processingTasks.Add(functionDeployment, new List<RequestToWait>());
         }
 
-        List<RequestToWait> httpResponseMessagesToDelete = new List<RequestToWait>();
+        List<RequestToWait> httpResponseMessagesToDelete = new();
         foreach (RequestToWait processing in processingTasks[functionDeployment])
         {
             try

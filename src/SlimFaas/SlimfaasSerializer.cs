@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using MemoryPack;
 
 namespace SlimFaas;
 
@@ -24,4 +25,10 @@ public class SlimfaasSerializer
 
     public static string Serialize(CustomRequest data) =>
         JsonSerializer.Serialize(data, CustomRequestSerializerContext.Default.CustomRequest);
+
+    public static CustomRequest Deserialize(byte[] data) =>
+        MemoryPackSerializer.Deserialize<CustomRequest>(data);
+
+    public static byte[] SerializeBin(CustomRequest data) =>
+        MemoryPackSerializer.Serialize(data);
 }

@@ -223,7 +223,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     private static async Task<CustomRequest> InitCustomRequest(HttpContext context, HttpRequest contextRequest,
         string functionName, string functionPath)
     {
-        IList<CustomHeader> customHeaders = contextRequest.Headers
+        List<CustomHeader> customHeaders = contextRequest.Headers
             .Select(headers => new CustomHeader(headers.Key, headers.Value.ToArray())).ToList();
 
         string requestMethod = contextRequest.Method;

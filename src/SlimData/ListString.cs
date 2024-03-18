@@ -1,9 +1,12 @@
 ﻿using System.Text.Json.Serialization;
+using MemoryPack;
 
 namespace SlimData;
 
-public class ListString : List<string>
+[MemoryPackable]
+public partial class ListString 
 {
+    public List<string> Items { get; set; }
 }
 
 [JsonSerializable(typeof(ListString))]
