@@ -20,12 +20,6 @@ public class SlimfaasSerializer
         return new string(chars);
     }
 
-    public static CustomRequest Deserialize(string data) =>
-        JsonSerializer.Deserialize(data, CustomRequestSerializerContext.Default.CustomRequest);
-
-    public static string Serialize(CustomRequest data) =>
-        JsonSerializer.Serialize(data, CustomRequestSerializerContext.Default.CustomRequest);
-
     public static CustomRequest Deserialize(byte[] data) =>
         MemoryPackSerializer.Deserialize<CustomRequest>(data);
 
