@@ -8,9 +8,3 @@ public partial class ListString
 {
     public List<byte[]> Items { get; set; }
 }
-
-[JsonSerializable(typeof(ListString))]
-[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-public partial class ListStringSerializerContext : JsonSerializerContext
-{
-}
