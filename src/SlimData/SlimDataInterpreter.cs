@@ -20,14 +20,15 @@ public class SlimDataInterpreter : CommandInterpreter
     public Dictionary<string, Dictionary<string, string>> hashsets = new();
     public Dictionary<string, string> keyValues = new();
     public Dictionary<string, List<string>> queues = new();
+    public Dictionary<string, List<ReadOnlyMemory<byte>>> queuesBin = new();
 
     [CommandHandler]
     public ValueTask ListRightPopAsync(ListRightPopCommand addHashSetCommand, CancellationToken token)
     {
-        return DoListRightPopAsync(addHashSetCommand, queues);
+        return DoListRightPopAsync(addHashSetCommand, queuesBin);
     }
 
-    internal static ValueTask DoListRightPopAsync(ListRightPopCommand addHashSetCommand, Dictionary<string, List<string>> queues)
+    internal static ValueTask DoListRightPopAsync(ListRightPopCommand addHashSetCommand, Dictionary<string, List<ReadOnlyMemory<byte>>> queues)
     {
         if (queues.TryGetValue(addHashSetCommand.Key, out var queue))
             for (var i = 0; i < addHashSetCommand.Count; i++)
@@ -122,8 +123,8 @@ public class SlimDataInterpreter : CommandInterpreter
     
     public static CommandInterpreter InitInterpreter(SlimDataState state)   
     {
-        ValueTask ListRightPopHandler(ListRightPopCommand command, CancellationToken token) => DoListRightPopAsync(command, state.queues);
-        ValueTask ListLeftPushHandler(ListLeftPushCommand command, CancellationToken token) => DoListLeftPushAsync(command, state.queues);
+        ValueTask ListRightPopHandler(ListRightPopCommand command, CancellationToken token) => DoListRightPopAsync(command, state.queuesBin);
+        // ValueTask ListLeftPushHandler(ListLeftPushCommand command, CancellationToken token) => DoListLeftPushAsync(command, state.queues);
         ValueTask ListLeftBienPushHandler(ListLeftBinPushCommand command, CancellationToken token) => DoListLeftBinPushAsync(command, state.queuesBin);
         ValueTask AddHashSetHandler(AddHashSetCommand command, CancellationToken token) => DoAddHashSetAsync(command, state.hashsets);
         ValueTask AddKeyValueHandler(AddKeyValueCommand command, CancellationToken token) => DoAddKeyValueAsync(command, state.keyValues);
@@ -131,7 +132,7 @@ public class SlimDataInterpreter : CommandInterpreter
 
         var interpreter = new Builder()
             .Add(ListRightPopCommand.Id, (Func<ListRightPopCommand, CancellationToken, ValueTask>)ListRightPopHandler)
-            .Add(ListLeftPushCommand.Id, (Func<ListLeftPushCommand, CancellationToken, ValueTask>)ListLeftPushHandler)
+           // .Add(ListLeftPushCommand.Id, (Func<ListLeftPushCommand, CancellationToken, ValueTask>)ListLeftPushHandler)
             .Add(ListLeftBinPushCommand.Id, (Func<ListLeftBinPushCommand, CancellationToken, ValueTask>)ListLeftBienPushHandler)
             .Add(AddHashSetCommand.Id, (Func<AddHashSetCommand, CancellationToken, ValueTask>)AddHashSetHandler)
             .Add(AddKeyValueCommand.Id, (Func<AddKeyValueCommand, CancellationToken, ValueTask>)AddKeyValueHandler)
