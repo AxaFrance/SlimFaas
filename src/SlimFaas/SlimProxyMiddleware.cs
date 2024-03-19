@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using MemoryPack;
 using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
@@ -134,8 +135,8 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             return;
         }
 
-        string dataString = SlimfaasSerializer.Serialize(customRequest);
-        await slimFaasQueue.EnqueueAsync(functionName, dataString);
+        var bin = MemoryPackSerializer.Serialize(customRequest);
+        await slimFaasQueue.EnqueueAsync(functionName, bin);
 
         contextResponse.StatusCode = 202;
     }

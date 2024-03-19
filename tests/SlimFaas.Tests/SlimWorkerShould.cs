@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SlimFaas.Kubernetes;
+using MemoryPack;
 
 namespace SlimFaas.Tests;
 
@@ -63,19 +64,19 @@ public class SlimWorkerShould
         CustomRequest customRequest =
             new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new[] { "value1" } } },
                 new byte[1], "fibonacci", "/download", "GET", "");
-        string jsonCustomRequest = SlimfaasSerializer.Serialize(customRequest);
+        var jsonCustomRequest = MemoryPackSerializer.Serialize(customRequest);
         await redisQueue.EnqueueAsync("fibonacci", jsonCustomRequest);
 
         CustomRequest customRequestNoPodStarted =
             new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new[] { "value1" } } },
                 new byte[1], "no-pod-started", "/download", "GET", "");
-        string jsonCustomNoPodStarted = SlimfaasSerializer.Serialize(customRequestNoPodStarted);
+        var jsonCustomNoPodStarted = MemoryPackSerializer.Serialize(customRequestNoPodStarted);
         await redisQueue.EnqueueAsync("no-pod-started", jsonCustomNoPodStarted);
 
         CustomRequest customRequestReplicas =
             new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new[] { "value1" } } },
                 new byte[1], "no-replicas", "/download", "GET", "");
-        string jsonCustomNoReplicas = SlimfaasSerializer.Serialize(customRequestReplicas);
+        var jsonCustomNoReplicas = MemoryPackSerializer.Serialize(customRequestReplicas);
         await redisQueue.EnqueueAsync("no-replicas", jsonCustomNoReplicas);
 
         SlimWorker service = new SlimWorker(redisQueue,

@@ -6,7 +6,7 @@ namespace SlimData;
 [MemoryPackable]
 public partial class ListString 
 {
-    public List<string> Items { get; set; }
+    public List<byte[]> Items { get; set; }
 }
 
 [JsonSerializable(typeof(ListString))]

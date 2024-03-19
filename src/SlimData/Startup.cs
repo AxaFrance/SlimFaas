@@ -38,7 +38,7 @@ public class Startup(IConfiguration configuration)
                 endpoints.MapGet(LeaderResource, Endpoints.RedirectToLeaderAsync);
                 endpoints.MapGet(HealthResource, async context => { await context.Response.WriteAsync("OK"); });
                 endpoints.MapPost(ListLeftPushResource,  Endpoints.ListLeftPush);
-                endpoints.MapPost(ListRightPopResource,  Endpoints.ListRigthPop);
+                endpoints.MapPost(ListRightPopResource,  Endpoints.ListRightPop);
                 endpoints.MapPost(AddHashSetResource,  Endpoints.AddHashSet);
                 endpoints.MapPost(AddKeyValueResource,  Endpoints.AddKeyValue);
             });

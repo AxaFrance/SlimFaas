@@ -82,7 +82,7 @@ public class Endpoints
         await provider.CommitAsync(source.Token);
     }
 
-    public static Task ListRigthPop(HttpContext context)
+    public static Task ListRightPop(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
@@ -97,16 +97,10 @@ public class Endpoints
                     context.RequestAborted);
                 return;
             }
-
-            //await cluster.ApplyReadBarrierAsync(context.RequestAborted);
-
+            
             var values = await ListRightPopCommand(provider, key, count, cluster, source);
             var bin = MemoryPackSerializer.Serialize(values);
             await context.Response.Body.WriteAsync(bin, context.RequestAborted);
-            
-           // await context.Response.WriteAsync(
-            //    JsonSerializer.Serialize(values, ListStringSerializerContext.Default.ListString),
-              //  context.RequestAborted);
         });
     }
 
@@ -114,14 +108,14 @@ public class Endpoints
         CancellationTokenSource source)
     {
         var values = new ListString();
-        values.Items = new List<string>();
-        var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
+        values.Items = new List<byte[]>();
+        var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().QueuesBin;
         if (queues.TryGetValue(key, out var queue))
         {
             for (var i = 0; i < count; i++)
             {
                 if (queue.Count <= i) break;
-                values.Items.Add(queue[i]);
+                values.Items.Add(queue[i].ToArray());
             }
             
             var logEntry =
@@ -139,25 +133,27 @@ public class Endpoints
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
-            var form = await context.Request.ReadFormAsync(source.Token);
-            var (key, value) = GetKeyValue(form);
-
+            context.Request.Query.TryGetValue("key", out var key);
             if (string.IsNullOrEmpty(key))
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 await context.Response.WriteAsync("not data found", context.RequestAborted);
                 return;
             }
-
+            
+            var inputStream = context.Request.Body;
+            await using var memoryStream = new MemoryStream();
+            inputStream.CopyTo(memoryStream);
+            var value = memoryStream.ToArray();
             await ListLeftPushCommand(provider, key, value, cluster, source);
         });
     }
 
-    public static async Task ListLeftPushCommand(SlimPersistentState provider, string key, string value,
+    public static async Task ListLeftPushCommand(SlimPersistentState provider, string key, byte[] value,
         IRaftCluster cluster, CancellationTokenSource source)
     {
         var logEntry =
-            provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
+            provider.Interpreter.CreateLogEntry(new ListLeftBinPushCommand { Key = key, Value = value },
                 cluster.Term);
         await provider.AppendAsync(logEntry, source.Token);
         await provider.CommitAsync(source.Token);

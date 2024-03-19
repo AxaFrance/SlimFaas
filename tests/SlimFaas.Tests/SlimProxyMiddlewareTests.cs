@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Moq;
 using SlimFaas.Kubernetes;
+using MemoryPack;
 
 namespace SlimFaas.Tests;
 
@@ -32,15 +33,11 @@ internal class MemoryReplicasService : IReplicasService
 
 internal class MemorySlimFaasQueue : ISlimFaasQueue
 {
-    public async Task EnqueueAsync(string key, string message) => await Task.Delay(100);
-
-    public Task<IList<string>> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
+    public Task<IList<byte[]>> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
 
     public Task<long> CountAsync(string key) => throw new NotImplementedException();
 
-    public Task EnqueueAsync(string key, byte[] message)=> throw new NotImplementedException();
-
-    public Task<IList<byte[]>> DequeueBinAsync(string key, long count = 1)=> throw new NotImplementedException();
+    public async Task EnqueueAsync(string key, byte[] message) => await Task.Delay(100);
 }
 
 internal class SendClientMock : ISendClient

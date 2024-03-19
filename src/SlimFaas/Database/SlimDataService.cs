@@ -116,12 +116,12 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
             : new Dictionary<string, string>();
     }
 
-    public async Task ListLeftPushAsync(string key, string field)
+    public async Task ListLeftPushAsync(string key, byte[] field)
     {
         await Retry.Do(() =>DoListLeftPushAsync(key, field), TimeSpan.FromSeconds(1), logger, 5);
     }
 
-    private async Task DoListLeftPushAsync(string key, string field)
+    private async Task DoListLeftPushAsync(string key, byte[] field)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
@@ -131,10 +131,8 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         }
         else
         {
-            HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListLeftPush"));
-            MultipartFormDataContent multipart = new();
-            multipart.Add(new StringContent(field), key);
-            request.Content = multipart;
+            HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListLeftPush?key={key}"));
+            request.Content = new ByteArrayContent(field);
             HttpResponseMessage response = await httpClient.SendAsync(request);
             if ((int)response.StatusCode >= 500)
             {
@@ -143,12 +141,12 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         }
     }
 
-    public async Task<IList<string>> ListRightPopAsync(string key, int count = 1)
+    public async Task<IList<byte[]>> ListRightPopAsync(string key, int count = 1)
     {
         return await Retry.Do(() =>DoListRightPopAsync(key, count), TimeSpan.FromSeconds(1), logger, 5);
     }
 
-    private async Task<IList<string>> DoListRightPopAsync(string key, int count = 1)
+    private async Task<IList<byte[]>> DoListRightPopAsync(string key, int count = 1)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
@@ -178,7 +176,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
               //      ListStringSerializerContext.Default.ListString)
                // : new List<string>();
 
-            return result?.Items ?? new List<string>();
+            return result?.Items ?? new List<byte[]>();
         }
     }
 
