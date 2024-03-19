@@ -143,7 +143,7 @@ public class Endpoints
             
             var inputStream = context.Request.Body;
             await using var memoryStream = new MemoryStream();
-            inputStream.CopyTo(memoryStream);
+            await inputStream.CopyToAsync(memoryStream, source.Token);
             var value = memoryStream.ToArray();
             await ListLeftPushCommand(provider, key, value, cluster, source);
         });
