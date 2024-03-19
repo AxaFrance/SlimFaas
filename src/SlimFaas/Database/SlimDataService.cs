@@ -170,12 +170,6 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
             var bin = await response.Content.ReadAsByteArrayAsync();
             ListString? result = MemoryPackSerializer.Deserialize<ListString>(bin);
-            //string json = await response.Content.ReadAsStringAsync();
-            //List<string>? result = !string.IsNullOrEmpty(json)
-             //   ? JsonSerializer.Deserialize(json,
-              //      ListStringSerializerContext.Default.ListString)
-               // : new List<string>();
-
             return result?.Items ?? new List<byte[]>();
         }
     }
@@ -196,7 +190,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
             }
         }
         SlimDataPayload data = SimplePersistentState.Invoke();
-        long result = data.Queues.TryGetValue(key, out List<string>? value) ? value.Count : 0L;
+        long result = data.QueuesBin.TryGetValue(key, out List<ReadOnlyMemory<byte>>? value) ? value.Count : 0L;
         return result;
     }
 
