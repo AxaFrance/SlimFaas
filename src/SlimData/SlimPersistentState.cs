@@ -2,6 +2,7 @@
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Commands;
 using DotNext.Runtime.Serialization;
+using SlimData.Commands;
 
 namespace RaftNode;
 
@@ -11,7 +12,6 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
 
     private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), 
         new Dictionary<string, string>(), 
-        new Dictionary<string, List<string>>(),
         new Dictionary<string, List<ReadOnlyMemory<byte>>>()
         );
     public CommandInterpreter Interpreter { get; }
@@ -43,9 +43,8 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
         return new SlimDataPayload()
         {
             KeyValues = _state.keyValues,
-            Queues = _state.queues,
             Hashsets = _state.hashsets,
-            QueuesBin = _state.queuesBin
+            Queues = _state.queues
         };
     }
 
@@ -68,7 +67,6 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
     {
         private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), 
             new Dictionary<string, string>(), 
-            new Dictionary<string, List<string>>(),
             new Dictionary<string, List<ReadOnlyMemory<byte>>>()
             );   
         private readonly CommandInterpreter _interpreter;
@@ -78,7 +76,6 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
         {
             _interpreter = SlimDataInterpreter.InitInterpreter(_state);
         }
-
 
         protected override async ValueTask ApplyAsync(LogEntry entry)
         {

@@ -2,6 +2,7 @@
 using DotNext.Net.Cluster.Consensus.Raft;
 using MemoryPack;
 using RaftNode;
+using SlimData.Commands;
 
 namespace SlimData;
 
@@ -109,7 +110,7 @@ public class Endpoints
     {
         var values = new ListString();
         values.Items = new List<byte[]>();
-        var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().QueuesBin;
+        var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
         if (queues.TryGetValue(key, out var queue))
         {
             for (var i = 0; i < count; i++)
@@ -153,7 +154,7 @@ public class Endpoints
         IRaftCluster cluster, CancellationTokenSource source)
     {
         var logEntry =
-            provider.Interpreter.CreateLogEntry(new ListLeftBinPushCommand { Key = key, Value = value },
+            provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
                 cluster.Term);
         await provider.AppendAsync(logEntry, source.Token);
         await provider.CommitAsync(source.Token);

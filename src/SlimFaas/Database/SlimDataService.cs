@@ -6,6 +6,7 @@ using DotNext.Net.Cluster.Consensus.Raft;
 using MemoryPack;
 using RaftNode;
 using SlimData;
+using SlimData.Commands;
 
 namespace SlimFaas;
 #pragma warning disable CA2252
@@ -190,7 +191,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
             }
         }
         SlimDataPayload data = SimplePersistentState.Invoke();
-        long result = data.QueuesBin.TryGetValue(key, out List<ReadOnlyMemory<byte>>? value) ? value.Count : 0L;
+        long result = data.Queues.TryGetValue(key, out List<ReadOnlyMemory<byte>>? value) ? value.Count : 0L;
         return result;
     }
 

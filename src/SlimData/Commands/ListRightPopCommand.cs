@@ -3,7 +3,7 @@ using DotNext.IO;
 using DotNext.Runtime.Serialization;
 using DotNext.Text;
 
-namespace RaftNode;
+namespace SlimData.Commands;
 
 public struct ListRightPopCommand : ISerializable<ListRightPopCommand>
 {
