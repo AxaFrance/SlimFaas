@@ -5,7 +5,7 @@ namespace RaftNode;
 
 public record SlimDataState(
     Dictionary<string, Dictionary<string, string>> hashsets,
-    Dictionary<string, string> keyValues,
+    Dictionary<string, ReadOnlyMemory<byte>> keyValues,
     Dictionary<string, List<ReadOnlyMemory<byte>>> queues);
 
 
@@ -13,7 +13,7 @@ public record SlimDataState(
 public class SlimDataInterpreter : CommandInterpreter
 {
 
-    public SlimDataState SlimDataState = new SlimDataState(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, string>(), new Dictionary<string, List<ReadOnlyMemory<byte>>>());
+    public SlimDataState SlimDataState = new SlimDataState(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, ReadOnlyMemory<byte>>(), new Dictionary<string, List<ReadOnlyMemory<byte>>>());
 
     [CommandHandler]
     public ValueTask ListRightPopAsync(ListRightPopCommand addHashSetCommand, CancellationToken token)
@@ -67,7 +67,7 @@ public class SlimDataInterpreter : CommandInterpreter
         return DoAddKeyValueAsync(valueCommand, SlimDataState.keyValues);
     }
     
-    internal static ValueTask DoAddKeyValueAsync(AddKeyValueCommand valueCommand, Dictionary<string, string> keyValues)
+    internal static ValueTask DoAddKeyValueAsync(AddKeyValueCommand valueCommand, Dictionary<string, ReadOnlyMemory<byte>> keyValues)
     {
         keyValues[valueCommand.Key] = valueCommand.Value;
         return default;
@@ -82,7 +82,7 @@ public class SlimDataInterpreter : CommandInterpreter
         return default;
     }
     
-    internal static ValueTask DoHandleSnapshotAsync(LogSnapshotCommand command, Dictionary<string, string> keyValues, Dictionary<string, Dictionary<string, string>> hashsets, Dictionary<string, List<ReadOnlyMemory<byte>>>  queues)
+    internal static ValueTask DoHandleSnapshotAsync(LogSnapshotCommand command, Dictionary<string, ReadOnlyMemory<byte>> keyValues, Dictionary<string, Dictionary<string, string>> hashsets, Dictionary<string, List<ReadOnlyMemory<byte>>>  queues)
     {
         keyValues.Clear();
         foreach (var keyValue in keyValues)

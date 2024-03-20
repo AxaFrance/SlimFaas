@@ -1,6 +1,6 @@
 ﻿using DotNext.Net.Cluster.Consensus.Raft;
 
-namespace SlimFaas;
+namespace SlimFaas.Database;
 
 public interface ISlimDataStatus
 {

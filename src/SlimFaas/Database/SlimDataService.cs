@@ -1,6 +1,5 @@
 ﻿using System.Data;
 using System.Net;
-using System.Text.Json;
 using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using MemoryPack;
@@ -8,7 +7,7 @@ using RaftNode;
 using SlimData;
 using SlimData.Commands;
 
-namespace SlimFaas;
+namespace SlimFaas.Database;
 #pragma warning disable CA2252
 public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProvider, IRaftCluster cluster, ILogger<SlimDataService> logger)
     : IDatabaseService
@@ -16,12 +15,12 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
     private ISupplier<SlimDataPayload> SimplePersistentState =>
         serviceProvider.GetRequiredService<ISupplier<SlimDataPayload>>();
 
-    public async Task<string> GetAsync(string key)
+    public async Task<byte[]?> GetAsync(string key)
     {
         return await Retry.Do(() => DoGetAsync(key), TimeSpan.FromSeconds(1), logger, 5);
     }
 
-    private async Task<string> DoGetAsync(string key)
+    private async Task<byte[]?> DoGetAsync(string key)
     {
         await GetAndWaitForLeader();
         if (cluster.LeadershipToken.IsCancellationRequested)
@@ -32,15 +31,15 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
             }
         }
         SlimDataPayload data = SimplePersistentState.Invoke();
-        return data.KeyValues.TryGetValue(key, out string? value) ? value : string.Empty;
+        return data.KeyValues.TryGetValue(key, out ReadOnlyMemory<byte> value) ? value.ToArray() : null;
     }
 
-    public async Task SetAsync(string key, string value)
+    public async Task SetAsync(string key, byte[] value)
     {
         await Retry.Do(() =>DoSetAsync(key, value), TimeSpan.FromSeconds(1), logger, 5);
     }
 
-    private async Task DoSetAsync(string key, string value)
+    private async Task DoSetAsync(string key,  byte[] value)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
 
@@ -51,11 +50,9 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         }
         else
         {
-            MultipartFormDataContent multipart = new();
-            multipart.Add(new StringContent(value), key);
-
-            HttpResponseMessage response =
-                await httpClient.PostAsync(new Uri($"{endpoint}SlimData/AddKeyValue"), multipart);
+            HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/AddKeyValue?key={key}"));
+            request.Content = new ByteArrayContent(value);
+            HttpResponseMessage response = await httpClient.SendAsync(request);
             if ((int)response.StatusCode >= 500)
             {
                 throw new DataException("Error in calling SlimData HTTP Service");

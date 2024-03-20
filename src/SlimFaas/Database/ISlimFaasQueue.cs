@@ -1,4 +1,4 @@
-﻿namespace SlimFaas;
+﻿namespace SlimFaas.Database;
 
 public interface ISlimFaasQueue
 {

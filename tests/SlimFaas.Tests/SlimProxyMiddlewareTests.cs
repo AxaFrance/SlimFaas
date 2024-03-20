@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Moq;
 using SlimFaas.Kubernetes;
 using MemoryPack;
+using SlimFaas.Database;
 
 namespace SlimFaas.Tests;
 

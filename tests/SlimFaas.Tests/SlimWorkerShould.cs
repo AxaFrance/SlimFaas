@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using SlimFaas.Kubernetes;
 using MemoryPack;
+using SlimFaas.Database;
 
 namespace SlimFaas.Tests;
 

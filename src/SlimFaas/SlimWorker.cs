@@ -1,4 +1,5 @@
 ﻿using MemoryPack;
+using SlimFaas.Database;
 using SlimFaas.Kubernetes;
 
 namespace SlimFaas;

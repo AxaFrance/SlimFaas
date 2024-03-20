@@ -6,20 +6,20 @@ public class DatabaseMockService : IDatabaseService
 {
     private readonly ConcurrentDictionary<string, IDictionary<string, string>> hashSet = new();
 
-    private readonly ConcurrentDictionary<string, string> keys = new();
+    private readonly ConcurrentDictionary<string, byte[]> keys = new();
     private readonly ConcurrentDictionary<string, List<byte[]>> queue = new();
 
-    public Task<string> GetAsync(string key)
+    public Task<byte[]?> GetAsync(string key)
     {
-        if (keys.ContainsKey(key))
+        if (keys.TryGetValue(key, out byte[]? value))
         {
-            return Task.FromResult(keys[key]);
+            return Task.FromResult(value)!;
         }
 
-        return Task.FromResult<string>("");
+        return Task.FromResult<byte[]?>(null);
     }
 
-    public Task SetAsync(string key, string value)
+    public Task SetAsync(string key, byte[] value)
     {
         if (keys.ContainsKey(key))
         {

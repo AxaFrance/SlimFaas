@@ -1,4 +1,4 @@
-﻿namespace SlimFaas;
+﻿namespace SlimFaas.Database;
 
 public class SlimFaasSlimFaasQueue(IDatabaseService databaseService) : ISlimFaasQueue
 {

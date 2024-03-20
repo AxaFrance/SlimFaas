@@ -11,7 +11,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
     public const string LogLocation = "logLocation";
 
     private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), 
-        new Dictionary<string, string>(), 
+        new Dictionary<string, ReadOnlyMemory<byte>>(), 
         new Dictionary<string, List<ReadOnlyMemory<byte>>>()
         );
     public CommandInterpreter Interpreter { get; }
@@ -66,7 +66,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
     private sealed class SimpleSnapshotBuilder : IncrementalSnapshotBuilder
     {
         private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), 
-            new Dictionary<string, string>(), 
+            new Dictionary<string, ReadOnlyMemory<byte>>(), 
             new Dictionary<string, List<ReadOnlyMemory<byte>>>()
             );   
         private readonly CommandInterpreter _interpreter;

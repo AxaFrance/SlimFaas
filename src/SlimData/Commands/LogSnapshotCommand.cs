@@ -5,13 +5,13 @@ using DotNext.Text;
 
 namespace SlimData.Commands;
 
-public readonly struct LogSnapshotCommand(Dictionary<string, string> keysValues,
+public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte>> keysValues,
         Dictionary<string, Dictionary<string, string>> hashsets, Dictionary<string, List<ReadOnlyMemory<byte>>> queues)
     : ISerializable<LogSnapshotCommand>
 {
     public const int Id = 5;
 
-    public readonly Dictionary<string, string> keysValues = keysValues;
+    public readonly Dictionary<string, ReadOnlyMemory<byte>> keysValues = keysValues;
     public readonly Dictionary<string, Dictionary<string, string>> hashsets = hashsets;
     public readonly Dictionary<string, List<ReadOnlyMemory<byte>>> queues = queues;
 
@@ -23,7 +23,7 @@ public readonly struct LogSnapshotCommand(Dictionary<string, string> keysValues,
             // compute length of the serialized data, in bytes
             long result = sizeof(Int32); // 4 bytes for count
             foreach (var keyValuePair in keysValues)
-                result += Encoding.UTF8.GetByteCount(keyValuePair.Key) + Encoding.UTF8.GetByteCount(keyValuePair.Value);
+                result += Encoding.UTF8.GetByteCount(keyValuePair.Key) + keyValuePair.Value.Length;
 
             // compute length of the serialized data, in bytes
             result += sizeof(Int32);
@@ -58,7 +58,7 @@ public readonly struct LogSnapshotCommand(Dictionary<string, string> keysValues,
             foreach (var (key, value) in keysValues)
             {
                 await writer.EncodeAsync(key.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
-                await writer.EncodeAsync(value.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                await writer.WriteAsync(value, LengthFormat.Compressed, token).ConfigureAwait(false);
             }
 
             // write the number of entries
@@ -94,15 +94,14 @@ public readonly struct LogSnapshotCommand(Dictionary<string, string> keysValues,
     {
 
             var count = await reader.ReadLittleEndianAsync<Int32>(token);
-            var keysValues = new Dictionary<string, string>(count);
+            var keysValues = new Dictionary<string,ReadOnlyMemory<byte>>(count);
             // deserialize entries;
             while (count-- > 0)
             {
                 var key = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
                     .ConfigureAwait(false);
-                var value = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
-                    .ConfigureAwait(false);
-                keysValues.Add(key.ToString(), value.ToString());
+                using var value = await reader.ReadAsync(LengthFormat.Compressed).ConfigureAwait(false);
+                keysValues.Add(key.ToString(), value.Memory);
             }
 
             var countQueues = await reader.ReadLittleEndianAsync<Int32>(token).ConfigureAwait(false);

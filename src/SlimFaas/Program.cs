@@ -6,6 +6,7 @@ using Polly.Extensions.Http;
 using Prometheus;
 using RaftNode;
 using SlimFaas;
+using SlimFaas.Database;
 using SlimFaas.Kubernetes;
 
 #pragma warning disable CA2252

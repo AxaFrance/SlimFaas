@@ -179,21 +179,22 @@ public class Endpoints
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
-            var form = await context.Request.ReadFormAsync(source.Token);
-            var (key, value) = GetKeyValue(form);
-
+            context.Request.Query.TryGetValue("key", out var key);
             if (string.IsNullOrEmpty(key))
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 await context.Response.WriteAsync("not data found", context.RequestAborted);
                 return;
             }
-
+            var inputStream = context.Request.Body;
+            await using var memoryStream = new MemoryStream();
+            await inputStream.CopyToAsync(memoryStream, source.Token);
+            var value = memoryStream.ToArray();
             await AddKeyValueCommand(provider, key, value, cluster, source);
         });
     }
 
-    public static async Task AddKeyValueCommand(SlimPersistentState provider, string key, string value,
+    public static async Task AddKeyValueCommand(SlimPersistentState provider, string key, byte[] value,
         IRaftCluster cluster, CancellationTokenSource source)
     {
         var logEntry =

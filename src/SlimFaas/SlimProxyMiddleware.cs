@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using MemoryPack;
+using SlimFaas.Database;
 using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
