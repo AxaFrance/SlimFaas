@@ -1,4 +1,5 @@
-﻿using SlimFaas.Kubernetes;
+﻿using SlimFaas.Database;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 

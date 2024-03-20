@@ -1,15 +1,15 @@
-﻿namespace SlimFaas;
+﻿namespace SlimFaas.Database;
 
 public class SlimFaasSlimFaasQueue(IDatabaseService databaseService) : ISlimFaasQueue
 {
     private const string KeyPrefix = "Queue:";
 
-    public async Task EnqueueAsync(string key, string data) =>
+    public async Task EnqueueAsync(string key, byte[] data) =>
         await databaseService.ListLeftPushAsync($"{KeyPrefix}{key}", data);
 
-    public async Task<IList<string>> DequeueAsync(string key, long count = 1)
+    public async Task<IList<byte[]>> DequeueAsync(string key, long count = 1)
     {
-        IList<string> data = await databaseService.ListRightPopAsync($"{KeyPrefix}{key}");
+        IList<byte[]> data = await databaseService.ListRightPopAsync($"{KeyPrefix}{key}");
         return data;
     }
 

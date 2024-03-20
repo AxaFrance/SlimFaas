@@ -3,6 +3,7 @@ using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 using Microsoft.AspNetCore.Connections;
 using SlimData;
+using SlimData.Commands;
 
 namespace RaftNode;
 
@@ -38,7 +39,7 @@ public class Startup(IConfiguration configuration)
                 endpoints.MapGet(LeaderResource, Endpoints.RedirectToLeaderAsync);
                 endpoints.MapGet(HealthResource, async context => { await context.Response.WriteAsync("OK"); });
                 endpoints.MapPost(ListLeftPushResource,  Endpoints.ListLeftPush);
-                endpoints.MapPost(ListRightPopResource,  Endpoints.ListRigthPop);
+                endpoints.MapPost(ListRightPopResource,  Endpoints.ListRightPop);
                 endpoints.MapPost(AddHashSetResource,  Endpoints.AddHashSet);
                 endpoints.MapPost(AddKeyValueResource,  Endpoints.AddKeyValue);
             });
@@ -54,7 +55,7 @@ public class Startup(IConfiguration configuration)
             .AddRouting();
         var path = configuration[SlimPersistentState.LogLocation];
         if (!string.IsNullOrWhiteSpace(path))
-            services.UsePersistenceEngine<ISupplier<SupplierPayload>, SlimPersistentState>();
+            services.UsePersistenceEngine<ISupplier<SlimDataPayload>, SlimPersistentState>();
         var endpoint = configuration["publicEndPoint"];
         if (!string.IsNullOrEmpty(endpoint))
         {

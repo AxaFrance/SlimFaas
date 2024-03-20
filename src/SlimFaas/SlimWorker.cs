@@ -1,4 +1,6 @@
-﻿using SlimFaas.Kubernetes;
+﻿using MemoryPack;
+using SlimFaas.Database;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
@@ -76,11 +78,12 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         string functionDeployment)
     {
         int? numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
-        IList<string> jsons = await slimFaasQueue.DequeueAsync(functionDeployment,
+        IList<byte[]> jsons = await slimFaasQueue.DequeueAsync(functionDeployment,
             numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue : 1);
-        foreach (string requestJson in jsons)
+        foreach (var requestJson in jsons)
         {
-            CustomRequest customRequest = SlimfaasSerializer.Deserialize(requestJson);
+            CustomRequest customRequest = MemoryPackSerializer.Deserialize<CustomRequest>(requestJson);
+
             logger.LogDebug("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
                 customRequest.Method, customRequest.Path, customRequest.Query);
             logger.LogDebug("{RequestJson}", requestJson);
@@ -136,7 +139,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
             processingTasks.Add(functionDeployment, new List<RequestToWait>());
         }
 
-        List<RequestToWait> httpResponseMessagesToDelete = new List<RequestToWait>();
+        List<RequestToWait> httpResponseMessagesToDelete = new();
         foreach (RequestToWait processing in processingTasks[functionDeployment])
         {
             try

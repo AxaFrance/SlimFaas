@@ -1,7 +1,8 @@
-﻿using System.Text.Json;
-using DotNext;
+﻿using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
+using MemoryPack;
 using RaftNode;
+using SlimData.Commands;
 
 namespace SlimData;
 
@@ -82,7 +83,7 @@ public class Endpoints
         await provider.CommitAsync(source.Token);
     }
 
-    public static Task ListRigthPop(HttpContext context)
+    public static Task ListRightPop(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
@@ -97,13 +98,10 @@ public class Endpoints
                     context.RequestAborted);
                 return;
             }
-
-            //await cluster.ApplyReadBarrierAsync(context.RequestAborted);
-
+            
             var values = await ListRightPopCommand(provider, key, count, cluster, source);
-            await context.Response.WriteAsync(
-                JsonSerializer.Serialize(values, ListStringSerializerContext.Default.ListString),
-                context.RequestAborted);
+            var bin = MemoryPackSerializer.Serialize(values);
+            await context.Response.Body.WriteAsync(bin, context.RequestAborted);
         });
     }
 
@@ -111,16 +109,16 @@ public class Endpoints
         CancellationTokenSource source)
     {
         var values = new ListString();
-        var queues = ((ISupplier<SupplierPayload>)provider).Invoke().Queues;
+        values.Items = new List<byte[]>();
+        var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
         if (queues.TryGetValue(key, out var queue))
         {
             for (var i = 0; i < count; i++)
             {
                 if (queue.Count <= i) break;
-
-                values.Add(queue[i]);
+                values.Items.Add(queue[i].ToArray());
             }
-                
+            
             var logEntry =
                 provider.Interpreter.CreateLogEntry(
                     new ListRightPopCommand { Key = key, Count = count },
@@ -136,22 +134,23 @@ public class Endpoints
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
-            var form = await context.Request.ReadFormAsync(source.Token);
-
-            var (key, value) = GetKeyValue(form);
-
+            context.Request.Query.TryGetValue("key", out var key);
             if (string.IsNullOrEmpty(key))
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 await context.Response.WriteAsync("not data found", context.RequestAborted);
                 return;
             }
-
+            
+            var inputStream = context.Request.Body;
+            await using var memoryStream = new MemoryStream();
+            await inputStream.CopyToAsync(memoryStream, source.Token);
+            var value = memoryStream.ToArray();
             await ListLeftPushCommand(provider, key, value, cluster, source);
         });
     }
 
-    public static async Task ListLeftPushCommand(SlimPersistentState provider, string key, string value,
+    public static async Task ListLeftPushCommand(SlimPersistentState provider, string key, byte[] value,
         IRaftCluster cluster, CancellationTokenSource source)
     {
         var logEntry =
@@ -180,22 +179,22 @@ public class Endpoints
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
-            var form = await context.Request.ReadFormAsync(source.Token);
-
-            var (key, value) = GetKeyValue(form);
-
+            context.Request.Query.TryGetValue("key", out var key);
             if (string.IsNullOrEmpty(key))
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 await context.Response.WriteAsync("not data found", context.RequestAborted);
                 return;
             }
-
+            var inputStream = context.Request.Body;
+            await using var memoryStream = new MemoryStream();
+            await inputStream.CopyToAsync(memoryStream, source.Token);
+            var value = memoryStream.ToArray();
             await AddKeyValueCommand(provider, key, value, cluster, source);
         });
     }
 
-    public static async Task AddKeyValueCommand(SlimPersistentState provider, string key, string value,
+    public static async Task AddKeyValueCommand(SlimPersistentState provider, string key, byte[] value,
         IRaftCluster cluster, CancellationTokenSource source)
     {
         var logEntry =

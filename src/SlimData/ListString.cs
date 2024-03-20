@@ -1,13 +1,10 @@
 ﻿using System.Text.Json.Serialization;
+using MemoryPack;
 
 namespace SlimData;
 
-public class ListString : List<string>
+[MemoryPackable]
+public partial class ListString 
 {
-}
-
-[JsonSerializable(typeof(ListString))]
-[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-public partial class ListStringSerializerContext : JsonSerializerContext
-{
+    public List<byte[]> Items { get; set; }
 }

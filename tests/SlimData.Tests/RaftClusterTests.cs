@@ -6,6 +6,7 @@ using DotNext.Diagnostics;
 using DotNext.Net.Cluster;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
+using MemoryPack;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RaftNode;
 using SlimFaas;
+using SlimFaas.Database;
 
 namespace SlimData.Tests;
 
@@ -235,9 +237,9 @@ public class RaftClusterTests
         IDatabaseService databaseServiceSlave = host3.Services.GetRequiredService<IDatabaseService>();
         IDatabaseService databaseServiceMaster = host1.Services.GetRequiredService<IDatabaseService>();
 
-        await databaseServiceSlave.SetAsync("key1", "value1");
-        Assert.Equal("value1", await databaseServiceMaster.GetAsync("key1"));
-        Assert.Equal("value1", await databaseServiceSlave.GetAsync("key1"));
+        await databaseServiceSlave.SetAsync("key1", MemoryPackSerializer.Serialize("value1") );
+        Assert.Equal("value1", MemoryPackSerializer.Deserialize<string>(await databaseServiceMaster.GetAsync("key1")));
+        Assert.Equal("value1", MemoryPackSerializer.Deserialize<string>(await databaseServiceSlave.GetAsync("key1")));
 
         await databaseServiceSlave.HashSetAsync("hashsetKey1",
             new Dictionary<string, string> { { "field1", "value1" }, { "field2", "value2" } });
@@ -246,13 +248,13 @@ public class RaftClusterTests
         Assert.Equal("value1", hashGet["field1"]);
         Assert.Equal("value2", hashGet["field2"]);
 
-        await databaseServiceSlave.ListLeftPushAsync("listKey1", "value1");
+       await databaseServiceSlave.ListLeftPushAsync("listKey1",   MemoryPackSerializer.Serialize("value1"));
 
         long listLength = await databaseServiceSlave.ListLengthAsync("listKey1");
         Assert.Equal(1, listLength);
 
-        IList<string> listRightPop = await databaseServiceSlave.ListRightPopAsync("listKey1");
-        Assert.Equal("value1", listRightPop[0]);
+        IList<byte[]> listRightPop = await databaseServiceSlave.ListRightPopAsync("listKey1");
+        Assert.Equal("value1", MemoryPackSerializer.Deserialize<string>(listRightPop[0]));
 
         await host1.StopAsync();
         await host2.StopAsync();

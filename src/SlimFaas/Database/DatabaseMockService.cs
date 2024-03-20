@@ -6,20 +6,20 @@ public class DatabaseMockService : IDatabaseService
 {
     private readonly ConcurrentDictionary<string, IDictionary<string, string>> hashSet = new();
 
-    private readonly ConcurrentDictionary<string, string> keys = new();
-    private readonly ConcurrentDictionary<string, List<string>> queue = new();
+    private readonly ConcurrentDictionary<string, byte[]> keys = new();
+    private readonly ConcurrentDictionary<string, List<byte[]>> queue = new();
 
-    public Task<string> GetAsync(string key)
+    public Task<byte[]?> GetAsync(string key)
     {
-        if (keys.ContainsKey(key))
+        if (keys.TryGetValue(key, out byte[]? value))
         {
-            return Task.FromResult(keys[key]);
+            return Task.FromResult(value)!;
         }
 
-        return Task.FromResult<string>("");
+        return Task.FromResult<byte[]?>(null);
     }
 
-    public Task SetAsync(string key, string value)
+    public Task SetAsync(string key, byte[] value)
     {
         if (keys.ContainsKey(key))
         {
@@ -57,16 +57,16 @@ public class DatabaseMockService : IDatabaseService
         return Task.FromResult<IDictionary<string, string>>(new Dictionary<string, string>());
     }
 
-    public Task ListLeftPushAsync(string key, string field)
+    public Task ListLeftPushAsync(string key, byte[] field)
     {
-        List<string> list;
+        List<byte[]> list;
         if (queue.ContainsKey(key))
         {
             list = queue[key];
         }
         else
         {
-            list = new List<string>();
+            list = new List<byte[]>();
             queue.TryAdd(key, list);
         }
 
@@ -74,23 +74,23 @@ public class DatabaseMockService : IDatabaseService
         return Task.CompletedTask;
     }
 
-    public Task<IList<string>> ListRightPopAsync(string key, int count = 1)
+    public Task<IList<byte[]>> ListRightPopAsync(string key, int count = 1)
     {
         if (!queue.ContainsKey(key))
         {
-            return Task.FromResult<IList<string>>(new List<string>());
+            return Task.FromResult<IList<byte[]>>(new List<byte[]>());
         }
 
-        List<string> list = queue[key];
+        List<byte[]> list = queue[key];
 
-        List<string> listToReturn = list.TakeLast((int)count).ToList();
+        List<byte[]> listToReturn = list.TakeLast((int)count).ToList();
         if (listToReturn.Count > 0)
         {
             list.RemoveRange(listToReturn.Count - 1, listToReturn.Count);
-            return Task.FromResult<IList<string>>(listToReturn);
+            return Task.FromResult<IList<byte[]>>(listToReturn);
         }
 
-        return Task.FromResult<IList<string>>(new List<string>());
+        return Task.FromResult<IList<byte[]>>(new List<byte[]>());
     }
 
     public Task<long> ListLengthAsync(string key)
@@ -100,7 +100,7 @@ public class DatabaseMockService : IDatabaseService
             return Task.FromResult<long>(0);
         }
 
-        List<string> list = queue[key];
+        List<byte[]> list = queue[key];
 
         return Task.FromResult<long>(list.Count);
     }

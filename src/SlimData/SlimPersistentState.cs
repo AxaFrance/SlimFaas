@@ -1,20 +1,22 @@
-﻿using System.Text;
-using DotNext;
-using DotNext.IO;
+﻿using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Commands;
-using DotNext.Text;
+using DotNext.Runtime.Serialization;
+using SlimData.Commands;
 
 namespace RaftNode;
 
-public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<SupplierPayload>
+public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<SlimDataPayload>
 {
     public const string LogLocation = "logLocation";
 
-    private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, string>(), new Dictionary<string, List<string>>());
+    private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), 
+        new Dictionary<string, ReadOnlyMemory<byte>>(), 
+        new Dictionary<string, List<ReadOnlyMemory<byte>>>()
+        );
     public CommandInterpreter Interpreter { get; }
 
-    public SlimPersistentState(string path)
+    public  SlimPersistentState(string path)
         : base(path, 50, new Options { InitialPartitionSize = 50 * 8, UseCaching = true })
     {
         Interpreter = SlimDataInterpreter.InitInterpreter(_state);
@@ -24,14 +26,25 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
         : this(configuration[LogLocation])
     {
     }
+    
+    public LogEntry<TCommand> CreateLogEntry<TCommand>(TCommand command)
+        where TCommand : struct, ISerializable<TCommand>
+        => Interpreter.CreateLogEntry(command, Term);
 
-    SupplierPayload ISupplier<SupplierPayload>.Invoke()
+    public SlimDataState SlimDataState
     {
-        return new SupplierPayload()
+        get
+        {
+            return _state;
+        }
+    }
+    SlimDataPayload ISupplier<SlimDataPayload>.Invoke()
+    {
+        return new SlimDataPayload()
         {
             KeyValues = _state.keyValues,
-            Queues = _state.queues,
-            Hashsets = _state.hashsets
+            Hashsets = _state.hashsets,
+            Queues = _state.queues
         };
     }
 
@@ -52,7 +65,10 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
 
     private sealed class SimpleSnapshotBuilder : IncrementalSnapshotBuilder
     {
-        private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, string>(), new Dictionary<string, List<string>>());   
+        private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), 
+            new Dictionary<string, ReadOnlyMemory<byte>>(), 
+            new Dictionary<string, List<ReadOnlyMemory<byte>>>()
+            );   
         private readonly CommandInterpreter _interpreter;
 
         public SimpleSnapshotBuilder(in SnapshotBuilderContext context)
@@ -60,7 +76,6 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sup
         {
             _interpreter = SlimDataInterpreter.InitInterpreter(_state);
         }
-
 
         protected override async ValueTask ApplyAsync(LogEntry entry)
         {

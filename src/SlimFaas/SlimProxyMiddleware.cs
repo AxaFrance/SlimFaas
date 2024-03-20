@@ -1,4 +1,6 @@
 ﻿using System.Text.Json.Serialization;
+using MemoryPack;
+using SlimFaas.Database;
 using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
@@ -134,8 +136,8 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             return;
         }
 
-        string dataString = SlimfaasSerializer.Serialize(customRequest);
-        await slimFaasQueue.EnqueueAsync(functionName, dataString);
+        var bin = MemoryPackSerializer.Serialize(customRequest);
+        await slimFaasQueue.EnqueueAsync(functionName, bin);
 
         contextResponse.StatusCode = 202;
     }
@@ -223,7 +225,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     private static async Task<CustomRequest> InitCustomRequest(HttpContext context, HttpRequest contextRequest,
         string functionName, string functionPath)
     {
-        IList<CustomHeader> customHeaders = contextRequest.Headers
+        List<CustomHeader> customHeaders = contextRequest.Headers
             .Select(headers => new CustomHeader(headers.Key, headers.Value.ToArray())).ToList();
 
         string requestMethod = contextRequest.Method;
