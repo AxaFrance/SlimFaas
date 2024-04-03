@@ -258,7 +258,7 @@ public class KubernetesService : IKubernetesService
                     ? int.Parse(annotations[ReplicasAtStart])
                     : 1, annotations.ContainsKey(ReplicasMin)
                     ? int.Parse(annotations[ReplicasMin])
-                    : 1, annotations.ContainsKey(TimeoutSecondBeforeSetReplicasMin)
+                    : 0, annotations.ContainsKey(TimeoutSecondBeforeSetReplicasMin)
                     ? int.Parse(annotations[TimeoutSecondBeforeSetReplicasMin])
                     : 300, annotations.ContainsKey(NumberParallelRequest)
                     ? int.Parse(annotations[NumberParallelRequest])
