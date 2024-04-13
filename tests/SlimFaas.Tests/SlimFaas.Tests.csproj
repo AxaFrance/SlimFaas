@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MemoryPack" Version="1.20.2" />
+    <PackageReference Include="MemoryPack" Version="1.21.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="Microsoft.CodeCoverage" Version="17.8.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.1" />
