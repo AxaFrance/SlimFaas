@@ -362,5 +362,6 @@ Why .NET ?
 
 ## What Next ?
 
-1. Different scale down mode depending from configuration and current hour
-2. Scale up dynamically from SlimFaas
+1. Scale up dynamically from SlimFaas
+2. Wake up from External Source (example: Kafka, etc.)
+3. Continue Optimization
