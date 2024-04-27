@@ -132,7 +132,7 @@ public class KubernetesService : IKubernetesService
                         break;
                     }
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(request.PodType.ToString());
             }
         }
         catch (HttpOperationException e)
@@ -185,7 +185,7 @@ public class KubernetesService : IKubernetesService
     {
         foreach (V1Deployment? deploymentListItem in deploymentList.Items)
         {
-            IDictionary<string, string>? annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
+            var annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
             if (annotations == null || !annotations.ContainsKey(Function) ||
                 annotations[Function].ToLower() != "true")
             {
