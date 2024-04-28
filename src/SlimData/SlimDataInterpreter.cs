@@ -41,8 +41,8 @@ public class SlimDataInterpreter : CommandInterpreter
     
     internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand addHashSetCommand, Dictionary<string, List<ReadOnlyMemory<byte>>> queues)
     {
-        if (queues.ContainsKey(addHashSetCommand.Key))
-            queues[addHashSetCommand.Key].Add(addHashSetCommand.Value);
+        if (queues.TryGetValue(addHashSetCommand.Key, out List<ReadOnlyMemory<byte>>? value))
+            value.Add(addHashSetCommand.Value);
         else
             queues.Add(addHashSetCommand.Key, new List<ReadOnlyMemory<byte>> { addHashSetCommand.Value });
 
