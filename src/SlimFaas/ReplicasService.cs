@@ -22,7 +22,6 @@ public class ReplicasService(IKubernetesService kubernetesService,
         EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalled,
         EnvironmentVariables.PodScaledUpByDefaultWhenInfrastructureHasNeverCalledDefault);
 
-    private readonly ILogger<ReplicasService> _logger = logger;
     private readonly object Lock = new();
 
     private DeploymentsInformations _deployments = new(new List<DeploymentInformation>(),
@@ -62,7 +61,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
     public async Task CheckScaleAsync(string kubeNamespace)
     {
         long maximumTicks = 0L;
-        IDictionary<string, long> ticksLastCall = new Dictionary<string, long>();
+        var ticksLastCall = new Dictionary<string, long>();
         foreach (DeploymentInformation deploymentInformation in Deployments.Functions)
         {
             long tickLastCall = historyHttpService.GetTicksLastCall(deploymentInformation.Deployment);
@@ -166,7 +165,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
         }
 
         var dateTime = DateTime.MinValue;
-        IList<DateTime> dates = new List<DateTime>();
+        var dates = new List<DateTime>();
         foreach (var defaultSchedule in deploymentInformation.Schedule.Default.WakeUp)
         {
             var splits = defaultSchedule.Split(':');

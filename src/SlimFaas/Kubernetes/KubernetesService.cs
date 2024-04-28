@@ -132,7 +132,7 @@ public class KubernetesService : IKubernetesService
                         break;
                     }
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(request.PodType.ToString());
             }
         }
         catch (HttpOperationException e)
@@ -185,7 +185,7 @@ public class KubernetesService : IKubernetesService
     {
         foreach (V1Deployment? deploymentListItem in deploymentList.Items)
         {
-            IDictionary<string, string>? annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
+            var annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
             if (annotations == null || !annotations.ContainsKey(Function) ||
                 annotations[Function].ToLower() != "true")
             {
@@ -200,14 +200,14 @@ public class KubernetesService : IKubernetesService
                 kubeNamespace,
                 podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
                 deploymentListItem.Spec.Replicas ?? 0,
-                annotations.ContainsKey(ReplicasAtStart)
-                    ? int.Parse(annotations[ReplicasAtStart])
-                    : 1, annotations.ContainsKey(ReplicasMin)
-                    ? int.Parse(annotations[ReplicasMin])
-                    : 0, annotations.ContainsKey(TimeoutSecondBeforeSetReplicasMin)
-                    ? int.Parse(annotations[TimeoutSecondBeforeSetReplicasMin])
-                    : 300, annotations.ContainsKey(NumberParallelRequest)
-                    ? int.Parse(annotations[NumberParallelRequest])
+                annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
+                    ? int.Parse(annotationReplicasAtStart)
+                    : 1, annotations.TryGetValue(ReplicasMin, out string? annotationReplicaMin)
+                    ? int.Parse(annotationReplicaMin)
+                    : 0, annotations.TryGetValue(TimeoutSecondBeforeSetReplicasMin, out string? annotationTimeoutSecondBeforeSetReplicasMin)
+                    ? int.Parse(annotationTimeoutSecondBeforeSetReplicasMin)
+                    : 300, annotations.TryGetValue(NumberParallelRequest, out string? annotationNumberParallelRequest)
+                    ? int.Parse(annotationNumberParallelRequest)
                     : 10, annotations.ContainsKey(
                               ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
                           annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.Deployment,
@@ -254,14 +254,14 @@ public class KubernetesService : IKubernetesService
                 kubeNamespace,
                 podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
                 deploymentListItem.Spec.Replicas ?? 0,
-                annotations.ContainsKey(ReplicasAtStart)
-                    ? int.Parse(annotations[ReplicasAtStart])
-                    : 1, annotations.ContainsKey(ReplicasMin)
-                    ? int.Parse(annotations[ReplicasMin])
-                    : 0, annotations.ContainsKey(TimeoutSecondBeforeSetReplicasMin)
-                    ? int.Parse(annotations[TimeoutSecondBeforeSetReplicasMin])
-                    : 300, annotations.ContainsKey(NumberParallelRequest)
-                    ? int.Parse(annotations[NumberParallelRequest])
+                annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
+                    ? int.Parse(annotationReplicasAtStart)
+                    : 1, annotations.TryGetValue(ReplicasMin, out string? annotationReplicasMin)
+                    ? int.Parse(annotationReplicasMin)
+                    : 0, annotations.TryGetValue(TimeoutSecondBeforeSetReplicasMin, out string? annotationTimeoutSecondBeforeSetReplicasMin)
+                    ? int.Parse(annotationTimeoutSecondBeforeSetReplicasMin)
+                    : 300, annotations.TryGetValue(NumberParallelRequest, out string? annotationNumberParallelRequest)
+                    ? int.Parse(annotationNumberParallelRequest)
                     : 10, annotations.ContainsKey(
                               ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
                           annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.StatefulSet,
