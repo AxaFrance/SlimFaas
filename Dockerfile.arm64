@@ -1,4 +1,5 @@
 ﻿FROM arm64v8/alpine:3.19 AS base
+RUN apk upgrade --available
 #RUN apk update && apk upgrade
 #RUN apk add --no-cache icu-libs
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
@@ -10,6 +11,7 @@ EXPOSE 80
 EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.19-arm64v8 AS build
+RUN apk upgrade --available
 RUN apk update && apk upgrade
 RUN apk add --no-cache clang build-base zlib-dev
 WORKDIR /src
