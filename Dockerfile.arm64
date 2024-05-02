@@ -1,6 +1,6 @@
 ﻿FROM arm64v8/alpine:3.19 AS base
 #RUN apk update && apk upgrade
-RUN apk add --no-cache icu-libs
+#RUN apk add --no-cache icu-libs
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 WORKDIR /app
 RUN adduser -u 1000 --disabled-password --gecos "" appuser && chown -R appuser /app
