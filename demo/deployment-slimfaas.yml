@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: slimfaas
+  namespace: slimfaas-demo
 spec:
   replicas: 3
   podManagementPolicy: Parallel
@@ -70,6 +71,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: slimfaas
+  namespace: slimfaas-demo
 spec:
   type: NodePort
   selector:

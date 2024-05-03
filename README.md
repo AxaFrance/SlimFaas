@@ -23,8 +23,6 @@ To test slimfaas on your local machine by using kubernetes with Docker Desktop, 
 ```bash
 git clone https://github.com/AxaFrance/slimfaas.git
 cd slimfaas/demo
-kubectl create namespace slimfaas-demo
-kubectl config set-context --current --namespace=slimfaas-demo
 # Create a custom service account for slimfaas
 # SlimFaas require to ba able to request Kubernetes API
 kubectl apply -f slimfaas-serviceaccount.yml
