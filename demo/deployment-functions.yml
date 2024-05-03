@@ -168,11 +168,8 @@ metadata:
 spec:
   selector:
     app: fibonacci1
-  type: NodePort
   ports:
     - port: 5000
-      targetPort: 5000
-      nodePort: 30015
 ---
 apiVersion: v1
 kind: Service
@@ -181,11 +178,8 @@ metadata:
 spec:
   selector:
     app: fibonacci2
-  type: NodePort
   ports:
     - port: 5000
-      targetPort: 5000
-      nodePort: 30016
 ---
 apiVersion: v1
 kind: Service
@@ -194,11 +188,8 @@ metadata:
 spec:
   selector:
     app: fibonacci3
-  type: NodePort
   ports:
     - port: 5000
-      targetPort: 5000
-      nodePort: 30017
 #---
 #apiVersion: v1
 #kind: Service
@@ -207,8 +198,5 @@ spec:
 #spec:
 #  selector:
 #    app: webapp
-#  type: NodePort
 #  ports:
 #    - port: 8000
-#      targetPort: 8000
-#      nodePort: 30018

@@ -77,9 +77,7 @@ spec:
   ports:
     - name: "http"
       port: 5000
-      targetPort: 5000
       nodePort: 30021
     - name: "slimdata"
       port: 3262
-      targetPort: 3262
   externalTrafficPolicy: Local  # Preserve source IP
