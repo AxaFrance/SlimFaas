@@ -2,7 +2,7 @@
 
 ![SlimFaas.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/SlimFaas.png)
 
-Why use SlimFaas ?
+Why use SlimFaas?
 - Scale to 0 after a period of inactivity (work with deployment and statefulset)
 - Synchronous HTTP calls
 - Asynchronous HTTP calls
@@ -62,11 +62,11 @@ Get function status:
 - http://localhost:30021/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1}
 - http://localhost:30021/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1}
 
-Single Page WebApp demo :
+Single Page WebApp demo:
 
 - http://localhost:8000
 
-Enjoy slimfaas !!!!
+Enjoy slimfaas!!!!
 
 ## Getting Started with docker-compose
 
@@ -82,7 +82,7 @@ Now, you can access your pod via SlimFaas proxy:
 
 - http://localhost:5020/function/fibonacci/hello/guillaume
 
-Enjoy slimfaas !!!!
+Enjoy slimfaas!!!!
 
 ## How it works
 
@@ -110,7 +110,7 @@ SlimFaas act as an HTTP proxy with 2 modes:
 
 1. Add SlimFaas annotations to your pods
 2. Add SlimFaas pod
-3. Have fun !
+3. Have fun!
 
 sample-deployment.yaml
 ````yaml
@@ -310,10 +310,10 @@ spec:
   }
 }
 ````
-## Why SlimFaas ?
+## Why SlimFaas?
 
 We used **OpenFaas** for a long time and we love it.
-But we encountered many OpenFaas issues :
+But we encountered many OpenFaas issues:
 - Kubernetes scripts are tightly coupled to OpenFaas syntax
 - OpenFaas pro is too expensive for our projects
 - OpenFaas needs to be installed on a dedicated namespace and configuration was intricate
@@ -326,7 +326,7 @@ We would like to use **Knative** but:
 - We cannot use it because of some internal constraints and security issues.
 
 So we decided to create **SlimFaas** to have a quick and simple replacement proxy solution that can expose Prometheus metrics.
-Now we have a solution not **coupled** to anything. **SlimFaas** is **simple**, **light**, **fast** and **plug and play** !
+Now we have a solution not **coupled** to anything. **SlimFaas** is **simple**, **light**, **fast** and **plug and play**!
 
 ## How it works ?
 
@@ -341,7 +341,7 @@ Instead of creating many pods, SlimFaas use internally many workers in the same 
 **SlimData** is a simple redis like database included inside SlimFaas executable. It is based on **Raft** algorithm offered by awesome https://github.com/dotnet/dotNext library.
 By default **SlimData** use a second HTTP port 3262 to expose its API. Don't expose it and keep it internal.
 
-SlimFaas require a least 3 nodes in production. 2 nodes are requires to keep the database in a consistent state.
+SlimFaas requires at least 3 nodes in production. 2 nodes are required to keep the database in a consistent state.
 If you want to use just one pod for testing purpose, you can use this env variable:
 - SLIMDATA_CONFIGURATION: '{"coldStart":"true"}'
 
@@ -350,7 +350,7 @@ SlimFaas can to scale up and down by using classic Horizontal Pod Autoscaler (HP
 
 ### Build with .NET
 
-Why .NET ?
+Why .NET?
 - .NET is always getting faster and faster : https://www.techempower.com/benchmarks/#section=data-r22
 - ASP.NET Core allow to resolve complex use cases with few lines of codes
 - .NET is always getting smaller and smaller: https://twitter.com/MStrehovsky/status/1660806238979117056?t=WPrZwi7WrIWi4tjoDUXEgg&s=19
@@ -360,7 +360,7 @@ Why .NET ?
 - French : https://www.youtube.com/watch?v=Lvd6FCuCZPI
 - English: https://youtu.be/hxRfvJhWW1w?si=4LuPgHVsuEVhlhpF
 
-## What Next ?
+## What Next?
 
 1. Scale up dynamically from SlimFaas
 2. Wake up from External Source (example: Kafka, etc.)
