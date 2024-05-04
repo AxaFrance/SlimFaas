@@ -17,6 +17,8 @@ WORKDIR /src
 FROM build AS publish
 COPY . .
 ARG RUNTIME_ID=linux-musl-x64
+RUN dotnet sln remove "./tests/SlimFaas.Tests.csproj"
+RUN dotnet sln remove "./tests/SlimData.Tests.csproj"
 RUN dotnet restore -r $RUNTIME_ID
 RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -r $RUNTIME_ID  -o /app/publish --no-restore
 RUN ls -la /app/publish
