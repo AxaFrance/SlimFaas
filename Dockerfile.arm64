@@ -1,6 +1,6 @@
 ﻿FROM arm64v8/alpine:3.18 AS base
 RUN apk update && apk upgrade
-RUN apk add --no-cache icu-libs
+RUN apk add --no-cache --upgrade icu-libs
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 WORKDIR /app
 RUN adduser -u 1000 --disabled-password --gecos "" appuser && chown -R appuser /app
@@ -10,9 +10,8 @@ EXPOSE 80
 EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.18-arm64v8 AS build
-RUN apk upgrade --available
 RUN apk update && apk upgrade
-RUN apk add --no-cache clang build-base zlib-dev
+RUN apk add --no-cache --upgrade clang build-base zlib-dev
 WORKDIR /src
 
 FROM build AS publish
