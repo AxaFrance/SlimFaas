@@ -18,6 +18,10 @@ on:
       image_file:
         required: true
         type: string
+      platforms:
+        required: false
+        type: string
+        default: linux/amd64
     secrets:
       DOCKER_USERNAME:
         required: true
@@ -67,7 +71,7 @@ jobs:
         push: true
         tags: ${{ inputs.image_name }}:${{ inputs.image_version }},${{ inputs.image_name }}:latest
         labels: ${{ steps.meta.outputs.labels }}
-        platforms: linux/amd64,linux/arm64/v8
+        platforms: ${{ inputs.platforms }}
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
 
@@ -81,6 +85,6 @@ jobs:
         push: true
         tags: ${{ inputs.image_name }}:${{ inputs.image_version }}
         labels: ${{ steps.meta.outputs.labels }}
-        platforms: linux/amd64,linux/arm64/v8
+        platforms: ${{ inputs.platforms }}
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
