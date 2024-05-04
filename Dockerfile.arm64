@@ -9,7 +9,7 @@ USER appuser
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.19-arm64v8 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.19 AS build
 RUN apk update && apk upgrade
 RUN apk add --no-cache --upgrade clang build-base zlib-dev
 WORKDIR /src
@@ -20,7 +20,8 @@ ARG RUNTIME_ID=linux-musl-arm64
 RUN dotnet sln remove "./tests/SlimFaas.Tests./SlimFaas.Tests.csproj"
 RUN dotnet sln remove "./tests/SlimData.Tests/SlimData.Tests.csproj"
 #RUN dotnet restore -r $RUNTIME_ID
-RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -v diag -c Release -r $RUNTIME_ID  -o /app/publish
+RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -r $RUNTIME_ID  -o /app/publish
+# -v diag
 RUN ls -la /app/publish
 RUN rm /app/publish/*.pdb
 RUN rm /app/publish/*.dbg
