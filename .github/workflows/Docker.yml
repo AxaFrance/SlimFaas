@@ -71,7 +71,7 @@ jobs:
         push: true
         tags: ${{ inputs.image_name }}:${{ inputs.image_version }},${{ inputs.image_name }}:latest
         labels: ${{ steps.meta.outputs.labels }}
-        platforms: ${{ inputs.platforms }}
+        platforms: "linux/amd64,linux/arm64"
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
 
@@ -85,6 +85,6 @@ jobs:
         push: true
         tags: ${{ inputs.image_name }}:${{ inputs.image_version }}
         labels: ${{ steps.meta.outputs.labels }}
-        platforms: ${{ inputs.platforms }}
+        platforms: "linux/amd64,linux/arm64"
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
