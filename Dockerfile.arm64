@@ -16,10 +16,10 @@ WORKDIR /src
 
 FROM --platform=$BUILDPLATFORM  build AS publish
 COPY . .
-ARG RUNTIME_ID=linux-musl-arm64
+ARG RUNTIME_ID=arm64
 RUN dotnet sln remove "./tests/SlimFaas.Tests./SlimFaas.Tests.csproj"
 RUN dotnet sln remove "./tests/SlimData.Tests/SlimData.Tests.csproj"
-#RUN dotnet restore -r $RUNTIME_ID
+RUN dotnet restore -a $RUNTIME_ID
 RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -a $RUNTIME_ID  -o /app/publish
 RUN ls -la /app/publish
 RUN rm /app/publish/*.pdb
