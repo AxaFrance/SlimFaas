@@ -18,10 +18,10 @@ FROM --platform=$BUILDPLATFORM  build AS publish
 COPY . .
 RUN echo $BUILDPLATFORM
 ARG RUNTIME_ID=arm64
-RUN dotnet sln remove "./tests/SlimFaas.Tests./SlimFaas.Tests.csproj"
+RUN dotnet sln remove "./tests/SlimFaas.Tests/SlimFaas.Tests.csproj"
 RUN dotnet sln remove "./tests/SlimData.Tests/SlimData.Tests.csproj"
 #RUN dotnet restore -a $RUNTIME_ID
-RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -r linux-musl-arm64  -o /app/publish -p:Plateform=$BUILDPLATFORM
+RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -a $RUNTIME_ID  -o /app/publish -p:Plateform=$BUILDPLATFORM
 RUN ls -la /app/publish
 RUN rm /app/publish/*.pdb
 RUN rm /app/publish/*.dbg

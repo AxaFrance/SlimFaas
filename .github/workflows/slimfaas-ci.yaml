@@ -120,7 +120,7 @@ jobs:
       image_build_args: ""
       image_context: "."
       image_file: "./Dockerfile.arm64"
-      platforms: "linux/arm64/v8"
+      platforms: "linux/arm64"
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
