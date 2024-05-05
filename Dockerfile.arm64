@@ -14,7 +14,7 @@ RUN apk update && apk upgrade
 RUN apk add --no-cache --upgrade clang build-base zlib-dev
 WORKDIR /src
 
-FROM build AS publish
+FROM --platform=$BUILDPLATFORM  build AS publish
 COPY . .
 ARG RUNTIME_ID=linux-musl-arm64
 RUN dotnet sln remove "./tests/SlimFaas.Tests./SlimFaas.Tests.csproj"
@@ -26,7 +26,7 @@ RUN rm /app/publish/*.pdb
 RUN rm /app/publish/*.dbg
 RUN rm /app/publish/SlimData
 
-FROM base AS final
+FROM --platform=$BUILDPLATFORM base AS final
 WORKDIR /app
 COPY --chown=appuser --from=publish /app/publish .
 
