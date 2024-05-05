@@ -17,7 +17,6 @@ WORKDIR /src
 FROM --platform=$BUILDPLATFORM  build AS publish
 COPY . .
 ARG RUNTIME_ID=x64
-#RUN dotnet restore -a $RUNTIME_ID
 RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -a $RUNTIME_ID  -o /app/publish
 RUN ls -la /app/publish
 RUN rm /app/publish/*.pdb

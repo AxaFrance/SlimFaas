@@ -1,10 +1,6 @@
 # SlimFaas : The slimest and simplest Function As A Service [![Continuous Integration](https://github.com/AxaFrance/SlimFaas/actions/workflows/slimfaas-ci.yaml/badge.svg)](https://github.com/AxaFrance/SlimFaas/actions/workflows/slimfaas-ci.yaml) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=alert_status)](https://sonarcloud.io/dashboard?id=AxaFrance_SlimFaas) [![Reliability](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=AxaFrance_SlimFaas&metric=reliability_rating) [![Security](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=security_rating)](https://sonarcloud.io/component_measures?id=AxaGuilDEv_ml-cli&metric=security_rating) [![Code Corevage](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=coverage)](https://sonarcloud.io/component_measures?id=AxaFrance_SlimFaas&metric=Coverage)
-[![Docker SlimFaas](https://img.shields.io/docker/pulls/axaguildev/slimfaas.svg?label=docker+pull+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds)  [![Docker SlimFaas arm64](https://img.shields.io/docker/pulls/axaguildev/slimfaas-arm64.svg?label=docker+pull+slimfaas-arm64)](https://hub.docker.com/r/axaguildev/slimfaas-arm64/builds)
-![Docker Image Size](https://img.shields.io/docker/image-size/axaguildev/slimfaas?label=image+size+slimfaas)
-![Docker Image Size](https://img.shields.io/docker/image-size/axaguildev/slimfaas-arm64?label=image+size+slimfaas-arm64)
+[![Docker SlimFaas](https://img.shields.io/docker/pulls/axaguildev/slimfaas.svg?label=docker+pull+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds) ![Docker Image Size](https://img.shields.io/docker/image-size/axaguildev/slimfaas?label=image+size+slimfaas)
 ![Docker Image Version](https://img.shields.io/docker/v/axaguildev/slimfaas?sort=semver&label=latest+version+slimfaas)
-![Docker Image Version](https://img.shields.io/docker/v/axaguildev/slimfaas-arm64?sort=semver&label=latest+version+slimfaas-arm64)
-
 
 ![SlimFaas.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/SlimFaas.png)
 
