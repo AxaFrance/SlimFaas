@@ -1,5 +1,5 @@
 ﻿FROM --platform=$BUILDPLATFORM  alpine:3.19 AS base
-#RUN apk update && apk upgrade
+RUN apk update && apk upgrade
 RUN apk add --no-cache icu-libs
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 WORKDIR /app
