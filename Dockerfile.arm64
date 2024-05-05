@@ -16,6 +16,7 @@ WORKDIR /src
 
 FROM --platform=$BUILDPLATFORM  build AS publish
 COPY . .
+RUN echo $BUILDPLATFORM
 ARG RUNTIME_ID=arm64
 RUN dotnet sln remove "./tests/SlimFaas.Tests./SlimFaas.Tests.csproj"
 RUN dotnet sln remove "./tests/SlimData.Tests/SlimData.Tests.csproj"
