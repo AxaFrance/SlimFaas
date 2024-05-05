@@ -1,4 +1,4 @@
-﻿FROM arm64v8/alpine:3.19 AS base
+﻿FROM --platform=$BUILDPLATFORM arm64v8/alpine:3.19 AS base
 RUN apk update && apk upgrade
 RUN apk add --no-cache --upgrade icu-libs
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
