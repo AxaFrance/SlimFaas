@@ -1,4 +1,4 @@
-﻿FROM --platform=$BUILDPLATFORM alpine:3.19 AS base
+﻿FROM --platform=$BUILDPLATFORM arm64v8/alpine:3.19 AS base
 RUN apk update && apk upgrade
 RUN apk add --no-cache --upgrade icu-libs
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
@@ -9,7 +9,7 @@ USER appuser
 EXPOSE 80
 EXPOSE 443
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.19 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.19-arm64v8 AS build
 RUN apk update && apk upgrade
 RUN apk add --no-cache --upgrade clang build-base zlib-dev
 WORKDIR /src
@@ -21,6 +21,7 @@ RUN dotnet sln remove "./tests/SlimFaas.Tests./SlimFaas.Tests.csproj"
 RUN dotnet sln remove "./tests/SlimData.Tests/SlimData.Tests.csproj"
 #RUN dotnet restore -a $RUNTIME_ID
 RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -a $RUNTIME_ID  -o /app/publish
+#-p:Plateform=$RUNTIME_ID
 RUN ls -la /app/publish
 RUN rm /app/publish/*.pdb
 RUN rm /app/publish/*.dbg
