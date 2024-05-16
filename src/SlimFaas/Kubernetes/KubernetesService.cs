@@ -185,36 +185,48 @@ public class KubernetesService : IKubernetesService
     {
         foreach (V1Deployment? deploymentListItem in deploymentList.Items)
         {
-            var annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
-            if (annotations == null || !annotations.ContainsKey(Function) ||
-                annotations[Function].ToLower() != "true")
+            try
             {
-                continue;
-            }
+                var annotations = deploymentListItem.Spec.Template?.Metadata?.Annotations;
+                if (annotations == null || !annotations.ContainsKey(Function) ||
+                    annotations[Function].ToLower() != "true")
+                {
+                    continue;
+                }
 
-            var name = deploymentListItem.Metadata.Name;
-            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
+                var name = deploymentListItem.Metadata.Name;
+                ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
 
-            DeploymentInformation deploymentInformation = new(
-                name,
-                kubeNamespace,
-                podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
-                deploymentListItem.Spec.Replicas ?? 0,
-                annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
-                    ? int.Parse(annotationReplicasAtStart)
-                    : 1, annotations.TryGetValue(ReplicasMin, out string? annotationReplicaMin)
-                    ? int.Parse(annotationReplicaMin)
-                    : 0, annotations.TryGetValue(TimeoutSecondBeforeSetReplicasMin, out string? annotationTimeoutSecondBeforeSetReplicasMin)
-                    ? int.Parse(annotationTimeoutSecondBeforeSetReplicasMin)
-                    : 300, annotations.TryGetValue(NumberParallelRequest, out string? annotationNumberParallelRequest)
-                    ? int.Parse(annotationNumberParallelRequest)
-                    : 10, annotations.ContainsKey(
-                              ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
-                          annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.Deployment,
-                annotations.TryGetValue(DependsOn, out string? value) ? value.Split(',').ToList() : new List<string>(),
-                scheduleConfig
+                DeploymentInformation deploymentInformation = new(
+                    name,
+                    kubeNamespace,
+                    podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
+                    deploymentListItem.Spec.Replicas ?? 0,
+                    annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
+                        ? int.Parse(annotationReplicasAtStart)
+                        : 1, annotations.TryGetValue(ReplicasMin, out string? annotationReplicaMin)
+                        ? int.Parse(annotationReplicaMin)
+                        : 0, annotations.TryGetValue(TimeoutSecondBeforeSetReplicasMin,
+                        out string? annotationTimeoutSecondBeforeSetReplicasMin)
+                        ? int.Parse(annotationTimeoutSecondBeforeSetReplicasMin)
+                        : 300, annotations.TryGetValue(NumberParallelRequest,
+                        out string? annotationNumberParallelRequest)
+                        ? int.Parse(annotationNumberParallelRequest)
+                        : 10, annotations.ContainsKey(
+                                  ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
+                              annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true",
+                    PodType.Deployment,
+                    annotations.TryGetValue(DependsOn, out string? value)
+                        ? value.Split(',').ToList()
+                        : new List<string>(),
+                    scheduleConfig
                 );
-            deploymentInformationList.Add(deploymentInformation);
+                deploymentInformationList.Add(deploymentInformation);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Error while adding deployment {Deployment}", deploymentListItem.Metadata.Name);
+            }
         }
     }
 
@@ -240,35 +252,48 @@ public class KubernetesService : IKubernetesService
     {
         foreach (V1StatefulSet? deploymentListItem in deploymentList.Items)
         {
-            IDictionary<string, string>? annotations = deploymentListItem.Spec.Template.Metadata.Annotations;
-            if (annotations == null || !annotations.ContainsKey(Function) ||
-                annotations[Function].ToLower() != "true")
+            try
             {
-                continue;
+                IDictionary<string, string>? annotations = deploymentListItem.Spec.Template?.Metadata?.Annotations;
+                if (annotations == null || !annotations.ContainsKey(Function) ||
+                    annotations[Function].ToLower() != "true")
+                {
+                    continue;
+                }
+
+                var name = deploymentListItem.Metadata.Name;
+                ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
+
+                DeploymentInformation deploymentInformation = new(
+                    name,
+                    kubeNamespace,
+                    podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
+                    deploymentListItem.Spec.Replicas ?? 0,
+                    annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
+                        ? int.Parse(annotationReplicasAtStart)
+                        : 1, annotations.TryGetValue(ReplicasMin, out string? annotationReplicasMin)
+                        ? int.Parse(annotationReplicasMin)
+                        : 0, annotations.TryGetValue(TimeoutSecondBeforeSetReplicasMin,
+                        out string? annotationTimeoutSecondBeforeSetReplicasMin)
+                        ? int.Parse(annotationTimeoutSecondBeforeSetReplicasMin)
+                        : 300, annotations.TryGetValue(NumberParallelRequest,
+                        out string? annotationNumberParallelRequest)
+                        ? int.Parse(annotationNumberParallelRequest)
+                        : 10, annotations.ContainsKey(
+                                  ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
+                              annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true",
+                    PodType.StatefulSet,
+                    annotations.TryGetValue(DependsOn, out string? value)
+                        ? value.Split(',').ToList()
+                        : new List<string>(),
+                    scheduleConfig);
+
+                deploymentInformationList.Add(deploymentInformation);
             }
-            var name = deploymentListItem.Metadata.Name;
-            ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
-
-            DeploymentInformation deploymentInformation = new(
-                name,
-                kubeNamespace,
-                podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
-                deploymentListItem.Spec.Replicas ?? 0,
-                annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
-                    ? int.Parse(annotationReplicasAtStart)
-                    : 1, annotations.TryGetValue(ReplicasMin, out string? annotationReplicasMin)
-                    ? int.Parse(annotationReplicasMin)
-                    : 0, annotations.TryGetValue(TimeoutSecondBeforeSetReplicasMin, out string? annotationTimeoutSecondBeforeSetReplicasMin)
-                    ? int.Parse(annotationTimeoutSecondBeforeSetReplicasMin)
-                    : 300, annotations.TryGetValue(NumberParallelRequest, out string? annotationNumberParallelRequest)
-                    ? int.Parse(annotationNumberParallelRequest)
-                    : 10, annotations.ContainsKey(
-                              ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
-                          annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true", PodType.StatefulSet,
-                annotations.TryGetValue(DependsOn, out string? value) ? value.Split(',').ToList() : new List<string>(),
-                scheduleConfig);
-
-            deploymentInformationList.Add(deploymentInformation);
+            catch (Exception e)
+            {
+                logger.LogError(e, "Error while adding statefulset {Deployment}", deploymentListItem.Metadata.Name);
+            }
         }
     }
 

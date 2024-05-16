@@ -29,9 +29,9 @@
 
 
   <ItemGroup>
-    <PackageReference Include="KubernetesClient.Aot" Version="13.0.37" />
+    <PackageReference Include="KubernetesClient.Aot" Version="14.0.2" />
     <PackageReference Include="MemoryPack" Version="1.21.1" />
-    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.5" />
     <PackageReference Include="prometheus-net" Version="8.2.1" />
     <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
   </ItemGroup>
