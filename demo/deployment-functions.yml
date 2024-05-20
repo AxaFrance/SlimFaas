@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fibonacci1
+  namespace: slimfaas-demo
 spec:
   selector:
     matchLabels:
@@ -50,6 +51,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fibonacci2
+  namespace: slimfaas-demo
 spec:
   selector:
     matchLabels:
@@ -93,6 +95,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fibonacci3
+  namespace: slimfaas-demo
 spec:
   selector:
     matchLabels:
@@ -138,6 +141,7 @@ spec:
 #kind: Deployment
 #metadata:
 #  name: webapp
+#  namespace: slimfaas-demo
 #spec:
 #  selector:
 #    matchLabels:
@@ -165,50 +169,42 @@ apiVersion: v1
 kind: Service
 metadata:
   name: fibonacci1
+  namespace: slimfaas-demo
 spec:
   selector:
     app: fibonacci1
-  type: NodePort
   ports:
     - port: 5000
-      targetPort: 5000
-      nodePort: 30015
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: fibonacci2
+  namespace: slimfaas-demo
 spec:
   selector:
     app: fibonacci2
-  type: NodePort
   ports:
     - port: 5000
-      targetPort: 5000
-      nodePort: 30016
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: fibonacci3
+  namespace: slimfaas-demo
 spec:
   selector:
     app: fibonacci3
-  type: NodePort
   ports:
     - port: 5000
-      targetPort: 5000
-      nodePort: 30017
 #---
 #apiVersion: v1
 #kind: Service
 #metadata:
 #  name: webapp
+#  namespace: slimfaas-demo
 #spec:
 #  selector:
 #    app: webapp
-#  type: NodePort
 #  ports:
 #    - port: 8000
-#      targetPort: 8000
-#      nodePort: 30018

@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: mysql-secret
+  namespace: slimfaas-demo
 type: kubernetes.io/basic-auth
 stringData:
   password: "test1234"
@@ -10,6 +11,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mysql-pv-claim
+  namespace: slimfaas-demo
 spec:
   accessModes:
     - ReadWriteOnce
@@ -21,6 +23,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mysql
+  namespace: slimfaas-demo
 spec:
   serviceName: mysql
   selector:
@@ -68,6 +71,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mysql
+  namespace: slimfaas-demo
 spec:
   ports:
     - port: 3306

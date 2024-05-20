@@ -25,13 +25,12 @@ To test slimfaas on your local machine by using kubernetes with Docker Desktop, 
 ```bash
 git clone https://github.com/AxaFrance/slimfaas.git
 cd slimfaas/demo
-kubectl create namespace slimfaas-demo
-kubectl config set-context --current --namespace=slimfaas-demo
-# Create a custom service account for slimfaas
-# SlimFaas require to ba able to request Kubernetes API
-kubectl apply -f slimfaas-serviceaccount.yml
-# Install slimfaas pod
+# Create slimfaas service account and pods
 kubectl apply -f deployment-slimfaas.yml
+# Expose SlimFaaS service as NodePort or Ingress
+kubectl apply -f slimfaas-nodeport.yml
+# or
+# kubectl apply -f slimfaas-ingress.yml
 # Install three instances of fibonacci functions
 # fibonacci1, fibonacci2 and fibonacci3
 kubectl apply -f deployment-functions.yml
