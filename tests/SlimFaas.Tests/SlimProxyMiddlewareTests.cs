@@ -43,7 +43,7 @@ internal class MemorySlimFaasQueue : ISlimFaasQueue
 
 internal class SendClientMock : ISendClient
 {
-    public Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null)
+    public Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null, string? baseUrl = null)
     {
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
@@ -51,7 +51,7 @@ internal class SendClientMock : ISendClient
     }
 
     public Task<HttpResponseMessage> SendHttpRequestSync(HttpContext httpContext, string functionName,
-        string functionPath, string functionQuery)
+        string functionPath, string functionQuery, string? baseUrl = null)
     {
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
@@ -71,7 +71,7 @@ public class ProxyMiddlewareTests
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
         Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
-        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>()))
+        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>(), It.IsAny<string?>()))
             .ReturnsAsync(responseMessage);
 
         using IHost host = await new HostBuilder()
