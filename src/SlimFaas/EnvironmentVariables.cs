@@ -43,6 +43,9 @@ public static class EnvironmentVariables
     public const string BaseFunctionUrl = "BASE_FUNCTION_URL";
     public const string BaseFunctionUrlDefault = "http://{function_name}:8080/";
 
+    public const string BaseFunctionPodUrl = "BASE_FUNCTION_POD_URL";
+    public const string BaseFunctionPodUrlDefault = "http://{pod_name}.{function_name}:8080/";
+
     public const string Namespace = "NAMESPACE";
     public const string NamespaceDefault = "default";
 
