@@ -39,7 +39,7 @@ internal class MemoryReplicas2ReplicasService : IReplicasService
             new List<DeploymentInformation>
             {
                 new(Replicas: 2, Deployment: "fibonacci", Namespace: "default",
-                    Pods: new List<PodInformation> { new("fibonacci-1", true, true, "0", "fibonacci"), new("fibonacci-2", true, true, "0", "fibonacci") })
+                    Pods: new List<PodInformation> { new("fibonacci-1", true, true, "0", "fibonacci"), new("fibonacci-2", true, true, "0", "fibonacci"), new("fibonacci-3", false, false, "0", "fibonacci")  })
             }, new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
 
     public Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace) => throw new NotImplementedException();
@@ -93,7 +93,7 @@ public class ProxyMiddlewareTests
         responseMessage.StatusCode = HttpStatusCode.OK;
         Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
         sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>(), It.IsAny<string?>()))
-            .ReturnsAsync(responseMessage, TimeSpan.FromMilliseconds(200));
+            .ReturnsAsync(responseMessage, TimeSpan.FromSeconds(1));
 
         using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
