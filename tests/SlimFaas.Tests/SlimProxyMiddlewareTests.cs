@@ -67,6 +67,7 @@ internal class SendClientMock : ISendClient
     {
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
+        Task.Delay(100).Wait();
         return Task.FromResult(responseMessage);
     }
 
@@ -93,7 +94,7 @@ public class ProxyMiddlewareTests
         responseMessage.StatusCode = HttpStatusCode.OK;
         Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
         sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>(), It.IsAny<string?>()))
-            .ReturnsAsync(responseMessage, TimeSpan.FromSeconds(1));
+            .ReturnsAsync(responseMessage, TimeSpan.FromMilliseconds(200));
 
         using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
