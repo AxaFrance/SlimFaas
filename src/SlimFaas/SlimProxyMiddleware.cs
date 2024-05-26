@@ -33,7 +33,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     private const string StatusFunction = "/status-function";
     private const string WakeFunction = "/wake-function";
     private const string Function = "/function";
-    private const string Publish = "/publish";
+    private const string Publish = "/publish-function";
 
     private readonly int[] _slimFaasPorts = EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts,
         EnvironmentVariables.SlimFaasPortsDefault);

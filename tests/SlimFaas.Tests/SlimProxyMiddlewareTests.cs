@@ -84,7 +84,8 @@ public class ProxyMiddlewareTests
 {
 
     [Theory]
-    [InlineData("/publish/fibonacci/hello", HttpStatusCode.OK)]
+    [InlineData("/publish-function/fibonacci/hello", HttpStatusCode.OK)]
+    [InlineData("/publish-function/wrong/download", HttpStatusCode.NotFound)]
     public async Task CallPublishInSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
         Mock<IWakeUpFunction> wakeUpFunctionMock = new();
@@ -92,7 +93,7 @@ public class ProxyMiddlewareTests
         responseMessage.StatusCode = HttpStatusCode.OK;
         Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
         sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>(), It.IsAny<string?>()))
-            .ReturnsAsync(responseMessage);
+            .ReturnsAsync(responseMessage, TimeSpan.FromMilliseconds(200));
 
         using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
@@ -113,8 +114,15 @@ public class ProxyMiddlewareTests
 
         HttpResponseMessage response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
 
-        sendClientMock.Verify(s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", It.IsAny<string>(), It.IsAny<string>(), "http://fibonacci-2.{function_name}:8080/"), Times.Once);
-        sendClientMock.Verify(s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", It.IsAny<string>(), It.IsAny<string>(), "http://fibonacci-1.{function_name}:8080/"), Times.Once);
+        if (expected == HttpStatusCode.OK)
+        {
+            sendClientMock.Verify(
+                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", It.IsAny<string>(), It.IsAny<string>(),
+                    "http://fibonacci-2.{function_name}:8080/"), Times.Once);
+            sendClientMock.Verify(
+                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", It.IsAny<string>(), It.IsAny<string>(),
+                    "http://fibonacci-1.{function_name}:8080/"), Times.Once);
+        }
 
         Assert.Equal(expected, response.StatusCode);
     }
