@@ -107,6 +107,14 @@ SlimFaas act as an HTTP proxy with 2 modes:
 - Wake http://slimfaas/wake-function/myfunction => HTTP 200
   - Wake up a function
 
+### Synchrounous Publish HTTP call
+
+To publish the message to every replicas in "Ready" state of the function
+
+- Synchronous http://slimfaas/function/myfunction = > HTTP response function
+
+![publish_sync_call.png](https://github.com/AxaFrance/slimfaas/blob/main/documentation/publish_sync_call.png)
+
 ## How to install
 
 1. Add SlimFaas annotations to your pods
