@@ -18,7 +18,7 @@ public class SlimWorkerShould
         responseMessage.StatusCode = HttpStatusCode.OK;
 
         Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
-        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>()))
+        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>(), It.IsAny<string?>()))
             .ReturnsAsync(responseMessage);
 
         Mock<IServiceProvider> serviceProvider = new Mock<IServiceProvider>();
@@ -91,7 +91,7 @@ public class SlimWorkerShould
         await Task.Delay(3000);
 
         Assert.True(task.IsCompleted);
-        sendClientMock.Verify(v => v.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>()),
+        sendClientMock.Verify(v => v.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>(), It.IsAny<string?>()),
             Times.Once());
     }
 

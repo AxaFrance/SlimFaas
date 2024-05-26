@@ -10,6 +10,7 @@ services:
       - 5020:5000
     environment:
       - BASE_FUNCTION_URL=http://{function_name}:5000
+      - BASE_FUNCTION_POD_URL=http://{function_name}:5000
       - MOCK_KUBERNETES_FUNCTIONS={"Functions":[{"Name":"fibonacci","NumberParallelRequest":1}],"Slimfaas":[{"Name":"slimfaas-1"}]}
       - BASE_SLIMDATA_URL=http://localhost:3262/
       - HOSTNAME=slimfaas-1

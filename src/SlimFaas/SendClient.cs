@@ -4,10 +4,10 @@ namespace SlimFaas;
 
 public interface ISendClient
 {
-    Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null);
+    Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null, string? baseUrl = null);
 
     Task<HttpResponseMessage> SendHttpRequestSync(HttpContext httpContext, string functionName, string functionPath,
-        string functionQuery);
+        string functionQuery, string? baseUrl = null);
 }
 
 public class SendClient(HttpClient httpClient) : ISendClient
@@ -19,9 +19,9 @@ public class SendClient(HttpClient httpClient) : ISendClient
         Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
 
     public async Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest,
-        HttpContext? context = null)
+        HttpContext? context = null, string? baseUrl = null)
     {
-        string functionUrl = _baseFunctionUrl;
+        string functionUrl = baseUrl ?? _baseFunctionUrl;
         string customRequestFunctionName = customRequest.FunctionName;
         string customRequestPath = customRequest.Path;
         string customRequestQuery = customRequest.Query;
@@ -39,9 +39,9 @@ public class SendClient(HttpClient httpClient) : ISendClient
     }
 
     public async Task<HttpResponseMessage> SendHttpRequestSync(HttpContext context, string functionName,
-        string functionPath, string functionQuery)
+        string functionPath, string functionQuery, string? baseUrl = null)
     {
-        string targetUri = ComputeTargetUrl(_baseFunctionUrl, functionName, functionPath, functionQuery, _namespaceSlimFaas);
+        string targetUri = ComputeTargetUrl(baseUrl ?? _baseFunctionUrl, functionName, functionPath, functionQuery, _namespaceSlimFaas);
         HttpRequestMessage targetRequestMessage = CreateTargetMessage(context, new Uri(targetUri));
         HttpResponseMessage responseMessage = await httpClient.SendAsync(targetRequestMessage,
             HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);

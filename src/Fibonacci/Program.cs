@@ -19,22 +19,23 @@ app.MapPost("/fibonacci", (
     [FromServices] Fibonacci fibonacci,
     FibonacciInput input) =>
 {
-    logger.LogDebug("Fibonacci Called");
+    logger.LogInformation("Fibonacci Called");
     var output = new FibonacciOutput();
     output.Result = fibonacci.Run(input.Input);
+    logger.LogInformation("Fibonacci output: {Output}", output.Result);
     return output;
 });
 
 app.MapGet("/download", ([FromServices] ILogger<Fibonacci> logger) =>
 {
-    logger.LogDebug("Download Called");
+    logger.LogInformation("Download Called");
     string path = Path.Combine(Directory.GetCurrentDirectory(), "dog.png");
     return Results.File(path, "image/png");
 });
 
 app.MapGet("/hello/{name}", ([FromServices] ILogger<Fibonacci> logger, string name) =>
 {
-    logger.LogDebug("Hello Called");
+    logger.LogInformation("Hello Called");
     return $"Hello {name}!";
 });
 

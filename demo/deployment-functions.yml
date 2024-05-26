@@ -136,34 +136,51 @@ spec:
               cpu: "10m"
           ports:
             - containerPort: 5000
-#---
-#apiVersion: apps/v1
-#kind: Deployment
-#metadata:
-#  name: webapp
-#  namespace: slimfaas-demo
-#spec:
-#  selector:
-#    matchLabels:
-#      app: webapp
-#  template:
-#    metadata:
-#      labels:
-#        app: webapp
-#    spec:
-#      serviceAccountName: default
-#      containers:
-#        - name: webapp
-#          image: axaguildev/fibonacci-webapp:latest
-#          resources:
-#            limits:
-#              memory: "96Mi"
-#              cpu: "50m"
-#            requests:
-#              memory: "96Mi"
-#              cpu: "10m"
-#          ports:
-#            - containerPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fibonacci4
+  namespace: slimfaas-demo
+spec:
+  selector:
+    matchLabels:
+      app: fibonacci4
+  template:
+    metadata:
+      labels:
+        app: fibonacci4
+      annotations:
+        SlimFaas/Function: "true"
+        SlimFaas/ReplicasMin: "2"
+        SlimFaas/ReplicasAtStart: "2"
+        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
+        SlimFaas/NumberParallelRequest : "10"
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: fibonacci4
+          image: axaguildev/fibonacci:latest
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 8
+            timeoutSeconds: 8
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://+:5000
+          resources:
+            limits:
+              memory: "96Mi"
+              cpu: "50m"
+            requests:
+              memory: "96Mi"
+              cpu: "10m"
+          ports:
+            - containerPort: 5000
 ---
 apiVersion: v1
 kind: Service
@@ -197,14 +214,14 @@ spec:
     app: fibonacci3
   ports:
     - port: 5000
-#---
-#apiVersion: v1
-#kind: Service
-#metadata:
-#  name: webapp
-#  namespace: slimfaas-demo
-#spec:
-#  selector:
-#    app: webapp
-#  ports:
-#    - port: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fibonacci4
+  namespace: slimfaas-demo
+spec:
+  selector:
+    app: fibonacci4
+  ports:
+    - port: 5000

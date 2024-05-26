@@ -4,9 +4,9 @@ namespace SlimFaas;
 
 public class SlimDataEndpoint
 {
-    public static string Get(PodInformation podInformation)
+    public static string Get(PodInformation podInformation, string? baseUrl = null)
     {
-        string baseSlimDataUrl = Environment.GetEnvironmentVariable(EnvironmentVariables.BaseSlimDataUrl) ??
+        string baseSlimDataUrl = baseUrl ?? Environment.GetEnvironmentVariable(EnvironmentVariables.BaseSlimDataUrl) ??
                                  EnvironmentVariables.BaseSlimDataUrlDefault;
         string namespaceSlimFaas = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
         if (!string.IsNullOrEmpty(baseSlimDataUrl))

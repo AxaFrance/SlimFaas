@@ -107,6 +107,14 @@ SlimFaas act as an HTTP proxy with 2 modes:
 - Wake http://slimfaas/wake-function/myfunction => HTTP 200
   - Wake up a function
 
+### Synchrounous Publish HTTP call like event to all replicas
+
+To publish the message to every replicas in "Ready" state of the function
+
+- Synchronous http://slimfaas/publish-function/myfunction = > HTTP response function
+
+![publish_sync_call.png](https://github.com/AxaFrance/slimfaas/blob/main/documentation/publish_sync_call.png)
+
 ## How to install
 
 1. Add SlimFaas annotations to your pods
@@ -187,6 +195,8 @@ spec:
           env:
             - name: BASE_FUNCTION_URL
               value: "http://{function_name}.{namespace}.svc.cluster.local:8080"
+            - name: BASE_FUNCTION_POD_URL # require for publish route
+              value: "http://{pod_name}.{function_name}.{namespace}.svc.cluster.local:8080"
             - name: BASE_SLIMDATA_URL
               value: "http://{pod_name}.slimfaas.{namespace}.svc.cluster.local:3262/"  # Don't expose this port, it can also be like "http://{pod_ip}:3262/" but if you can use DNS it's better
             - name: SLIMFAAS_PORTS
