@@ -9,6 +9,7 @@ Why use SlimFaas?
 - Synchronous HTTP calls
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
+- Synchronous Publish HTTP calls (events) to every replicas
 - Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
 - Mind Changer: REST API that show the status of your functions and allow to wake up your infrastructure
   - Very useful to inform end users that your infrastructure is starting
@@ -36,7 +37,7 @@ kubectl apply -f slimfaas-nodeport.yml
 kubectl apply -f deployment-functions.yml
 # Install MySql
 kubectl apply -f deployment-mysql.yml
-# to run Single Page webapp demo (optional)
+# to run Single Page webapp demo (optional) on http://localhost:8000
 docker run -p 8000:8000 --rm axaguildev/fibonacci-webapp:latest
 ```
 
@@ -62,6 +63,9 @@ Get function status:
 - http://localhost:30021/status-function/fibonacci1 => {"NumberReady":1,"numberRequested":1}
 - http://localhost:30021/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1}
 - http://localhost:30021/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1}
+
+Send event to every function replicas:
+- http://localhost:30021/wake-function/fibonacci4/hello/guillaume
 
 Single Page WebApp demo:
 
@@ -107,7 +111,7 @@ SlimFaas act as an HTTP proxy with 2 modes:
 - Wake http://slimfaas/wake-function/myfunction => HTTP 200
   - Wake up a function
 
-### Synchrounous Publish HTTP call like event to all replicas
+### Synchrounous Publish HTTP call (events) to every replicas
 
 To publish the message to every replicas in "Ready" state of the function
 
