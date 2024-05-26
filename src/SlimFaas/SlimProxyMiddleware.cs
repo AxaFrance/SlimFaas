@@ -163,15 +163,20 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         List<Task<HttpResponseMessage>> tasks = new();
         foreach (var pod in function.Pods)
         {
-            if (pod.Ready == true)
+            if (pod.Ready != true)
             {
-                string baseFunctionPodUrl =
-                    Environment.GetEnvironmentVariable(EnvironmentVariables.BaseFunctionPodUrl) ??
-                    EnvironmentVariables.BaseFunctionPodUrlDefault;
-                Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, functionName,
-                    functionPath, context.Request.QueryString.ToUriComponent(), baseFunctionPodUrl);
-                tasks.Add(responseMessagePromise);
+                continue;
             }
+
+            string baseFunctionPodUrl =
+                Environment.GetEnvironmentVariable(EnvironmentVariables.BaseFunctionPodUrl) ??
+                EnvironmentVariables.BaseFunctionPodUrlDefault;
+
+            var baseUrl = SlimDataEndpoint.Get(pod, baseFunctionPodUrl);
+
+            Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, functionName,
+                functionPath, context.Request.QueryString.ToUriComponent(), baseUrl);
+            tasks.Add(responseMessagePromise);
         }
 
         while (tasks.Any(t => !t.IsCompleted) && !context.RequestAborted.IsCancellationRequested)
