@@ -336,6 +336,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             Function => FunctionType.Sync,
             StatusFunction => FunctionType.Status,
             WakeFunction => FunctionType.Wake,
+            Publish => FunctionType.Publish,
             _ => FunctionType.NotAFunction
         };
         return new FunctionInfo(functionPath, functionName, functionType);
@@ -359,6 +360,10 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         else if (path.StartsWithSegments(StatusFunction))
         {
             functionBeginPath = $"{StatusFunction}";
+        }
+        else if (path.StartsWithSegments(Publish))
+        {
+            functionBeginPath = $"{Publish}";
         }
 
         return functionBeginPath;

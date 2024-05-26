@@ -32,6 +32,26 @@ internal class MemoryReplicasService : IReplicasService
     }
 }
 
+internal class MemoryReplicas2ReplicasService : IReplicasService
+{
+    public DeploymentsInformations Deployments =>
+        new(
+            new List<DeploymentInformation>
+            {
+                new(Replicas: 2, Deployment: "fibonacci", Namespace: "default",
+                    Pods: new List<PodInformation> { new("fibonacci-1", true, true, "0", "fibonacci"), new("fibonacci-2", true, true, "0", "fibonacci") })
+            }, new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
+
+    public Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace) => throw new NotImplementedException();
+
+    public Task CheckScaleAsync(string kubeNamespace) => throw new NotImplementedException();
+
+    public async Task SyncDeploymentsFromSlimData(DeploymentsInformations deploymentsInformations)
+    {
+        await Task.Delay(100);
+    }
+}
+
 internal class MemorySlimFaasQueue : ISlimFaasQueue
 {
     public Task<IList<byte[]>> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
@@ -62,6 +82,43 @@ internal class SendClientMock : ISendClient
 
 public class ProxyMiddlewareTests
 {
+
+    [Theory]
+    [InlineData("/publish/fibonacci/hello", HttpStatusCode.OK)]
+    public async Task CallPublishInSyncModeAndReturnOk(string path, HttpStatusCode expected)
+    {
+        Mock<IWakeUpFunction> wakeUpFunctionMock = new();
+        HttpResponseMessage responseMessage = new HttpResponseMessage();
+        responseMessage.StatusCode = HttpStatusCode.OK;
+        Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
+        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>(), It.IsAny<string?>()))
+            .ReturnsAsync(responseMessage);
+
+        using IHost host = await new HostBuilder()
+            .ConfigureWebHost(webBuilder =>
+            {
+                webBuilder
+                    .UseTestServer()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
+                        services.AddSingleton<ISendClient, ISendClient>(sc => sendClientMock.Object);
+                        services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
+                        services.AddSingleton<IReplicasService, MemoryReplicas2ReplicasService>();
+                        services.AddSingleton<IWakeUpFunction>(sp => wakeUpFunctionMock.Object);
+                    })
+                    .Configure(app => { app.UseMiddleware<SlimProxyMiddleware>(); });
+            })
+            .StartAsync();
+
+        HttpResponseMessage response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
+
+        sendClientMock.Verify(s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", It.IsAny<string>(), It.IsAny<string>(), "http://fibonacci-2.{function_name}:8080/"), Times.Once);
+        sendClientMock.Verify(s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", It.IsAny<string>(), It.IsAny<string>(), "http://fibonacci-1.{function_name}:8080/"), Times.Once);
+
+        Assert.Equal(expected, response.StatusCode);
+    }
+
     [Theory]
     [InlineData("/function/fibonacci/download", HttpStatusCode.OK)]
     [InlineData("/function/wrong/download", HttpStatusCode.NotFound)]
