@@ -152,7 +152,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 else {
                     logger.LogInformation("Scale down {Deployment} from {currentScale} to {ReplicasMin}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasMin);
                 }
-                logger.LogInformation("Time elapsed without request reached. Scaling...");
+                Console.WriteLine("Time elapsed without request reached. Scaling...");
 
                 Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
                     Replicas: deploymentInformation.ReplicasMin,
@@ -203,7 +203,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
         return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0, new CultureInfo(culture).Calendar).ToUniversalTime();
     }
 
-    public long? GetLastTicksFromSchedule(DeploymentInformation deploymentInformation, DateTime nowUtc)
+    public static long? GetLastTicksFromSchedule(DeploymentInformation deploymentInformation, DateTime nowUtc)
     {
         if (deploymentInformation.Schedule is not { Default: not null })
         {
@@ -226,7 +226,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
             }
 
             var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
-            logger.LogInformation("Created date from schedule : {date}", date.ToString());
+            Console.WriteLine("Created date from schedule : " + date.ToString());
             dates.Add(date);
         }
 
@@ -241,25 +241,25 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
         if (dateTime > DateTime.MinValue)
         {
-            logger.LogInformation("LastTicksFromSchedule, dateTime > DateTime.MinValue : {ticks}", dateTime.Ticks);
+            Console.WriteLine("LastTicksFromSchedule, dateTime > DateTime.MinValue : " + dateTime.Ticks);
             return dateTime.Ticks;
         }
 
         if(dateTime == DateTime.MinValue && dates.Count > 0)
         {
             dateTime = dates.OrderBy(d => d).Last();
-            logger.LogInformation("LastTicksFromSchedule, dateTime == DateTime.MinValue && dates.Count > 0 : {ticks}", dateTime.AddDays(-1).Ticks);
+            Console.WriteLine("LastTicksFromSchedule, dateTime == DateTime.MinValue && dates.Count > 0 : " + dateTime.AddDays(-1).Ticks);
             return dateTime.AddDays(-1).Ticks;
         }
 
         return null;
     }
 
-    public int GetTimeoutSecondBeforeSetReplicasMin(DeploymentInformation deploymentInformation, DateTime nowUtc)
+    public static int GetTimeoutSecondBeforeSetReplicasMin(DeploymentInformation deploymentInformation, DateTime nowUtc)
     {
         if (deploymentInformation.Schedule is { Default: not null })
         {
-            logger.LogInformation("GetTimeoutSecondBeforeSetReplicasMin : schedule is not null");
+            Console.WriteLine("GetTimeoutSecondBeforeSetReplicasMin : schedule is not null");
             List<TimeToScaleDownTimeout> times = new();
             foreach (var defaultSchedule in deploymentInformation.Schedule.Default.ScaleDownTimeout)
             {
@@ -288,10 +288,10 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     return orderedTimes[^1].Value;
                 }
 
-                logger.LogInformation("Ordered times :");
+                Console.WriteLine("Ordered times :");
                 foreach (var orderedTime in orderedTimes)
                 {
-                    logger.LogInformation("{Hours}:{Minutes}, value : {Value}", orderedTime.Hours, orderedTime.Minutes, orderedTime.Value);
+                    Console.WriteLine(orderedTime.Hours + ":" + orderedTime.Minutes + ", value : " + orderedTime.Value);
                 }
 
                 return times.OrderBy(t => t.Hours * 60+ t.Minutes).Last().Value;
