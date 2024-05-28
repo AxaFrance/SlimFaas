@@ -2,7 +2,7 @@
 [![Docker SlimFaas](https://img.shields.io/docker/pulls/axaguildev/slimfaas.svg?label=docker+pull+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds) [![Docker Image Size](https://img.shields.io/docker/image-size/axaguildev/slimfaas?label=image+size+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds)
 [![Docker Image Version](https://img.shields.io/docker/v/axaguildev/slimfaas?sort=semver&label=latest+version+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds)
 
-![SlimFaas.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/SlimFaas.png)
+![SlimFaas.png](./documentation/SlimFaas.png)
 
 Why use SlimFaas?
 - Scale to 0 after a period of inactivity (work with deployment and statefulset)
@@ -19,7 +19,7 @@ Why use SlimFaas?
   - No impact on your current kubernetes manifests: just add an annotation to the pod you want to auto-scale
 - Very **Slim** and very **Fast**
 
-![slim-faas-ram-cpu.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/slim-faas-ram-cpu.png)
+![slim-faas-ram-cpu.png](./documentation/slim-faas-ram-cpu.png)
 
 ## Getting Started with Kubernetes
 
@@ -105,14 +105,14 @@ SlimFaas act as an HTTP proxy with 2 modes:
 
 - Synchronous http://slimfaas/function/myfunction = > HTTP response function
 
-![sync_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/sync_http_call.PNG)
+![sync_http_call.PNG](./documentation/sync_http_call.PNG)
 
 ### Asynchronous HTTP call
 
 - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
   - Tail using SlimData database included in SlimFaas pod
 
-![async_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/async_http_call.PNG)
+![async_http_call.PNG](./documentation/async_http_call.PNG)
 
 ### Wake HTTP call
 
@@ -125,7 +125,7 @@ To publish the message to every replicas in "Ready" state of the function
 
 - HTTP POST http://slimfaas/publish-event/my-event-name {"data":"my-event-data"}
 
-![publish_sync_call.png](https://github.com/AxaFrance/slimfaas/blob/main/documentation/publish_sync_call.png)
+![publish_sync_call.png](./documentation/publish_sync_call.png)
 
 ## How to install
 
