@@ -1,6 +1,6 @@
 # SlimFaas : The slimest and simplest Function As A Service [![Continuous Integration](https://github.com/AxaFrance/SlimFaas/actions/workflows/slimfaas-ci.yaml/badge.svg)](https://github.com/AxaFrance/SlimFaas/actions/workflows/slimfaas-ci.yaml) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=alert_status)](https://sonarcloud.io/dashboard?id=AxaFrance_SlimFaas) [![Reliability](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=AxaFrance_SlimFaas&metric=reliability_rating) [![Security](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=security_rating)](https://sonarcloud.io/component_measures?id=AxaGuilDEv_ml-cli&metric=security_rating) [![Code Corevage](https://sonarcloud.io/api/project_badges/measure?project=AxaFrance_SlimFaas&metric=coverage)](https://sonarcloud.io/component_measures?id=AxaFrance_SlimFaas&metric=Coverage)
-[![Docker SlimFaas](https://img.shields.io/docker/pulls/axaguildev/slimfaas.svg?label=docker+pull+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds) ![Docker Image Size](https://img.shields.io/docker/image-size/axaguildev/slimfaas?label=image+size+slimfaas)
-![Docker Image Version](https://img.shields.io/docker/v/axaguildev/slimfaas?sort=semver&label=latest+version+slimfaas)
+[![Docker SlimFaas](https://img.shields.io/docker/pulls/axaguildev/slimfaas.svg?label=docker+pull+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds) [![Docker Image Size](https://img.shields.io/docker/image-size/axaguildev/slimfaas?label=image+size+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds)
+[![Docker Image Version](https://img.shields.io/docker/v/axaguildev/slimfaas?sort=semver&label=latest+version+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds)
 
 ![SlimFaas.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/SlimFaas.png)
 
@@ -9,7 +9,7 @@ Why use SlimFaas?
 - Synchronous HTTP calls
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
-- Synchronous Publish HTTP calls (events) to every replicas
+- Synchronous Publish event via HTTP calls (events) to every replicas which deployment subscribe to the event name
 - Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
 - Mind Changer: REST API that show the status of your functions and allow to wake up your infrastructure
   - Very useful to inform end users that your infrastructure is starting
@@ -64,8 +64,9 @@ Get function status:
 - http://localhost:30021/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1}
 - http://localhost:30021/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1}
 
-Send event to every function replicas:
-- http://localhost:30021/wake-function/fibonacci4/hello/guillaume
+Send event to every function replicas (which deployment subscribe to the event name) in synchronous way:
+
+- HTTP POST http://localhost:30021/publish-event/my-event-name {"data":"my-data"}
 
 Single Page WebApp demo:
 
@@ -115,7 +116,7 @@ SlimFaas act as an HTTP proxy with 2 modes:
 
 To publish the message to every replicas in "Ready" state of the function
 
-- Synchronous http://slimfaas/publish-function/myfunction = > HTTP response function
+- HTTP POST http://slimfaas/publish-event/my-event-name {"data":"my-event-data"}
 
 ![publish_sync_call.png](https://github.com/AxaFrance/slimfaas/blob/main/documentation/publish_sync_call.png)
 
@@ -150,6 +151,7 @@ spec:
         SlimFaas/Schedule : |
             {"Culture":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
         SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment or statefulset names
+        SlimFaas/SubscribeEvents : "my-event-name" # comma separated list of event names
     spec:
       serviceAccountName: default
       containers:
@@ -312,6 +314,9 @@ spec:
   - This property is useful if you want to scale up your pods only if your database is ready for example
 - **SlimFaas/Schedule** : json configuration
   - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00
+- **SlimFaas/SubscribeEvents** : "my-event-name"
+  - Comma separated list of event names to license the function to receive events
+
 
 ````bash
 {
