@@ -38,7 +38,7 @@ internal class MemoryReplicas2ReplicasService : IReplicasService
         new(
             new List<DeploymentInformation>
             {
-                new(Replicas: 2, Deployment: "fibonacci", Namespace: "default",
+                new(Replicas: 2, Deployment: "fibonacci", SubscribeEvents: new List<string>() { "reload" }, Namespace: "default",
                     Pods: new List<PodInformation> { new("fibonacci-1", true, true, "0", "fibonacci"), new("fibonacci-2", true, true, "0", "fibonacci"), new("fibonacci-3", false, false, "0", "fibonacci")  })
             }, new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
 
@@ -85,8 +85,8 @@ public class ProxyMiddlewareTests
 {
 
     [Theory]
-    [InlineData("/publish-function/fibonacci/hello", HttpStatusCode.OK)]
-    [InlineData("/publish-function/wrong/download", HttpStatusCode.NotFound)]
+    [InlineData("/publish-event/reload/hello", HttpStatusCode.OK)]
+    [InlineData("/publish-event/wrong/download", HttpStatusCode.NotFound)]
     public async Task CallPublishInSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
         Mock<IWakeUpFunction> wakeUpFunctionMock = new();

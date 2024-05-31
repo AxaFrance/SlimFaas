@@ -56,7 +56,8 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
     bool ReplicasStartAsSoonAsOneFunctionRetrieveARequest = false,
     PodType PodType = PodType.Deployment,
     IList<string>? DependsOn = null,
-    ScheduleConfig? Schedule = null);
+    ScheduleConfig? Schedule = null,
+    IList<string>? SubscribeEvents = null);
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
 
@@ -68,6 +69,7 @@ public class KubernetesService : IKubernetesService
     private const string Function = "SlimFaas/Function";
     private const string ReplicasAtStart = "SlimFaas/ReplicasAtStart";
     private const string DependsOn = "SlimFaas/DependsOn";
+    private const string SubscribeEvents = "SlimFaas/SubscribeEvents";
 
     private const string ReplicasStartAsSoonAsOneFunctionRetrieveARequest =
         "SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest";
@@ -219,7 +221,10 @@ public class KubernetesService : IKubernetesService
                     annotations.TryGetValue(DependsOn, out string? value)
                         ? value.Split(',').ToList()
                         : new List<string>(),
-                    scheduleConfig
+                    scheduleConfig,
+                    annotations.TryGetValue(SubscribeEvents, out string? valueSubscribeEvents)
+                        ? valueSubscribeEvents.Split(',').ToList()
+                        : new List<string>()
                 );
                 deploymentInformationList.Add(deploymentInformation);
             }
@@ -286,7 +291,10 @@ public class KubernetesService : IKubernetesService
                     annotations.TryGetValue(DependsOn, out string? value)
                         ? value.Split(',').ToList()
                         : new List<string>(),
-                    scheduleConfig);
+                    scheduleConfig,
+                    annotations.TryGetValue(SubscribeEvents, out string? valueSubscribeEvents)
+                        ? valueSubscribeEvents.Split(',').ToList()
+                        : new List<string>());
 
                 deploymentInformationList.Add(deploymentInformation);
             }
