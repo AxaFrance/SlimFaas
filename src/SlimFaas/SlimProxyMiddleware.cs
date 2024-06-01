@@ -26,7 +26,8 @@ public partial class FunctionStatusSerializerContext : JsonSerializerContext
 public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQueue, IWakeUpFunction wakeUpFunction,
     ILogger<SlimProxyMiddleware> logger,
     int timeoutWaitWakeSyncFunctionMilliSecond =
-        EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault)
+        EnvironmentVariables.SlimProxyMiddlewareTimeoutWaitWakeSyncFunctionMilliSecondsDefault,
+    string slimFaasSubscribeEventsDefault = EnvironmentVariables.SlimFaasSubscribeEventsDefault)
 
 {
     private const string AsyncFunction = "/async-function";
@@ -41,6 +42,10 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     private readonly int _timeoutMaximumWaitWakeSyncFunctionMilliSecond = EnvironmentVariables.ReadInteger(logger,
         EnvironmentVariables.TimeMaximumWaitForAtLeastOnePodStartedForSyncFunction,
         timeoutWaitWakeSyncFunctionMilliSecond);
+
+    private readonly IDictionary<string, IList<string>> _slimFaasSubscribeEvents = EnvironmentVariables.ReadSlimFaasSubscribeEvents(logger,
+        EnvironmentVariables.SlimFaasSubscribeEvents,
+        slimFaasSubscribeEventsDefault);
 
     public async Task InvokeAsync(HttpContext context,
         HistoryHttpMemoryService historyHttpService, ISendClient sendClient, IReplicasService replicasService)
@@ -190,6 +195,16 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             }
         }
 
+        foreach (KeyValuePair<string,IList<string>> slimFaasSubscribeEvent in _slimFaasSubscribeEvents.Where(s => s.Key == eventName))
+        {
+            foreach (string baseUrl in slimFaasSubscribeEvent.Value)
+            {
+                Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, "",
+                    functionPath, context.Request.QueryString.ToUriComponent(), baseUrl);
+                tasks.Add(responseMessagePromise);
+            }
+        }
+
         while (tasks.Any(t => !t.IsCompleted) && !context.RequestAborted.IsCancellationRequested)
         {
             await Task.Delay(10, context.RequestAborted);
@@ -206,7 +221,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             }
         }
 
-        context.Response.StatusCode = 200;
+        context.Response.StatusCode = 204;
     }
 
     private async Task BuildSyncResponseAsync(HttpContext context, HistoryHttpMemoryService historyHttpService,
