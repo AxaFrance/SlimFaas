@@ -66,7 +66,7 @@ Get function status:
 
 Send event to every function replicas (which deployment subscribe to the event name) in synchronous way:
 
-- HTTP POST http://localhost:30021/publish-event/my-event-name {"data":"my-data"}
+- HTTP POST http://localhost:30021/publish-event/my-event-name {"data":"my-data"} => HTTP 204 (No Content)
 
 Single Page WebApp demo:
 
@@ -94,13 +94,13 @@ Enjoy slimfaas!!!!
 
 SlimFaas act as an HTTP proxy with 2 modes:
 
-### Synchrounous HTTP call
+### Synchronous HTTP call
 
 - Synchronous http://slimfaas/function/myfunction = > HTTP response function
 
 ![sync_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/sync_http_call.PNG)
 
-### Asynchrounous HTTP call
+### Asynchronous HTTP call
 
 - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
   - Tail using SlimData database included in SlimFaas pod
@@ -112,7 +112,7 @@ SlimFaas act as an HTTP proxy with 2 modes:
 - Wake http://slimfaas/wake-function/myfunction => HTTP 200
   - Wake up a function
 
-### Synchrounous Publish HTTP call (events) to every replicas
+### Synchronous Publish HTTP call (events) to every replicas
 
 To publish the message to every replicas in "Ready" state of the function
 
@@ -211,11 +211,16 @@ spec:
               value: "default"
             - name: SLIMDATA_DIRECTORY
               value: "/database"
+            # If you want to send event to an url which is not a SlimFaas function, you can use this env variable
+            # use comma to separate event name and url, use => to separate event name and destination url.
+            # urls are separated by ; 
+            #- name: SLIMFAAS_SUBSCRIBE_EVENTS
+            #  value: "my-event-name1=>http://localhost:5002;http://localhost:5003,my-event-name2=>http://localhost:5002"
             # If you want to use just one pod for testing purpose, you can use this env variable
             #- name: SLIMDATA_CONFIGURATION
             #  value: |
             #      {"coldStart":"true"}
-            # If your are not on kubernetes for example docker-compose, you can use this env variable, but you will lose auto-scale
+            # If you are not on kubernetes for example docker-compose, you can use this env variable, but you will lose auto-scale
             #- name: MOCK_KUBERNETES_FUNCTIONS
             #  value: "{"Functions":[{"Name":"fibonacci","NumberParallelRequest":1}],"Slimfaas":[{"Name":"slimfaas-1"}]}"
 
@@ -312,10 +317,10 @@ spec:
   - Comma separated list of deployment names or statefulset names
   - Pods will be scaled up only if all pods in this list are in ready state with the minimum number of replicas superior or equal to ReplicasAtStart
   - This property is useful if you want to scale up your pods only if your database is ready for example
-- **SlimFaas/Schedule** : json configuration
+- **SlimFaas/Schedule** : "" #json configuration
   - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00
-- **SlimFaas/SubscribeEvents** : "my-event-name"
-  - Comma separated list of event names to license the function to receive events
+- **SlimFaas/SubscribeEvents** : ""
+  - Comma separated list of event names to license the function to receive events. example: "my-event-name1,my-event-name2"
 
 
 ````bash
@@ -359,7 +364,7 @@ Instead of creating many pods, SlimFaas use internally many workers in the same 
 - **ReplicasScaleWorker**: If master, then scale up and down kubernetes pods
 
 **SlimData** is a simple redis like database included inside SlimFaas executable. It is based on **Raft** algorithm offered by awesome https://github.com/dotnet/dotNext library.
-By default **SlimData** use a second HTTP port 3262 to expose its API. Don't expose it and keep it internal.
+By default, **SlimData** use a second HTTP port 3262 to expose its API. Don't expose it and keep it internal.
 
 SlimFaas requires at least 3 nodes in production. 2 nodes are required to keep the database in a consistent state.
 If you want to use just one pod for testing purpose, you can use this env variable:

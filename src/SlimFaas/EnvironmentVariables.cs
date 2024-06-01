@@ -3,6 +3,9 @@ namespace SlimFaas;
 public static class EnvironmentVariables
 {
 
+    public const string SlimFaasSubscribeEvents = "SLIMFAAS_SUBSCRIBE_EVENTS";
+    public const string SlimFaasSubscribeEventsDefault = "";
+
     public const string SlimFaasCorsAllowOrigin = "SLIMFAAS_CORS_ALLOW_ORIGIN";
     public const string SlimFaasCorsAllowOriginDefault = "*";
 
@@ -73,6 +76,33 @@ public static class EnvironmentVariables
         return tempDirectory;
     }
 
+    public static IDictionary<string, IList<string>> ReadSlimFaasSubscribeEvents<T>(ILogger<T> logger, string environmentVariableName, string defaultValue)
+    {
+        string valueString = Environment.GetEnvironmentVariable(environmentVariableName) ?? defaultValue;
+        var results = new Dictionary<string, IList<string>>();
+        if (!string.IsNullOrEmpty(valueString))
+        {
+            //"my-event-name1=>http://localhost:5002;http://localhost:5003,my-event-name2;http://localhost:5002"
+            var events = valueString.Split(',');
+            foreach (var @event in events)
+            {
+                var eventParts = @event.Split("=>");
+                if (eventParts.Length < 2)
+                {
+                    logger.LogWarning("Cannot parse the event {Event} with value {EventValue}", @event, valueString);
+                    continue;
+                }
+
+                var eventKey = eventParts[0];
+                var urls = eventParts[1].Split(";");
+                results[eventKey] = urls;
+            }
+
+            return results;
+        }
+
+        return results;
+    }
 
     public static int ReadInteger<T>(ILogger<T> logger, string environmentVariableName, int defaultInteger)
     {

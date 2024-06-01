@@ -85,7 +85,7 @@ public class ProxyMiddlewareTests
 {
 
     [Theory]
-    [InlineData("/publish-event/reload/hello", HttpStatusCode.OK)]
+    [InlineData("/publish-event/reload/hello", HttpStatusCode.NoContent)]
     [InlineData("/publish-event/wrong/download", HttpStatusCode.NotFound)]
     public async Task CallPublishInSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
@@ -95,6 +95,9 @@ public class ProxyMiddlewareTests
         Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
         sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>(), It.IsAny<string?>()))
             .ReturnsAsync(responseMessage, TimeSpan.FromMilliseconds(200));
+
+        System.Environment.SetEnvironmentVariable(EnvironmentVariables.SlimFaasSubscribeEvents,
+            "reload=>http://localhost:5002");
 
         using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
@@ -118,11 +121,14 @@ public class ProxyMiddlewareTests
         if (expected == HttpStatusCode.OK)
         {
             sendClientMock.Verify(
-                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", It.IsAny<string>(), It.IsAny<string>(),
+                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", "reload", It.IsAny<string>(),
                     "http://fibonacci-2.{function_name}:8080/"), Times.Once);
             sendClientMock.Verify(
-                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", It.IsAny<string>(), It.IsAny<string>(),
+                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", "reload", It.IsAny<string>(),
                     "http://fibonacci-1.{function_name}:8080/"), Times.Once);
+            sendClientMock.Verify(
+                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "", "reload", It.IsAny<string>(),
+                    "http://localhost:5002/"), Times.Once);
         }
 
         Assert.Equal(expected, response.StatusCode);
