@@ -83,12 +83,42 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             case FunctionType.Async:
             default:
                 {
+                    DeploymentInformation? function = SearchFunction(replicasService, functionName);
+                    if (function == null)
+                    {
+                        contextResponse.StatusCode = 404;
+                        return;
+                    }
+                    if (function.Visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(context, replicasService))
+                    {
+                        context.Response.StatusCode = 404;
+                        return;
+                    }
                     CustomRequest customRequest =
                         await InitCustomRequest(context, contextRequest, functionName, functionPath);
                     await BuildAsyncResponseAsync(replicasService, functionName, customRequest, contextResponse);
                     break;
                 }
         }
+    }
+
+    private static Boolean MessageComeFromNamepaceInternal(HttpContext context, IReplicasService replicasService)
+    {
+        IList<string> podIps = replicasService.Deployments.Pods.Select(p => p.Ip).ToList();
+        var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        var remoteIp = context.Connection.RemoteIpAddress?.ToString();
+
+        if (IsInternalIp(forwardedFor, podIps) || IsInternalIp(remoteIp, podIps))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsInternalIp(string? ipAddress, IList<string> podIps)
+    {
+        return ipAddress != null && podIps.Contains(ipAddress);
     }
 
     private static void BuildStatusResponse(IReplicasService replicasService,
@@ -229,6 +259,12 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     {
         DeploymentInformation? function = SearchFunction(replicasService, functionName);
         if (function == null)
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+
+        if (function.Visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(context, replicasService))
         {
             context.Response.StatusCode = 404;
             return;

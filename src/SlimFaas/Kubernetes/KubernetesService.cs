@@ -32,6 +32,12 @@ public record ScaleDownTimeout
 public partial class ScheduleConfigSerializerContext : JsonSerializerContext;
 
 
+public enum FunctionVisibility
+{
+    Public,
+    Private
+}
+
 public enum PodType
 {
     Deployment,
@@ -42,7 +48,8 @@ public record ReplicaRequest(string Deployment, string Namespace, int Replicas, 
 
 public record SlimFaasDeploymentInformation(int Replicas, IList<PodInformation> Pods);
 
-public record DeploymentsInformations(IList<DeploymentInformation> Functions, SlimFaasDeploymentInformation SlimFaas);
+public record DeploymentsInformations(IList<DeploymentInformation> Functions,
+    SlimFaasDeploymentInformation SlimFaas, IEnumerable<PodInformation> Pods);
 
 [JsonSerializable(typeof(DeploymentsInformations))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
@@ -57,7 +64,8 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
     PodType PodType = PodType.Deployment,
     IList<string>? DependsOn = null,
     ScheduleConfig? Schedule = null,
-    IList<string>? SubscribeEvents = null);
+    IList<string>? SubscribeEvents = null,
+    FunctionVisibility Visibility = FunctionVisibility.Public);
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
 
@@ -70,6 +78,7 @@ public class KubernetesService : IKubernetesService
     private const string ReplicasAtStart = "SlimFaas/ReplicasAtStart";
     private const string DependsOn = "SlimFaas/DependsOn";
     private const string SubscribeEvents = "SlimFaas/SubscribeEvents";
+    private const string Visibility = "SlimFaas/Visibility";
 
     private const string ReplicasStartAsSoonAsOneFunctionRetrieveARequest =
         "SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest";
@@ -168,17 +177,18 @@ public class KubernetesService : IKubernetesService
                             podList.Where(p => p.Name.StartsWith(deploymentListItem.Metadata.Name)).ToList()))
                 .FirstOrDefault();
 
-            AddDeployments(kubeNamespace, deploymentList, podList, deploymentInformationList, _logger);
-            AddStatefulSets(kubeNamespace, statefulSetList, podList, deploymentInformationList, _logger);
+            IEnumerable<PodInformation> podInformations = podList as PodInformation[] ?? podList.ToArray();
+            AddDeployments(kubeNamespace, deploymentList, podInformations, deploymentInformationList, _logger);
+            AddStatefulSets(kubeNamespace, statefulSetList, podInformations, deploymentInformationList, _logger);
 
             return new DeploymentsInformations(deploymentInformationList,
-                slimFaasDeploymentInformation ?? new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
+                slimFaasDeploymentInformation ?? new SlimFaasDeploymentInformation(1, new List<PodInformation>()), podInformations);
         }
         catch (HttpOperationException e)
         {
             _logger.LogError(e, "Error while listing kubernetes functions");
             return new DeploymentsInformations(new List<DeploymentInformation>(),
-                new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
+                new SlimFaasDeploymentInformation(1, new List<PodInformation>()), new List<PodInformation>());
         }
     }
 
@@ -224,8 +234,10 @@ public class KubernetesService : IKubernetesService
                     scheduleConfig,
                     annotations.TryGetValue(SubscribeEvents, out string? valueSubscribeEvents)
                         ? valueSubscribeEvents.Split(',').ToList()
-                        : new List<string>()
-                );
+                        : new List<string>(),
+                    annotations.TryGetValue(Visibility, out string? visibility)
+                        ? Enum.Parse<FunctionVisibility>(visibility)
+                        : FunctionVisibility.Public);
                 deploymentInformationList.Add(deploymentInformation);
             }
             catch (Exception e)
@@ -294,7 +306,10 @@ public class KubernetesService : IKubernetesService
                     scheduleConfig,
                     annotations.TryGetValue(SubscribeEvents, out string? valueSubscribeEvents)
                         ? valueSubscribeEvents.Split(',').ToList()
-                        : new List<string>());
+                        : new List<string>(),
+                    annotations.TryGetValue(Visibility, out string? visibility)
+                        ? Enum.Parse<FunctionVisibility>(visibility)
+                        : FunctionVisibility.Public);
 
                 deploymentInformationList.Add(deploymentInformation);
             }
