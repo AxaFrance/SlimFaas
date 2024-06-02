@@ -154,23 +154,32 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         var result = new List<DeploymentInformation>();
         foreach (DeploymentInformation deploymentInformation in replicasService.Deployments.Functions)
         {
-            var splits = eventName.Split(":");
-            if (splits.Length == 1 && splits[0] == eventName)
+            if(deploymentInformation.SubscribeEvents == null)
             {
-                result.Add(deploymentInformation);
+                continue;
             }
-            else if (splits.Length == 2 && splits[1] == eventName)
+            foreach (string deploymentInformationSubscribeEvent in deploymentInformation.SubscribeEvents)
             {
-                var visibility = splits[0];
-                var visibilityEnum = Enum.Parse<FunctionVisibility>(visibility, true);
-                if(visibilityEnum == FunctionVisibility.Private && MessageComeFromNamepaceInternal(context, replicasService))
-                {
-                    result.Add(deploymentInformation);
-                } else if(visibilityEnum == FunctionVisibility.Public)
+                var splits = deploymentInformationSubscribeEvent.Split(":");
+                if (splits.Length == 1 && splits[0] == eventName)
                 {
                     result.Add(deploymentInformation);
                 }
+                else if (splits.Length == 2 && splits[1] == eventName)
+                {
+                    var visibility = splits[0];
+                    var visibilityEnum = Enum.Parse<FunctionVisibility>(visibility, true);
+                    if(visibilityEnum == FunctionVisibility.Private && MessageComeFromNamepaceInternal(context, replicasService))
+                    {
+                        result.Add(deploymentInformation);
+                    } else if(visibilityEnum == FunctionVisibility.Public)
+                    {
+                        result.Add(deploymentInformation);
+                    }
+                }
+
             }
+
         }
         return result;
     }
