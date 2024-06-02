@@ -83,20 +83,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             case FunctionType.Async:
             default:
                 {
-                    DeploymentInformation? function = SearchFunction(replicasService, functionName);
-                    if (function == null)
-                    {
-                        contextResponse.StatusCode = 404;
-                        return;
-                    }
-                    if (function.Visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(context, replicasService))
-                    {
-                        context.Response.StatusCode = 404;
-                        return;
-                    }
-                    CustomRequest customRequest =
-                        await InitCustomRequest(context, contextRequest, functionName, functionPath);
-                    await BuildAsyncResponseAsync(replicasService, functionName, customRequest, contextResponse);
+                    await BuildAsyncResponseAsync(context, replicasService, functionName, functionPath);
                     break;
                 }
         }
@@ -161,11 +148,31 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         }
     }
 
-    private static List<DeploymentInformation> SearchFunctions(IReplicasService replicasService, string eventName)
+    private static List<DeploymentInformation> SearchFunctions(HttpContext context, IReplicasService replicasService, string eventName)
     {
-        var functions =
-            replicasService.Deployments.Functions.Where(f => f.SubscribeEvents?.Contains(eventName) == true).ToList();
-        return functions;
+        // example: "Public:my-event-name1,Private:my-event-name2,my-event-name3"
+        var result = new List<DeploymentInformation>();
+        foreach (DeploymentInformation deploymentInformation in replicasService.Deployments.Functions)
+        {
+            var splits = eventName.Split(":");
+            if (splits.Length == 1 && splits[0] == eventName)
+            {
+                result.Add(deploymentInformation);
+            }
+            else if (splits.Length == 2 && splits[1] == eventName)
+            {
+                var visibility = splits[0];
+                var visibilityEnum = Enum.Parse<FunctionVisibility>(visibility, true);
+                if(visibilityEnum == FunctionVisibility.Private && MessageComeFromNamepaceInternal(context, replicasService))
+                {
+                    result.Add(deploymentInformation);
+                } else if(visibilityEnum == FunctionVisibility.Public)
+                {
+                    result.Add(deploymentInformation);
+                }
+            }
+        }
+        return result;
     }
 
     private static DeploymentInformation? SearchFunction(IReplicasService replicasService, string functionName)
@@ -175,26 +182,35 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         return function;
     }
 
-    private async Task BuildAsyncResponseAsync(IReplicasService replicasService, string functionName,
-        CustomRequest customRequest, HttpResponse contextResponse)
+    private async Task BuildAsyncResponseAsync(HttpContext context, IReplicasService replicasService, string functionName,
+        string functionPath)
     {
         DeploymentInformation? function = SearchFunction(replicasService, functionName);
         if (function == null)
         {
-            contextResponse.StatusCode = 404;
+            context.Response.StatusCode = 404;
             return;
         }
+        if (function.Visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(context, replicasService))
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+        CustomRequest customRequest =
+            await InitCustomRequest(context, context.Request, functionName, functionPath);
+
+
 
         var bin = MemoryPackSerializer.Serialize(customRequest);
         await slimFaasQueue.EnqueueAsync(functionName, bin);
 
-        contextResponse.StatusCode = 202;
+        context.Response.StatusCode = 202;
     }
 
     private async Task BuildPublishResponseAsync(HttpContext context, HistoryHttpMemoryService historyHttpService,
         ISendClient sendClient, IReplicasService replicasService, string eventName, string functionPath)
     {
-        var functions = SearchFunctions(replicasService, eventName);
+        var functions = SearchFunctions(context, replicasService, eventName);
         if (functions.Count <= 0)
         {
             context.Response.StatusCode = 404;

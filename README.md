@@ -151,7 +151,8 @@ spec:
         SlimFaas/Schedule : |
             {"Culture":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
         SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment or statefulset names
-        SlimFaas/SubscribeEvents : "my-event-name" # comma separated list of event names
+        SlimFaas/SubscribeEvents : "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
+        SlimFaas/Visibility : "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
     spec:
       serviceAccountName: default
       containers:
@@ -213,7 +214,7 @@ spec:
               value: "/database"
             # If you want to send event to an url which is not a SlimFaas function, you can use this env variable
             # use comma to separate event name and url, use => to separate event name and destination url.
-            # urls are separated by ; 
+            # urls are separated by ;
             #- name: SLIMFAAS_SUBSCRIBE_EVENTS
             #  value: "my-event-name1=>http://localhost:5002;http://localhost:5003,my-event-name2=>http://localhost:5002"
             # If you want to use just one pod for testing purpose, you can use this env variable
@@ -321,6 +322,8 @@ spec:
   - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00
 - **SlimFaas/SubscribeEvents** : ""
   - Comma separated list of event names to license the function to receive events. example: "my-event-name1,my-event-name2"
+- **SlimFaas/Visibility** : "Public"
+    - Public or Private (private function cannot be accessed by external HTTP call)
 
 
 ````bash
