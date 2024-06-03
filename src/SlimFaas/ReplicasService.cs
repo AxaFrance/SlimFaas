@@ -100,6 +100,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
             bool timeElapsedWithoutRequest = TimeSpan.FromTicks(tickLastCall) +
                                               TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow)) <
                                               TimeSpan.FromTicks(DateTime.UtcNow.Ticks);
+            Console.WriteLine("Is timeElapsedWithoutRequest ? " + timeElapsedWithoutRequest.ToString());
             int currentScale = deploymentInformation.Replicas;
 
             if (timeElapsedWithoutRequest)
@@ -214,10 +215,11 @@ public class ReplicasService(IKubernetesService kubernetesService,
     {
         if (deploymentInformation.Schedule is { Default: not null })
         {
-            Console.WriteLine("GetTimeoutSecondBeforeSetReplicasMin : schedule is not null");
             List<TimeToScaleDownTimeout> times = new();
             foreach (var defaultSchedule in deploymentInformation.Schedule.Default.ScaleDownTimeout)
             {
+                Console.WriteLine("Default schedule : " + defaultSchedule.Time);
+                Console.WriteLine("With Value being " + defaultSchedule.Value);
                 var splits = defaultSchedule.Time.Split(':');
                 if (splits.Length != 2)
                 {
@@ -229,8 +231,9 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 }
 
                 var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
-                times.Add( new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value));
+                times.Add(new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value));
             }
+            Console.WriteLine("Total times found : " + times.Count);
 
             if (times.Count >= 2)
             {
@@ -240,6 +243,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     .ToList();
                 if (orderedTimes.Count >= 1)
                 {
+                    Console.WriteLine("Selected orderedTime : " + orderedTimes[^1].Value);
                     return orderedTimes[^1].Value;
                 }
 
