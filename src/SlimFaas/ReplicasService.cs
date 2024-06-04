@@ -212,6 +212,11 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
         var dateTime = DateTime.MinValue;
         var dates = new List<DateTime>();
+        
+        string json = JsonSerializer.Serialize(deploymentInformation.Schedule, new JsonSerializerOptions { WriteIndented = true });
+        Console.WriteLine("Json of schedule :");
+        Console.WriteLine(json);
+
         foreach (var defaultSchedule in deploymentInformation.Schedule.Default.WakeUp)
         {
             var splits = defaultSchedule.Split(':');
