@@ -92,6 +92,7 @@ spec:
             initialDelaySeconds: 3
             periodSeconds: 10
             timeoutSeconds: 8
+            terminationGracePeriodSeconds: 30
           env:
             - name: BASE_FUNCTION_URL
               value: "http://{function_name}.{namespace}.svc.cluster.local:5000"

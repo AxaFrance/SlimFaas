@@ -198,6 +198,7 @@ spec:
             initialDelaySeconds: 3
             periodSeconds: 10
             timeoutSeconds: 8
+            terminationGracePeriodSeconds: 30
           env:
             - name: BASE_FUNCTION_URL
               value: "http://{function_name}.{namespace}.svc.cluster.local:8080"
@@ -213,7 +214,7 @@ spec:
               value: "/database"
             # If you want to send event to an url which is not a SlimFaas function, you can use this env variable
             # use comma to separate event name and url, use => to separate event name and destination url.
-            # urls are separated by ; 
+            # urls are separated by ;
             #- name: SLIMFAAS_SUBSCRIBE_EVENTS
             #  value: "my-event-name1=>http://localhost:5002;http://localhost:5003,my-event-name2=>http://localhost:5002"
             # If you want to use just one pod for testing purpose, you can use this env variable
@@ -317,11 +318,10 @@ spec:
   - Comma separated list of deployment names or statefulset names
   - Pods will be scaled up only if all pods in this list are in ready state with the minimum number of replicas superior or equal to ReplicasAtStart
   - This property is useful if you want to scale up your pods only if your database is ready for example
+- **SlimFaas/SubscribeEvents** : ""
+    - Comma separated list of event names to license the function to receive events. example: "my-event-name1,my-event-name2"
 - **SlimFaas/Schedule** : "" #json configuration
   - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00
-- **SlimFaas/SubscribeEvents** : ""
-  - Comma separated list of event names to license the function to receive events. example: "my-event-name1,my-event-name2"
-
 
 ````bash
 {
@@ -345,7 +345,7 @@ But we encountered many OpenFaas issues:
 - OpenFaas monitoring was not compatible with our monitoring solution
 - It requires to configure well NATS for managing fail-over
 - Queue configuration is not easy
-- The aggressive removing of of old images from docker.io by OpenFaas team in April 20023 got us some production issues
+- The aggressive removing of old images from docker.io by OpenFaas team in April 2023 got us some production issues
 
 We would like to use **Knative** but:
 - We cannot use it because of some internal constraints and security issues.
