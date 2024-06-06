@@ -2,6 +2,7 @@
 using SlimFaas.Kubernetes;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SlimFaas;
 
@@ -287,16 +288,30 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 times.Add(new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value));
             }
             Console.WriteLine("Total times found : " + times.Count);
+            Console.WriteLine("times :");
+            foreach (var time in times)
+            {
+                Console.WriteLine(time.ToString());
+            }
 
             if (times.Count >= 2)
             {
+                /* 
+                    Convert to ticks to prevent schedule elements, when moving to utc time, from taking precedence when they shoudln't.
+                    For instance: 1am in French would become 11pm of the day before in utc hour.
+                    This would make it take precedence over almost every other time.
+                    Therefore, comparing only the total amount of minutes, as was done before, would not work.
+                */
                 List<TimeToScaleDownTimeout> orderedTimes = times
-                    .Where(t => t.Hours*60 + t.Minutes < nowUtc.Hour*60 + nowUtc.Minute)
-                    .OrderBy(t => t.Hours * 60+ t.Minutes)
+                    .Select(t => new {Time = t, CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.Culture).ToUniversalTime().Ticks})
+                    .Where(t => t.Ticks < nowUtc.Ticks)
+                    .OrderBy(t => t.Ticks)
+                    .Select(t => t.Time)
                     .ToList();
                 if (orderedTimes.Count >= 1)
                 {
                     Console.WriteLine("Selected orderedTime : " + orderedTimes[^1].Value);
+                    Console.WriteLine("Count ordered times : " + orderedTimes.Count);
                     return orderedTimes[^1].Value;
                 }
 
@@ -306,7 +321,14 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     Console.WriteLine(orderedTime.Hours + ":" + orderedTime.Minutes + ", value : " + orderedTime.Value);
                 }
 
-                return times.OrderBy(t => t.Hours * 60+ t.Minutes).Last().Value;
+                
+                return times.OrderBy(t => CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.Culture).ToUniversalTime().Ticks).Last().Value;
+            }
+            else if (times.Count == 1)
+            {
+                var time = times.First();
+                return (CreateDateTime(nowUtc, time.Hours, time.Minutes, deploymentInformation.Schedule.Culture).ToUniversalTime().Ticks < nowUtc.Ticks) ?
+                    time.Value : deploymentInformation.TimeoutSecondBeforeSetReplicasMin;
             }
         }
 
