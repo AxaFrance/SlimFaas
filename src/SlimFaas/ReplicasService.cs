@@ -202,9 +202,10 @@ public class ReplicasService(IKubernetesService kubernetesService,
     private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string culture)
     {
         Console.WriteLine("CreateDateTime start : " + dateTime.ToString() + ", with hours : " + hours + ", with minutes : " + minutes + ", in culture " + culture);
-        DateTime result = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0, new CultureInfo(culture).Calendar).ToUniversalTime();
-        Console.WriteLine("Result : " + result.ToString());
-        return result;
+        DateTime test = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0, new CultureInfo(culture).Calendar);
+        DateTime trueResult = TimeZoneInfo.ConvertTimeToUtc(test);
+        Console.WriteLine("CreateDateTime result, converted in UTC : " + trueResult.ToString());
+        return trueResult;
     }
 
     public static long? GetLastTicksFromSchedule(DeploymentInformation deploymentInformation, DateTime nowUtc)
