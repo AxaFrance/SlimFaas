@@ -201,7 +201,10 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
     private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string culture)
     {
-        return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0, new CultureInfo(culture).Calendar).ToUniversalTime();
+        Console.WriteLine("CreateDateTime start : " + dateTime.ToString() + ", with hours : " + hours + ", with minutes : " + minutes + ", in culture " + culture);
+        DateTime result = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0, new CultureInfo(culture).Calendar).ToUniversalTime();
+        Console.WriteLine("Result : " + result.ToString());
+        return result;
     }
 
     public static long? GetLastTicksFromSchedule(DeploymentInformation deploymentInformation, DateTime nowUtc)
@@ -285,6 +288,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 }
 
                 var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
+                Console.WriteLine("Date added to times list :" + date.ToString());
                 times.Add(new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value));
             }
             Console.WriteLine("Total times found : " + times.Count);
