@@ -347,9 +347,9 @@ public class KubernetesService : IKubernetesService, IDisposable
     public static string ExtractPodDeploymentNameFrom(string generalName)
     {
         string[] names = generalName.Split('-');
-        if (names.Length <= 0)
+        if (names.Length <= 1)
         {
-            return string.Empty;
+            return generalName;
         }
 
         StringBuilder realName = new(names[0]);
