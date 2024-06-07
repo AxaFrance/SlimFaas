@@ -96,7 +96,7 @@ public class KubernetesService : IKubernetesService, IDisposable
     public k8s.Kubernetes GetClient()
     {
         // There is a bug in the k8s client that makes it crash the whole application after a while
-        if (DateTime.Now - _lastClientCreation > TimeSpan.FromMinutes(60))
+        if (DateTime.Now - _lastClientCreation > TimeSpan.FromMinutes(5))
         {
             _client.Dispose();
             _client = new(_k8SConfig);
