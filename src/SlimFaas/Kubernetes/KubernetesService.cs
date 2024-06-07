@@ -62,7 +62,7 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
 
 [ExcludeFromCodeCoverage]
-public class KubernetesService : IKubernetesService, IDisposable
+public class KubernetesService : IKubernetesService
 {
     private const string ReplicasMin = "SlimFaas/ReplicasMin";
     private const string Schedule = "SlimFaas/Schedule";
@@ -78,9 +78,7 @@ public class KubernetesService : IKubernetesService, IDisposable
     private const string NumberParallelRequest = "SlimFaas/NumberParallelRequest";
     private const string SlimfaasDeploymentName = "slimfaas";
     private readonly ILogger<KubernetesService> _logger;
-    private k8s.Kubernetes _client;
     private readonly KubernetesClientConfiguration _k8SConfig;
-    private DateTime _lastClientCreation = DateTime.Now;
 
     public KubernetesService(ILogger<KubernetesService> logger, bool useKubeConfig)
     {
@@ -90,19 +88,6 @@ public class KubernetesService : IKubernetesService, IDisposable
             : KubernetesClientConfiguration.BuildConfigFromConfigFile();
         k8SConfig.SkipTlsVerify = true;
         _k8SConfig = k8SConfig;
-        _client = new(k8SConfig);
-    }
-
-    public k8s.Kubernetes GetClient()
-    {
-        // There is a bug in the k8s client that makes it crash the whole application after a while
-        if (DateTime.Now - _lastClientCreation > TimeSpan.FromMinutes(5))
-        {
-            _client.Dispose();
-            _client = new(_k8SConfig);
-            _lastClientCreation = DateTime.Now;
-        }
-        return _client;
     }
 
 
@@ -112,7 +97,7 @@ public class KubernetesService : IKubernetesService, IDisposable
         {
             string patchString = $"{{\"spec\": {{\"replicas\": {request.Replicas}}}}}";
             var httpContent = new StringContent(patchString, Encoding.UTF8, "application/merge-patch+json");
-            var client = GetClient();
+            using var client = new k8s.Kubernetes(_k8SConfig);
             // we need to get the base uri, as it's not set on the HttpClient
             switch (request.PodType)
             {
@@ -167,7 +152,7 @@ public class KubernetesService : IKubernetesService, IDisposable
     {
         try
         {
-            var client = GetClient();
+            using var client = new k8s.Kubernetes(_k8SConfig);
             IList<DeploymentInformation>? deploymentInformationList = new List<DeploymentInformation>();
 
             Task<V1DeploymentList>? deploymentListTask = client.ListNamespacedDeploymentAsync(kubeNamespace);
@@ -361,8 +346,4 @@ public class KubernetesService : IKubernetesService, IDisposable
         return realName.ToString();
     }
 
-    public void Dispose()
-    {
-        _client.Dispose();
-    }
 }
