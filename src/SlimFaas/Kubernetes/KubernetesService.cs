@@ -62,7 +62,7 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
 
 [ExcludeFromCodeCoverage]
-public class KubernetesService : IKubernetesService
+public class KubernetesService : IKubernetesService, IDisposable
 {
     private const string ReplicasMin = "SlimFaas/ReplicasMin";
     private const string Schedule = "SlimFaas/Schedule";
@@ -78,7 +78,9 @@ public class KubernetesService : IKubernetesService
     private const string NumberParallelRequest = "SlimFaas/NumberParallelRequest";
     private const string SlimfaasDeploymentName = "slimfaas";
     private readonly ILogger<KubernetesService> _logger;
-    private readonly k8s.Kubernetes _client;
+    private k8s.Kubernetes _client;
+    private readonly KubernetesClientConfiguration _k8SConfig;
+    private DateTime _lastClientCreation = DateTime.Now;
 
     public KubernetesService(ILogger<KubernetesService> logger, bool useKubeConfig)
     {
@@ -87,8 +89,22 @@ public class KubernetesService : IKubernetesService
             ? KubernetesClientConfiguration.InClusterConfig()
             : KubernetesClientConfiguration.BuildConfigFromConfigFile();
         k8SConfig.SkipTlsVerify = true;
+        _k8SConfig = k8SConfig;
         _client = new(k8SConfig);
     }
+
+    public k8s.Kubernetes GetClient()
+    {
+        // There is a bug in the k8s client that makes it crash the whole application after a while
+        if (DateTime.Now - _lastClientCreation > TimeSpan.FromMinutes(60))
+        {
+            _client.Dispose();
+            _client = new(_k8SConfig);
+            _lastClientCreation = DateTime.Now;
+        }
+        return _client;
+    }
+
 
     public async Task<ReplicaRequest?> ScaleAsync(ReplicaRequest request)
     {
@@ -96,20 +112,21 @@ public class KubernetesService : IKubernetesService
         {
             string patchString = $"{{\"spec\": {{\"replicas\": {request.Replicas}}}}}";
             var httpContent = new StringContent(patchString, Encoding.UTF8, "application/merge-patch+json");
+            var client = GetClient();
             // we need to get the base uri, as it's not set on the HttpClient
             switch (request.PodType)
             {
                 case PodType.Deployment:
                     {
-                        var url = string.Concat(_client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
+                        var url = string.Concat(client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/deployments/{request.Deployment}/scale" );
                         HttpRequestMessage httpRequest = new(HttpMethod.Patch,
                             new Uri(url));
                         httpRequest.Content = httpContent;
-                        if ( _client.Credentials != null )
+                        if ( client.Credentials != null )
                         {
-                            await _client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
+                            await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
                         }
-                        var response = await _client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
+                        var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
                         if(response.StatusCode != HttpStatusCode.OK)
                         {
                             throw new HttpOperationException("Error while scaling deployment");
@@ -118,15 +135,15 @@ public class KubernetesService : IKubernetesService
                     }
                 case PodType.StatefulSet:
                     {
-                        var url = string.Concat(_client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
+                        var url = string.Concat(client.BaseUri, $"apis/apps/v1/namespaces/{request.Namespace}/statefulsets/{request.Deployment}/scale" );
                         HttpRequestMessage httpRequest = new(HttpMethod.Patch,
                             new Uri(url));
                         httpRequest.Content = httpContent;
-                        if ( _client.Credentials != null )
+                        if ( client.Credentials != null )
                         {
-                            await _client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
+                            await client.Credentials.ProcessHttpRequestAsync( httpRequest, CancellationToken.None );
                         }
-                        var response = await _client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
+                        var response = await client.HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead );
                         if(response.StatusCode != HttpStatusCode.OK)
                         {
                             throw new HttpOperationException("Error while scaling deployment");
@@ -150,11 +167,12 @@ public class KubernetesService : IKubernetesService
     {
         try
         {
+            var client = GetClient();
             IList<DeploymentInformation>? deploymentInformationList = new List<DeploymentInformation>();
 
-            Task<V1DeploymentList>? deploymentListTask = _client.ListNamespacedDeploymentAsync(kubeNamespace);
-            Task<V1PodList>? podListTask = _client.ListNamespacedPodAsync(kubeNamespace);
-            Task<V1StatefulSetList>? statefulSetListTask = _client.ListNamespacedStatefulSetAsync(kubeNamespace);
+            Task<V1DeploymentList>? deploymentListTask = client.ListNamespacedDeploymentAsync(kubeNamespace);
+            Task<V1PodList>? podListTask = client.ListNamespacedPodAsync(kubeNamespace);
+            Task<V1StatefulSetList>? statefulSetListTask = client.ListNamespacedStatefulSetAsync(kubeNamespace);
 
             await Task.WhenAll(deploymentListTask, podListTask, statefulSetListTask);
             V1DeploymentList? deploymentList = deploymentListTask.Result;
@@ -341,5 +359,10 @@ public class KubernetesService : IKubernetesService
         }
 
         return realName.ToString();
+    }
+
+    public void Dispose()
+    {
+        _client.Dispose();
     }
 }
