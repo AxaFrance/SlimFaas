@@ -2,10 +2,9 @@
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 using Microsoft.AspNetCore.Connections;
-using SlimData;
 using SlimData.Commands;
 
-namespace RaftNode;
+namespace SlimData;
 
 public class Startup(IConfiguration configuration)
 {

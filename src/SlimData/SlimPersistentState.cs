@@ -4,7 +4,7 @@ using DotNext.Net.Cluster.Consensus.Raft.Commands;
 using DotNext.Runtime.Serialization;
 using SlimData.Commands;
 
-namespace RaftNode;
+namespace SlimData;
 
 public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<SlimDataPayload>
 {

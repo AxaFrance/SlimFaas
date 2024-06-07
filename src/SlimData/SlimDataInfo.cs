@@ -1,4 +1,4 @@
-﻿namespace RaftNode;
+﻿namespace SlimData;
 
 public class SlimDataInfo(int port)
 {

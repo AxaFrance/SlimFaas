@@ -1,8 +1,7 @@
 ﻿using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using SlimData;
 
-namespace RaftNode;
+namespace SlimData;
 
 internal sealed class RaftClientHandlerFactory : IHttpMessageHandlerFactory
 {

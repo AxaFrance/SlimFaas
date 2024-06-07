@@ -1,7 +1,7 @@
 ﻿using DotNext.Net.Cluster.Consensus.Raft.Commands;
 using SlimData.Commands;
 
-namespace RaftNode;
+namespace SlimData;
 
 public record SlimDataState(
     Dictionary<string, Dictionary<string, string>> hashsets,
