@@ -78,7 +78,7 @@ public class KubernetesService : IKubernetesService
     private const string NumberParallelRequest = "SlimFaas/NumberParallelRequest";
     private const string SlimfaasDeploymentName = "slimfaas";
     private readonly ILogger<KubernetesService> _logger;
-    private readonly KubernetesClientConfiguration _k8SConfig;
+    private readonly k8s.Kubernetes _client;
 
     public KubernetesService(ILogger<KubernetesService> logger, bool useKubeConfig)
     {
@@ -87,7 +87,7 @@ public class KubernetesService : IKubernetesService
             ? KubernetesClientConfiguration.InClusterConfig()
             : KubernetesClientConfiguration.BuildConfigFromConfigFile();
         k8SConfig.SkipTlsVerify = true;
-        _k8SConfig = k8SConfig;
+        _client = new k8s.Kubernetes(k8SConfig);
     }
 
 
@@ -95,9 +95,9 @@ public class KubernetesService : IKubernetesService
     {
         try
         {
+            var client = _client;
             string patchString = $"{{\"spec\": {{\"replicas\": {request.Replicas}}}}}";
             var httpContent = new StringContent(patchString, Encoding.UTF8, "application/merge-patch+json");
-            using var client = new k8s.Kubernetes(_k8SConfig);
             // we need to get the base uri, as it's not set on the HttpClient
             switch (request.PodType)
             {
@@ -152,7 +152,7 @@ public class KubernetesService : IKubernetesService
     {
         try
         {
-            using var client = new k8s.Kubernetes(_k8SConfig);
+            var client = _client;
             IList<DeploymentInformation>? deploymentInformationList = new List<DeploymentInformation>();
 
             Task<V1DeploymentList>? deploymentListTask = client.ListNamespacedDeploymentAsync(kubeNamespace);
