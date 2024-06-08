@@ -2,7 +2,7 @@
 using DotNext.Net.Cluster;
 using DotNext.Net.Cluster.Consensus.Raft;
 
-namespace RaftNode;
+namespace SlimData;
 
 internal sealed class ClusterConfigurator : IClusterMemberLifetime
 {
