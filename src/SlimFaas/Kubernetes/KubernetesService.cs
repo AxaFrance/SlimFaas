@@ -11,7 +11,7 @@ namespace SlimFaas.Kubernetes;
 
 public class ScheduleConfig
 {
-    public string TimeZone  { get; set; } = "GMT Standard Time";
+    public string CountryCode  { get; set; } = "GB";
     public DefaultSchedule? Default { get; set; } = new();
 }
 

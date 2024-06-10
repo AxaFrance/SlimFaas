@@ -22,7 +22,7 @@ spec:
         SlimFaas/DependsOn: "fibonacci2"
         SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
         #SlimFaas/Schedule: |
-        #          {"TimeZone":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time": "21:00","Value":20},{"Time":"07:00","Value": 10}]}}
+        #          {"CountryCode":"FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time": "21:00","Value":20},{"Time":"07:00","Value": 10}]}}
     spec:
       serviceAccountName: default
       containers:
