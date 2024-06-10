@@ -156,7 +156,7 @@ spec:
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
         SlimFaas/Schedule : |
-            {"CountryCode":"FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
+            {"TimeZoneID":"Europe/Paris","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
         SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment or statefulset names
         SlimFaas/SubscribeEvents : "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
         SlimFaas/DefaultVisibility : "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
@@ -342,12 +342,12 @@ spec:
   - Comma separated list of deployment names or statefulset names
   - Message from that pods will be considered as public. It is useful if you want to exclude some pods from the private visibility, for example for a backend for frontend.
 - **SlimFaas/Schedule** : json configuration
-  - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00. Country codes are defined in ISO 3166 alpha-2. The full list is available [here](https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes)
+  - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00. Time zones are defined as IANA time zones. The full list is available [here](https://nodatime.org/TimeZones)
 
 
 ````bash
 {
-  "CountryCode":"FR", // Country code used to detect your time zone
+  "TimeZoneID":"Europe/Paris",
   "Default":{
     "WakeUp":["07:00"], // Wake up your infrastructure at 07:00
     "ScaleDownTimeout":[
