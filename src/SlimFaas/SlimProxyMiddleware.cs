@@ -83,12 +83,29 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             case FunctionType.Async:
             default:
                 {
-                    CustomRequest customRequest =
-                        await InitCustomRequest(context, contextRequest, functionName, functionPath);
-                    await BuildAsyncResponseAsync(replicasService, functionName, customRequest, contextResponse);
+                    await BuildAsyncResponseAsync(context, replicasService, functionName, functionPath);
                     break;
                 }
         }
+    }
+
+    private static Boolean MessageComeFromNamepaceInternal(HttpContext context, IReplicasService replicasService)
+    {
+        IList<string> podIps = replicasService.Deployments.Pods.Select(p => p.Ip).ToList();
+        var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        var remoteIp = context.Connection.RemoteIpAddress?.ToString();
+
+        if (IsInternalIp(forwardedFor, podIps) || IsInternalIp(remoteIp, podIps))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsInternalIp(string? ipAddress, IList<string> podIps)
+    {
+        return ipAddress != null && podIps.Contains(ipAddress);
     }
 
     private static void BuildStatusResponse(IReplicasService replicasService,
@@ -131,11 +148,44 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         }
     }
 
-    private static List<DeploymentInformation> SearchFunctions(IReplicasService replicasService, string eventName)
+    private static List<DeploymentInformation> SearchFunctions(HttpContext context, IReplicasService replicasService, string eventName)
     {
-        var functions =
-            replicasService.Deployments.Functions.Where(f => f.SubscribeEvents?.Contains(eventName) == true).ToList();
-        return functions;
+        // example: "Public:my-event-name1,Private:my-event-name2,my-event-name3"
+        var result = new List<DeploymentInformation>();
+        foreach (DeploymentInformation deploymentInformation in replicasService.Deployments.Functions)
+        {
+            if(deploymentInformation.SubscribeEvents == null)
+            {
+                continue;
+            }
+            foreach (string deploymentInformationSubscribeEvent in deploymentInformation.SubscribeEvents)
+            {
+                var splits = deploymentInformationSubscribeEvent.Split(":");
+                if (splits.Length == 1 && splits[0] == eventName)
+                {
+                    if (deploymentInformation.Visibility == FunctionVisibility.Public ||
+                        MessageComeFromNamepaceInternal(context, replicasService))
+                    {
+                        result.Add(deploymentInformation);
+                    }
+                }
+                else if (splits.Length == 2 && splits[1] == eventName)
+                {
+                    var visibility = splits[0];
+                    var visibilityEnum = Enum.Parse<FunctionVisibility>(visibility, true);
+                    if(visibilityEnum == FunctionVisibility.Private && MessageComeFromNamepaceInternal(context, replicasService))
+                    {
+                        result.Add(deploymentInformation);
+                    } else if(visibilityEnum == FunctionVisibility.Public)
+                    {
+                        result.Add(deploymentInformation);
+                    }
+                }
+
+            }
+
+        }
+        return result;
     }
 
     private static DeploymentInformation? SearchFunction(IReplicasService replicasService, string functionName)
@@ -145,26 +195,56 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         return function;
     }
 
-    private async Task BuildAsyncResponseAsync(IReplicasService replicasService, string functionName,
-        CustomRequest customRequest, HttpResponse contextResponse)
+    private static FunctionVisibility GetFunctionVisibility(ILogger<SlimProxyMiddleware> logger, DeploymentInformation function, string path)
+    {
+        if (function.PathsStartWithVisibility?.Count > 0)
+        {
+            foreach (string pathStartWith in function.PathsStartWithVisibility)
+            {
+                var splits = pathStartWith.Split(":");
+                if (splits.Length == 2 && splits[1].ToLowerInvariant() == path.ToLowerInvariant())
+                {
+                    var visibility = splits[0];
+                    var visibilityEnum = Enum.Parse<FunctionVisibility>(visibility, true);
+                    return visibilityEnum;
+                }
+
+                logger.LogWarning("PathStartWithVisibility {PathStartWith} should be prefixed by Public: or Private:", pathStartWith);
+            }
+        }
+        return function.Visibility;
+    }
+
+    private async Task BuildAsyncResponseAsync(HttpContext context, IReplicasService replicasService, string functionName,
+        string functionPath)
     {
         DeploymentInformation? function = SearchFunction(replicasService, functionName);
         if (function == null)
         {
-            contextResponse.StatusCode = 404;
+            context.Response.StatusCode = 404;
             return;
         }
+
+        var visibility = GetFunctionVisibility(logger, function, functionPath);
+
+        if (visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(context, replicasService))
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+        CustomRequest customRequest =
+            await InitCustomRequest(context, context.Request, functionName, functionPath);
 
         var bin = MemoryPackSerializer.Serialize(customRequest);
         await slimFaasQueue.EnqueueAsync(functionName, bin);
 
-        contextResponse.StatusCode = 202;
+        context.Response.StatusCode = 202;
     }
 
     private async Task BuildPublishResponseAsync(HttpContext context, HistoryHttpMemoryService historyHttpService,
         ISendClient sendClient, IReplicasService replicasService, string eventName, string functionPath)
     {
-        var functions = SearchFunctions(replicasService, eventName);
+        var functions = SearchFunctions(context, replicasService, eventName);
         if (functions.Count <= 0)
         {
             context.Response.StatusCode = 404;
@@ -229,6 +309,14 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     {
         DeploymentInformation? function = SearchFunction(replicasService, functionName);
         if (function == null)
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+
+        var visibility = GetFunctionVisibility(logger, function, functionPath);
+
+        if (visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(context, replicasService))
         {
             context.Response.StatusCode = 404;
             return;

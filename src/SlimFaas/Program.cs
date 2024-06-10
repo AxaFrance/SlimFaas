@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Polly;
 using Polly.Extensions.Http;
 using Prometheus;
@@ -153,6 +154,11 @@ serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
 serviceCollectionSlimFaas.AddSingleton<IWakeUpFunction, WakeUpFunction>();
 serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .ConfigureHttpClient((client =>
+    {
+        client.DefaultRequestVersion = HttpVersion.Version20;
+        client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
+    }))
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true });
 
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
@@ -160,6 +166,12 @@ serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
 serviceCollectionSlimFaas.AddScoped<ISendClient, SendClient>();
 serviceCollectionSlimFaas.AddHttpClient<ISendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .ConfigureHttpClient((client =>
+    {
+        client.DefaultRequestVersion = HttpVersion.Version20;
+        client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
+    }))
+
     .AddPolicyHandler(GetRetryPolicy());
 
 if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
@@ -215,7 +227,10 @@ builder.WebHost.ConfigureKestrel((context, serverOptions) =>
     serverOptions.ListenAnyIP(uri.Port);
     foreach (int slimFaasPort in slimFaasPorts)
     {
-        serverOptions.ListenAnyIP(slimFaasPort);
+        serverOptions.ListenAnyIP(slimFaasPort, listenOptions =>
+        {
+            listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+        });
     }
 });
 

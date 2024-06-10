@@ -25,7 +25,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
     private readonly object Lock = new();
 
     private DeploymentsInformations _deployments = new(new List<DeploymentInformation>(),
-        new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
+        new SlimFaasDeploymentInformation(1, new List<PodInformation>()), new List<PodInformation>());
 
     public DeploymentsInformations Deployments
     {
@@ -35,7 +35,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
             {
                 return new DeploymentsInformations(_deployments.Functions.ToArray(),
                     new SlimFaasDeploymentInformation(_deployments?.SlimFaas?.Replicas ?? 1,
-                        _deployments?.SlimFaas?.Pods ?? new List<PodInformation>()));
+                        _deployments?.SlimFaas?.Pods ?? new List<PodInformation>()), new List<PodInformation>());
             }
         }
     }

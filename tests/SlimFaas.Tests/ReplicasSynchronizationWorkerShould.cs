@@ -13,7 +13,7 @@ public class DeploymentsTestData : IEnumerable<object[]>
         yield return new object[]
         {
             new DeploymentsInformations(new List<DeploymentInformation>(),
-                new SlimFaasDeploymentInformation(1, new List<PodInformation>()))
+                new SlimFaasDeploymentInformation(1, new List<PodInformation>()), new List<PodInformation>())
         };
         yield return new object[]
         {
@@ -23,7 +23,8 @@ public class DeploymentsTestData : IEnumerable<object[]>
                     new("fibonacci1", "default", Replicas: 1, Pods: new List<PodInformation>()),
                     new("fibonacci2", "default", Replicas: 0, Pods: new List<PodInformation>())
                 },
-                new SlimFaasDeploymentInformation(1, new List<PodInformation>())
+                new SlimFaasDeploymentInformation(1, new List<PodInformation>()),
+                new List<PodInformation>()
             )
         };
     }

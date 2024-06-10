@@ -20,7 +20,7 @@ internal class MemoryReplicasService : IReplicasService
             {
                 new(Replicas: 0, Deployment: "fibonacci", Namespace: "default",
                     Pods: new List<PodInformation> { new("", true, true, "", "") })
-            }, new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
+            }, new SlimFaasDeploymentInformation(1, new List<PodInformation>()), new List<PodInformation>());
 
     public Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace) => throw new NotImplementedException();
 
@@ -38,9 +38,26 @@ internal class MemoryReplicas2ReplicasService : IReplicasService
         new(
             new List<DeploymentInformation>
             {
-                new(Replicas: 2, Deployment: "fibonacci", SubscribeEvents: new List<string>() { "reload" }, Namespace: "default",
-                    Pods: new List<PodInformation> { new("fibonacci-1", true, true, "0", "fibonacci"), new("fibonacci-2", true, true, "0", "fibonacci"), new("fibonacci-3", false, false, "0", "fibonacci")  })
-            }, new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
+                new(Replicas: 2,
+                    Deployment: "fibonacci",
+                    SubscribeEvents: new List<string>() {
+                        "Public:reload",
+                        "Private:reloadprivate",
+                        "reloadnoprefix"
+                    },
+                    PathsStartWithVisibility: new List<string>()
+                    {
+                        "Public:/compute",
+                        "Private:/computeprivate",
+                        "/computenoprefix",
+                    },
+                    Namespace: "default",
+                    Pods: new List<PodInformation> {
+                        new("fibonacci-1", true, true, "0", "fibonacci"),
+                        new("fibonacci-2", true, true, "0", "fibonacci"),
+                        new("fibonacci-3", false, false, "0", "fibonacci")
+                    })
+            }, new SlimFaasDeploymentInformation(1, new List<PodInformation>()), new List<PodInformation>());
 
     public Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace) => throw new NotImplementedException();
 
@@ -86,7 +103,9 @@ public class ProxyMiddlewareTests
 
     [Theory]
     [InlineData("/publish-event/reload/hello", HttpStatusCode.NoContent)]
+    [InlineData("/publish-event/reloadnoprefix/hello", HttpStatusCode.NoContent)]
     [InlineData("/publish-event/wrong/download", HttpStatusCode.NotFound)]
+    [InlineData("/publish-event/reloadprivate/hello", HttpStatusCode.NotFound)]
     public async Task CallPublishInSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
         Mock<IWakeUpFunction> wakeUpFunctionMock = new();
@@ -120,14 +139,15 @@ public class ProxyMiddlewareTests
 
         if (expected == HttpStatusCode.OK)
         {
+            var functionPath = path.Split("/")[1];
             sendClientMock.Verify(
-                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", "reload", It.IsAny<string>(),
+                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", functionPath, It.IsAny<string>(),
                     "http://fibonacci-2.{function_name}:8080/"), Times.Once);
             sendClientMock.Verify(
-                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", "reload", It.IsAny<string>(),
+                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", functionPath, It.IsAny<string>(),
                     "http://fibonacci-1.{function_name}:8080/"), Times.Once);
             sendClientMock.Verify(
-                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "", "reload", It.IsAny<string>(),
+                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "", functionPath, It.IsAny<string>(),
                     "http://localhost:5002/"), Times.Once);
         }
 
@@ -135,8 +155,11 @@ public class ProxyMiddlewareTests
     }
 
     [Theory]
+    [InlineData("/function/fibonacci/compute", HttpStatusCode.OK)]
+    [InlineData("/function/fibonacci/computenotprefix", HttpStatusCode.OK)]
     [InlineData("/function/fibonacci/download", HttpStatusCode.OK)]
     [InlineData("/function/wrong/download", HttpStatusCode.NotFound)]
+    [InlineData("/function/fibonacci/computeprivate", HttpStatusCode.NotFound)]
     public async Task CallFunctionInSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
         Mock<IWakeUpFunction> wakeUpFunctionMock = new();
@@ -156,7 +179,7 @@ public class ProxyMiddlewareTests
                         services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
                         services.AddSingleton<ISendClient, SendClientMock>();
                         services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
-                        services.AddSingleton<IReplicasService, MemoryReplicasService>();
+                        services.AddSingleton<IReplicasService, MemoryReplicas2ReplicasService>();
                         services.AddSingleton<IWakeUpFunction>(sp => wakeUpFunctionMock.Object);
                     })
                     .Configure(app => { app.UseMiddleware<SlimProxyMiddleware>(); });

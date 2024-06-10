@@ -55,7 +55,7 @@ public class MockKubernetesService : IKubernetesService
         }
 
         _deploymentInformations = new DeploymentsInformations(Functions: new List<DeploymentInformation>(),
-            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, slimfaasPods));
+            SlimFaas: new SlimFaasDeploymentInformation(Replicas: 1, slimfaasPods), new List<PodInformation>());
 
         foreach (var function in functions.Functions)
         {

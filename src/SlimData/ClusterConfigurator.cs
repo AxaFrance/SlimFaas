@@ -16,14 +16,14 @@ internal sealed class ClusterConfigurator : IClusterMemberLifetime
         cluster.LeaderChanged -= LeaderChanged;
     }
 
-    internal static void LeaderChanged(ICluster cluster, IClusterMember? leader)
+    private static void LeaderChanged(ICluster cluster, IClusterMember? leader)
     {
-        Debug.Assert(cluster is IRaftCluster);
+        var now = DateTime.Now;    
         var term = ((IRaftCluster)cluster).Term;
         var timeout = ((IRaftCluster)cluster).ElectionTimeout;
         Console.WriteLine(leader is null
-            ? "Consensus cannot be reached"
-            : $"New cluster leader is elected. Leader address is {leader.EndPoint}");
-        Console.WriteLine($"Term of local cluster member is {term}. Election timeout {timeout}");
+            ? $"{now}: Consensus cannot be reached"
+            : $"{now}: New cluster leader is elected. Leader address is {leader.EndPoint}");
+        Console.WriteLine($"{now}: Term of local cluster member is {term}. Election timeout {timeout}");
     }
 }

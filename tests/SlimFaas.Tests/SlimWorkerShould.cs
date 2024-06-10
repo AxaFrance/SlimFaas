@@ -57,7 +57,7 @@ public class SlimWorkerShould
                 new(Replicas: 0, Deployment: "no-replicas", Namespace: "default", NumberParallelRequest: 1,
                     ReplicasMin: 0, ReplicasAtStart: 1, TimeoutSecondBeforeSetReplicasMin: 300,
                     ReplicasStartAsSoonAsOneFunctionRetrieveARequest: true, Pods: new List<PodInformation>())
-            }));
+            }, Pods: new List<PodInformation>()));
         HistoryHttpMemoryService historyHttpService = new HistoryHttpMemoryService();
         Mock<ILogger<SlimWorker>> logger = new Mock<ILogger<SlimWorker>>();
 

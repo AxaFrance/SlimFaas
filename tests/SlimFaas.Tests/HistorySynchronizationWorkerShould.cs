@@ -20,7 +20,7 @@ public class HistorySynchronizationWorkerShould
                 new("fibonacci1", "default", Replicas: 1, Pods: new List<PodInformation>()),
                 new("fibonacci2", "default", Replicas: 0, Pods: new List<PodInformation>())
             },
-            new SlimFaasDeploymentInformation(1, new List<PodInformation>()));
+            new SlimFaasDeploymentInformation(1, new List<PodInformation>()), new List<PodInformation>());
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>())).ReturnsAsync(deploymentsInformations);
         HistoryHttpMemoryService historyHttpMemoryService = new HistoryHttpMemoryService();
         Mock<ILogger<ReplicasService>> loggerReplicasService = new Mock<ILogger<ReplicasService>>();
