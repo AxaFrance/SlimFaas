@@ -125,7 +125,7 @@ public class ReplicasScaleWorkerShould
             },
             Schedule: new ScheduleConfig()
             {
-                CountryCode = "FR",
+                TimeZoneID = "Europe/Paris",
                 Default = new DefaultSchedule()
                 {
                     ScaleDownTimeout = new List<ScaleDownTimeout>()
@@ -158,7 +158,7 @@ public class ReplicasScaleWorkerShould
             },
             Schedule: new ScheduleConfig()
             {
-                CountryCode = "FR",
+                TimeZoneID = "Europe/Paris",
                 Default = new DefaultSchedule()
                 {
                     WakeUp = new List<string>()

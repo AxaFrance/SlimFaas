@@ -1,4 +1,6 @@
 ﻿using SlimFaas.Kubernetes;
+using NodaTime;
+using NodaTime.TimeZones;
 
 namespace SlimFaas;
 
@@ -149,12 +151,13 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
     record TimeToScaleDownTimeout(int Hours, int Minutes, int Value);
 
-    private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string isoCountryCode)
+    private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string timeZoneID)
     {
-        DateTime date = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0);
-        TimeZoneInfo timeZone = DateManager.GetTimeZoneInfoFromCountryCode(isoCountryCode);
-        DateTime result = TimeZoneInfo.ConvertTimeToUtc(date, timeZone);
-        return result;
+        TzdbDateTimeZoneSource source = TzdbDateTimeZoneSource.Default;
+        LocalDateTime local = new LocalDateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes);
+        DateTimeZone dateTimeZone = source.ForId(timeZoneID);
+        ZonedDateTime zonedDateTime = local.InZoneLeniently(dateTimeZone);
+        return zonedDateTime.ToDateTimeUtc();
     }
 
     public static long? GetLastTicksFromSchedule(DeploymentInformation deploymentInformation, DateTime nowUtc)
@@ -180,7 +183,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 continue;
             }
 
-            var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.CountryCode);
+            var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.TimeZoneID);
             dates.Add(date);
         }
 
@@ -224,7 +227,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     continue;
                 }
 
-                var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.CountryCode);
+                var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.TimeZoneID);
                 times.Add(new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value));
             }
 
@@ -237,7 +240,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     Therefore, comparing only the total amount of minutes, as was done before, would not work.
                 */
                 List<TimeToScaleDownTimeout> orderedTimes = times
-                    .Select(t => new {Time = t, CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.CountryCode).Ticks})
+                    .Select(t => new {Time = t, CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.TimeZoneID).Ticks})
                     .Where(t => t.Ticks < nowUtc.Ticks)
                     .OrderBy(t => t.Ticks)
                     .Select(t => t.Time)
@@ -247,12 +250,12 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     return orderedTimes[^1].Value;
                 }
                 
-                return times.OrderBy(t => CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.CountryCode).Ticks).Last().Value;
+                return times.OrderBy(t => CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.TimeZoneID).Ticks).Last().Value;
             }
             else if (times.Count == 1)
             {
                 var time = times.First();
-                return (CreateDateTime(nowUtc, time.Hours, time.Minutes, deploymentInformation.Schedule.CountryCode).Ticks < nowUtc.Ticks) ?
+                return (CreateDateTime(nowUtc, time.Hours, time.Minutes, deploymentInformation.Schedule.TimeZoneID).Ticks < nowUtc.Ticks) ?
                     time.Value : deploymentInformation.TimeoutSecondBeforeSetReplicasMin;
             }
         }
