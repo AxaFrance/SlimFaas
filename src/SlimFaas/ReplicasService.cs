@@ -1,8 +1,4 @@
-﻿using System.Globalization;
-using SlimFaas.Kubernetes;
-using System.Text.Json.Serialization;
-using System.Text.Json;
-using System.Security.Cryptography.X509Certificates;
+﻿using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
@@ -153,7 +149,6 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 else {
                     logger.LogInformation("Scale down {Deployment} from {currentScale} to {ReplicasMin}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasMin);
                 }
-                Console.WriteLine("Time elapsed without request reached. Scaling...");
 
                 Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
                     Replicas: deploymentInformation.ReplicasMin,
@@ -199,13 +194,12 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
     record TimeToScaleDownTimeout(int Hours, int Minutes, int Value);
 
-    private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string culture)
+    private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string timeZoneStr)
     {
-        Console.WriteLine("CreateDateTime start : " + dateTime.ToString() + ", with hours : " + hours + ", with minutes : " + minutes + ", in culture " + culture);
-        DateTime test = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0, new CultureInfo(culture).Calendar);
-        DateTime trueResult = TimeZoneInfo.ConvertTimeToUtc(test);
-        Console.WriteLine("CreateDateTime result, converted in UTC : " + trueResult.ToString());
-        return trueResult;
+        DateTime date = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0);
+        TimeZoneInfo timeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneStr);
+        DateTime result = TimeZoneInfo.ConvertTimeToUtc(date, timeZone);
+        return result;
     }
 
     public static long? GetLastTicksFromSchedule(DeploymentInformation deploymentInformation, DateTime nowUtc)
@@ -218,14 +212,6 @@ public class ReplicasService(IKubernetesService kubernetesService,
         var dateTime = DateTime.MinValue;
         var dates = new List<DateTime>();
         
-        Console.WriteLine(
-            "Culture : "
-          + deploymentInformation.Schedule.Culture
-          + ", WakeUp : "
-          + string.Join(',', deploymentInformation.Schedule.Default.WakeUp)
-          + ", ScaleDownTimeout : "
-          + string.Join(',', deploymentInformation.Schedule.Default.ScaleDownTimeout));
-
         foreach (var defaultSchedule in deploymentInformation.Schedule.Default.WakeUp)
         {
             var splits = defaultSchedule.Split(':');
@@ -239,8 +225,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 continue;
             }
 
-            var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
-            Console.WriteLine("Created date from schedule : " + date.ToString());
+            var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.TimeZone);
             dates.Add(date);
         }
 
@@ -255,14 +240,12 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
         if (dateTime > DateTime.MinValue)
         {
-            Console.WriteLine("LastTicksFromSchedule, dateTime > DateTime.MinValue : " + dateTime.Ticks);
             return dateTime.Ticks;
         }
 
         if(dateTime == DateTime.MinValue && dates.Count > 0)
         {
             dateTime = dates.OrderBy(d => d).Last();
-            Console.WriteLine("LastTicksFromSchedule, dateTime == DateTime.MinValue && dates.Count > 0 : " + dateTime.AddDays(-1).Ticks);
             return dateTime.AddDays(-1).Ticks;
         }
 
@@ -276,8 +259,6 @@ public class ReplicasService(IKubernetesService kubernetesService,
             List<TimeToScaleDownTimeout> times = new();
             foreach (var defaultSchedule in deploymentInformation.Schedule.Default.ScaleDownTimeout)
             {
-                Console.WriteLine("Default schedule : " + defaultSchedule.Time);
-                Console.WriteLine("With Value being " + defaultSchedule.Value);
                 var splits = defaultSchedule.Time.Split(':');
                 if (splits.Length != 2)
                 {
@@ -288,15 +269,8 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     continue;
                 }
 
-                var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
-                Console.WriteLine("Date added to times list :" + date.ToString());
+                var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.TimeZone);
                 times.Add(new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value));
-            }
-            Console.WriteLine("Total times found : " + times.Count);
-            Console.WriteLine("times :");
-            foreach (var time in times)
-            {
-                Console.WriteLine(time.ToString());
             }
 
             if (times.Count >= 2)
@@ -308,31 +282,22 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     Therefore, comparing only the total amount of minutes, as was done before, would not work.
                 */
                 List<TimeToScaleDownTimeout> orderedTimes = times
-                    .Select(t => new {Time = t, CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.Culture).ToUniversalTime().Ticks})
+                    .Select(t => new {Time = t, CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.TimeZone).Ticks})
                     .Where(t => t.Ticks < nowUtc.Ticks)
                     .OrderBy(t => t.Ticks)
                     .Select(t => t.Time)
                     .ToList();
                 if (orderedTimes.Count >= 1)
                 {
-                    Console.WriteLine("Selected orderedTime : " + orderedTimes[^1].Value);
-                    Console.WriteLine("Count ordered times : " + orderedTimes.Count);
                     return orderedTimes[^1].Value;
                 }
-
-                Console.WriteLine("Ordered times :");
-                foreach (var orderedTime in orderedTimes)
-                {
-                    Console.WriteLine(orderedTime.Hours + ":" + orderedTime.Minutes + ", value : " + orderedTime.Value);
-                }
-
                 
-                return times.OrderBy(t => CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.Culture).ToUniversalTime().Ticks).Last().Value;
+                return times.OrderBy(t => CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.TimeZone).Ticks).Last().Value;
             }
             else if (times.Count == 1)
             {
                 var time = times.First();
-                return (CreateDateTime(nowUtc, time.Hours, time.Minutes, deploymentInformation.Schedule.Culture).ToUniversalTime().Ticks < nowUtc.Ticks) ?
+                return (CreateDateTime(nowUtc, time.Hours, time.Minutes, deploymentInformation.Schedule.TimeZone).Ticks < nowUtc.Ticks) ?
                     time.Value : deploymentInformation.TimeoutSecondBeforeSetReplicasMin;
             }
         }
