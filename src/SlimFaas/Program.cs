@@ -4,10 +4,11 @@ using DotNext.Net.Cluster.Consensus.Raft.Http;
 using Polly;
 using Polly.Extensions.Http;
 using Prometheus;
-using RaftNode;
+using SlimData;
 using SlimFaas;
 using SlimFaas.Database;
 using SlimFaas.Kubernetes;
+using EnvironmentVariables = SlimFaas.EnvironmentVariables;
 
 #pragma warning disable CA2252
 

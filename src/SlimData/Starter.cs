@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 
-namespace RaftNode;
+namespace SlimData;
 
 public class Starter
 {

@@ -4,7 +4,7 @@ using DotNext.Net.Cluster.Consensus.Raft.Commands;
 using DotNext.Runtime.Serialization;
 using SlimData.Commands;
 
-namespace RaftNode;
+namespace SlimData;
 
 public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<SlimDataPayload>
 {
@@ -17,7 +17,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
     public CommandInterpreter Interpreter { get; }
 
     public  SlimPersistentState(string path)
-        : base(path, 50, new Options { InitialPartitionSize = 50 * 8, UseCaching = true })
+        : base(path, 50, new Options { InitialPartitionSize = 50 * 8, UseCaching = true, UseLegacyBinaryFormat = true })
     {
         Interpreter = SlimDataInterpreter.InitInterpreter(_state);
     }

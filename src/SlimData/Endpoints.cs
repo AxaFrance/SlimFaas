@@ -1,7 +1,6 @@
 ﻿using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using MemoryPack;
-using RaftNode;
 using SlimData.Commands;
 
 namespace SlimData;

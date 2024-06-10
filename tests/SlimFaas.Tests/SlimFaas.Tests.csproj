@@ -16,8 +16,8 @@
     <PackageReference Include="MemoryPack" Version="1.21.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageReference Include="Microsoft.CodeCoverage" Version="17.10.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.5" />
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.6" />
     <PackageReference Include="KubernetesClient" Version="14.0.2" />
     <PackageReference Include="Moq" Version="4.20.70" />
     <PackageReference Include="xunit" Version="2.8.1" />

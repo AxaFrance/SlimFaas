@@ -3,7 +3,6 @@ using System.Net;
 using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using MemoryPack;
-using RaftNode;
 using SlimData;
 using SlimData.Commands;
 
