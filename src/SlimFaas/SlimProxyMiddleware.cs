@@ -163,7 +163,11 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 var splits = deploymentInformationSubscribeEvent.Split(":");
                 if (splits.Length == 1 && splits[0] == eventName)
                 {
-                    result.Add(deploymentInformation);
+                    if (deploymentInformation.Visibility == FunctionVisibility.Public ||
+                        MessageComeFromNamepaceInternal(context, replicasService))
+                    {
+                        result.Add(deploymentInformation);
+                    }
                 }
                 else if (splits.Length == 2 && splits[1] == eventName)
                 {
@@ -191,6 +195,26 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         return function;
     }
 
+    private static FunctionVisibility GetFunctionVisibility(ILogger<SlimProxyMiddleware> logger, DeploymentInformation function, string path)
+    {
+        if (function.PathsStartWithVisibility?.Count > 0)
+        {
+            foreach (string pathStartWith in function.PathsStartWithVisibility)
+            {
+                var splits = pathStartWith.Split(":");
+                if (splits.Length == 2 && splits[1].ToLowerInvariant() == path.ToLowerInvariant())
+                {
+                    var visibility = splits[0];
+                    var visibilityEnum = Enum.Parse<FunctionVisibility>(visibility, true);
+                    return visibilityEnum;
+                }
+
+                logger.LogWarning("PathStartWithVisibility {PathStartWith} should be prefixed by Public: or Private:", pathStartWith);
+            }
+        }
+        return function.Visibility;
+    }
+
     private async Task BuildAsyncResponseAsync(HttpContext context, IReplicasService replicasService, string functionName,
         string functionPath)
     {
@@ -200,15 +224,16 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             context.Response.StatusCode = 404;
             return;
         }
-        if (function.Visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(context, replicasService))
+
+        var visibility = GetFunctionVisibility(logger, function, functionPath);
+
+        if (visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(context, replicasService))
         {
             context.Response.StatusCode = 404;
             return;
         }
         CustomRequest customRequest =
             await InitCustomRequest(context, context.Request, functionName, functionPath);
-
-
 
         var bin = MemoryPackSerializer.Serialize(customRequest);
         await slimFaasQueue.EnqueueAsync(functionName, bin);
@@ -289,7 +314,9 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             return;
         }
 
-        if (function.Visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(context, replicasService))
+        var visibility = GetFunctionVisibility(logger, function, functionPath);
+
+        if (visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(context, replicasService))
         {
             context.Response.StatusCode = 404;
             return;

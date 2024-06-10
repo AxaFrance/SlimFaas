@@ -152,7 +152,8 @@ spec:
             {"Culture":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
         SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment or statefulset names
         SlimFaas/SubscribeEvents : "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
-        SlimFaas/Visibility : "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
+        SlimFaas/DefaultVisibility : "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
+        SlimFaas/UrlsPathStartWithVisibility : "Private:/mypath/subPath,Private:/mysecondpath" # Public or Private (private can be accessed only by internal namespace https call from pods)
     spec:
       serviceAccountName: default
       containers:
@@ -320,9 +321,13 @@ spec:
   - Pods will be scaled up only if all pods in this list are in ready state with the minimum number of replicas superior or equal to ReplicasAtStart
   - This property is useful if you want to scale up your pods only if your database is ready for example
 - **SlimFaas/SubscribeEvents** : ""
-    - Comma separated list of event names to license the function to receive events. example: "my-event-name1,my-event-name2"
-- **SlimFaas/Visibility** : "Public"
-    - Public or Private (private function cannot be accessed by external HTTP call)
+  - Comma separated list of event names to license the function to receive events. example: "Public:my-event-name1,Private:my-event-name2,my-event-name3"
+  - "Public:" or "Private:" are prefix that set the event visibility, if not set, "SlimFaas/DefaultVisibility" is used
+- **SlimFaas/DefaultVisibility** : "Public"
+  - Public or Private (private can be accessed only by internal namespace https call from pods)
+- **SlimFaas/PathsStartWithVisibility** : ""
+  - Comma separated list of path prefixed by the default visibility. example: "Private:/mypath/subpath,Public:/mypath2"
+  - "Public:" or "Private:" are prefix that set the path visibility, if not set, "SlimFaas/DefaultVisibility" is used
 - **SlimFaas/Schedule** : "" #json configuration
   - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00
 
@@ -350,9 +355,6 @@ But we encountered many OpenFaas issues:
 - It requires to configure well NATS for managing fail-over
 - Queue configuration is not easy
 - The aggressive removing of old images from docker.io by OpenFaas team in April 2023 got us some production issues
-        SlimFaas/SubscribeEvents : "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
-        SlimFaas/Visibility : "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
-            # urls are separated by ;
 
 We would like to use **Knative** but:
 - We cannot use it because of some internal constraints and security issues.

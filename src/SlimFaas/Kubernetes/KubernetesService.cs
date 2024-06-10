@@ -65,7 +65,8 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
     IList<string>? DependsOn = null,
     ScheduleConfig? Schedule = null,
     IList<string>? SubscribeEvents = null,
-    FunctionVisibility Visibility = FunctionVisibility.Public);
+    FunctionVisibility Visibility = FunctionVisibility.Public,
+    IList<string>? PathsStartWithVisibility = null);
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
 
@@ -78,7 +79,8 @@ public class KubernetesService : IKubernetesService
     private const string ReplicasAtStart = "SlimFaas/ReplicasAtStart";
     private const string DependsOn = "SlimFaas/DependsOn";
     private const string SubscribeEvents = "SlimFaas/SubscribeEvents";
-    private const string Visibility = "SlimFaas/Visibility";
+    private const string DefaultVisibility = "SlimFaas/DefaultVisibility";
+    private const string PathsStartWithVisibility = "SlimFaas/PathsStartWithVisibility";
 
     private const string ReplicasStartAsSoonAsOneFunctionRetrieveARequest =
         "SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest";
@@ -238,9 +240,12 @@ public class KubernetesService : IKubernetesService
                     annotations.TryGetValue(SubscribeEvents, out string? valueSubscribeEvents)
                         ? valueSubscribeEvents.Split(',').ToList()
                         : new List<string>(),
-                    annotations.TryGetValue(Visibility, out string? visibility)
+                    annotations.TryGetValue(DefaultVisibility, out string? visibility)
                         ? Enum.Parse<FunctionVisibility>(visibility)
-                        : FunctionVisibility.Public);
+                        : FunctionVisibility.Public,
+                    annotations.TryGetValue(PathsStartWithVisibility, out string? valueUrlsStartWithVisibility)
+                        ? valueUrlsStartWithVisibility.Split(',').ToList()
+                        : new List<string>());
                 deploymentInformationList.Add(deploymentInformation);
             }
             catch (Exception e)
@@ -310,7 +315,7 @@ public class KubernetesService : IKubernetesService
                     annotations.TryGetValue(SubscribeEvents, out string? valueSubscribeEvents)
                         ? valueSubscribeEvents.Split(',').ToList()
                         : new List<string>(),
-                    annotations.TryGetValue(Visibility, out string? visibility)
+                    annotations.TryGetValue(DefaultVisibility, out string? visibility)
                         ? Enum.Parse<FunctionVisibility>(visibility)
                         : FunctionVisibility.Public);
 
