@@ -2,7 +2,7 @@
 [![Docker SlimFaas](https://img.shields.io/docker/pulls/axaguildev/slimfaas.svg?label=docker+pull+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds) [![Docker Image Size](https://img.shields.io/docker/image-size/axaguildev/slimfaas?label=image+size+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds)
 [![Docker Image Version](https://img.shields.io/docker/v/axaguildev/slimfaas?sort=semver&label=latest+version+slimfaas)](https://hub.docker.com/r/axaguildev/slimfaas/builds)
 
-![SlimFaas.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/SlimFaas.png)
+![SlimFaas.png](./documentation/SlimFaas.png)
 
 Why use SlimFaas?
 - Scale to 0 after a period of inactivity (work with deployment and statefulset)
@@ -17,7 +17,7 @@ Why use SlimFaas?
   - No impact on your current kubernetes manifests: just add an annotation to the pod you want to auto-scale
 - Very **Slim** and very **Fast**
 
-![slim-faas-ram-cpu.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/slim-faas-ram-cpu.png)
+![slim-faas-ram-cpu.png](./documentation/slim-faas-ram-cpu.png)
 
 ## Getting Started with Kubernetes
 
@@ -98,14 +98,14 @@ SlimFaas act as an HTTP proxy with 2 modes:
 
 - Synchronous http://slimfaas/function/myfunction = > HTTP response function
 
-![sync_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/sync_http_call.PNG)
+![sync_http_call.PNG](./documentation/sync_http_call.PNG)
 
 ### Asynchronous HTTP call
 
 - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
   - Tail using SlimData database included in SlimFaas pod
 
-![async_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/async_http_call.PNG)
+![async_http_call.PNG](./documentation/async_http_call.PNG)
 
 ### Wake HTTP call
 
@@ -118,7 +118,7 @@ To publish the message to every replicas in "Ready" state of the function
 
 - HTTP POST http://slimfaas/publish-event/my-event-name {"data":"my-event-data"}
 
-![publish_sync_call.png](https://github.com/AxaFrance/slimfaas/blob/main/documentation/publish_sync_call.png)
+![publish_sync_call.png](./documentation/publish_sync_call.png)
 
 ## How to install
 
@@ -149,7 +149,7 @@ spec:
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
         SlimFaas/Schedule : |
-            {"Culture":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
+            {"TimeZoneID":"Europe/Paris","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
         SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment or statefulset names
         SlimFaas/SubscribeEvents : "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
         SlimFaas/DefaultVisibility : "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
@@ -328,13 +328,13 @@ spec:
 - **SlimFaas/PathsStartWithVisibility** : ""
   - Comma separated list of path prefixed by the default visibility. example: "Private:/mypath/subpath,Public:/mypath2"
   - "Public:" or "Private:" are prefix that set the path visibility, if not set, "SlimFaas/DefaultVisibility" is used
-- **SlimFaas/Schedule** : "" #json configuration
-  - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00
+- **SlimFaas/Schedule** : json configuration
+  - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00. Time zones are defined as IANA time zones. The full list is available [here](https://nodatime.org/TimeZones)
 
 
 ````bash
 {
-  "Culture":"fr-FR", // Time zone culture, example: en-US,  CultureInfo in .NET https://learn.microsoft.com/en-us/dotnet/api/system.globalization.cultureinfo?view=net-8.0
+  "TimeZoneID":"Europe/Paris",
   "Default":{
     "WakeUp":["07:00"], // Wake up your infrastructure at 07:00
     "ScaleDownTimeout":[
