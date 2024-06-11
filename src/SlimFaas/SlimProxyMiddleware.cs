@@ -245,7 +245,8 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         ISendClient sendClient, IReplicasService replicasService, string eventName, string functionPath)
     {
         var functions = SearchFunctions(context, replicasService, eventName);
-        if (functions.Count <= 0)
+        var slimFaasSubscribeEvents = _slimFaasSubscribeEvents.Where(s => s.Key == eventName);
+        if (functions.Count <= 0 && !slimFaasSubscribeEvents.Any())
         {
             context.Response.StatusCode = 404;
             return;
@@ -275,7 +276,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             }
         }
 
-        foreach (KeyValuePair<string,IList<string>> slimFaasSubscribeEvent in _slimFaasSubscribeEvents.Where(s => s.Key == eventName))
+        foreach (KeyValuePair<string,IList<string>> slimFaasSubscribeEvent in slimFaasSubscribeEvents)
         {
             foreach (string baseUrl in slimFaasSubscribeEvent.Value)
             {
