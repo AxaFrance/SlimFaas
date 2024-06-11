@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using DotNext.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -78,13 +79,17 @@ internal class MemorySlimFaasQueue : ISlimFaasQueue
     public async Task EnqueueAsync(string key, byte[] message) => await Task.Delay(100);
 }
 
+internal record SendData(string FunctionName, string Path, string BaseUrl = null);
+
 internal class SendClientMock : ISendClient
 {
+    public IList<SendData> SendDatas = new List<SendData>();
     public Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null, string? baseUrl = null)
     {
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
         Task.Delay(100).Wait();
+        SendDatas.Add(new(customRequest.FunctionName, customRequest.Path, baseUrl));
         return Task.FromResult(responseMessage);
     }
 
@@ -94,6 +99,7 @@ internal class SendClientMock : ISendClient
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
         Task.Delay(100).Wait();
+        SendDatas.Add(new(functionName, functionPath, baseUrl));
         return Task.FromResult(responseMessage);
     }
 }
@@ -102,21 +108,20 @@ public class ProxyMiddlewareTests
 {
 
     [Theory]
-    [InlineData("/publish-event/reload/hello", HttpStatusCode.NoContent)]
-    [InlineData("/publish-event/reloadnoprefix/hello", HttpStatusCode.NoContent)]
-    [InlineData("/publish-event/wrong/download", HttpStatusCode.NotFound)]
-    [InlineData("/publish-event/reloadprivate/hello", HttpStatusCode.NotFound)]
-    public async Task CallPublishInSyncModeAndReturnOk(string path, HttpStatusCode expected)
+    [InlineData("/publish-event/toto/hello", HttpStatusCode.NoContent, "http://localhost:5002/hello" )]
+    [InlineData("/publish-event/reload/hello", HttpStatusCode.NoContent, "http://fibonacci-2.{function_name}:8080//hello,http://fibonacci-1.{function_name}:8080//hello,http://localhost:5002/hello" )]
+    [InlineData("/publish-event/reloadnoprefix/hello", HttpStatusCode.NoContent,  "http://fibonacci-2.{function_name}:8080//hello,http://fibonacci-1.{function_name}:8080//hello")]
+    [InlineData("/publish-event/wrong/download", HttpStatusCode.NotFound, null)]
+    [InlineData("/publish-event/reloadprivate/hello", HttpStatusCode.NotFound, null)]
+    public async Task CallPublishInSyncModeAndReturnOk(string path, HttpStatusCode expected, string? times)
     {
         Mock<IWakeUpFunction> wakeUpFunctionMock = new();
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
-        Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
-        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>(), It.IsAny<string?>()))
-            .ReturnsAsync(responseMessage, TimeSpan.FromMilliseconds(200));
+        var sendClientMock = new SendClientMock();
 
         System.Environment.SetEnvironmentVariable(EnvironmentVariables.SlimFaasSubscribeEvents,
-            "reload=>http://localhost:5002");
+            "reload=>http://localhost:5002,toto=>http://localhost:5002");
 
         using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
@@ -126,7 +131,7 @@ public class ProxyMiddlewareTests
                     .ConfigureServices(services =>
                     {
                         services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
-                        services.AddSingleton<ISendClient, ISendClient>(sc => sendClientMock.Object);
+                        services.AddSingleton<ISendClient, ISendClient>(sc => sendClientMock);
                         services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
                         services.AddSingleton<IReplicasService, MemoryReplicas2ReplicasService>();
                         services.AddSingleton<IWakeUpFunction>(sp => wakeUpFunctionMock.Object);
@@ -137,18 +142,16 @@ public class ProxyMiddlewareTests
 
         HttpResponseMessage response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
 
-        if (expected == HttpStatusCode.OK)
+        if (times != null)
         {
-            var functionPath = path.Split("/")[1];
-            sendClientMock.Verify(
-                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", functionPath, It.IsAny<string>(),
-                    "http://fibonacci-2.{function_name}:8080/"), Times.Once);
-            sendClientMock.Verify(
-                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "fibonacci", functionPath, It.IsAny<string>(),
-                    "http://fibonacci-1.{function_name}:8080/"), Times.Once);
-            sendClientMock.Verify(
-                s => s.SendHttpRequestSync(It.IsAny<HttpContext>(), "", functionPath, It.IsAny<string>(),
-                    "http://localhost:5002/"), Times.Once);
+            var functionPath = $"/{path.Split("/")[3]}";
+            var timesList = times.Split(",");
+            Assert.Equal(timesList.Length, sendClientMock.SendDatas.Count);
+            foreach (var time in sendClientMock.SendDatas)
+            {
+                var p = time.BaseUrl + time.Path;
+                Assert.True(timesList.Contains(p));
+            }
         }
 
         Assert.Equal(expected, response.StatusCode);
