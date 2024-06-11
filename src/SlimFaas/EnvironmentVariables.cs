@@ -2,6 +2,8 @@ namespace SlimFaas;
 
 public static class EnvironmentVariables
 {
+    public const string SlimFaasAllowUnsecureSSL = "SLIMFAAS_ALLOW_UNSECURE_SSL";
+    public const bool SlimFaasAllowUnsecureSSLDefault = false;
 
     public const string SlimFaasSubscribeEvents = "SLIMFAAS_SUBSCRIBE_EVENTS";
     public const string SlimFaasSubscribeEventsDefault = "";
@@ -133,6 +135,15 @@ public static class EnvironmentVariables
         return defaultLong;
     }
 
+    public static bool ReadBoolean( string environmentVariableName, bool defaultBoolean)
+    {
+        string valueString = Environment.GetEnvironmentVariable(environmentVariableName) ?? defaultBoolean.ToString();
+        if (bool.TryParse(valueString, out bool value))
+        {
+            return value;
+        }
+        return defaultBoolean;
+    }
     public static bool ReadBoolean<T>(ILogger<T> logger, string environmentVariableName, bool defaultBoolean)
     {
         string valueString = Environment.GetEnvironmentVariable(environmentVariableName) ?? defaultBoolean.ToString();

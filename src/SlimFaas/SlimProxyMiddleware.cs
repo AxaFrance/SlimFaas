@@ -202,7 +202,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             foreach (string pathStartWith in function.PathsStartWithVisibility)
             {
                 var splits = pathStartWith.Split(":");
-                if (splits.Length == 2 && splits[1].ToLowerInvariant() == path.ToLowerInvariant())
+                if (splits.Length == 2 && path.ToLowerInvariant().StartsWith(splits[1].ToLowerInvariant()))
                 {
                     var visibility = splits[0];
                     var visibilityEnum = Enum.Parse<FunctionVisibility>(visibility, true);
@@ -244,6 +244,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     private async Task BuildPublishResponseAsync(HttpContext context, HistoryHttpMemoryService historyHttpService,
         ISendClient sendClient, IReplicasService replicasService, string eventName, string functionPath)
     {
+        logger.LogDebug("Receiving event: {EventName}", eventName);
         var functions = SearchFunctions(context, replicasService, eventName);
         var slimFaasSubscribeEvents = _slimFaasSubscribeEvents.Where(s => s.Key == eventName);
         if (functions.Count <= 0 && !slimFaasSubscribeEvents.Any())
@@ -269,7 +270,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                     EnvironmentVariables.BaseFunctionPodUrlDefault;
 
                 var baseUrl = SlimDataEndpoint.Get(pod, baseFunctionPodUrl);
-
+                logger.LogDebug("Sending event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, function.Deployment, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
                 Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, function.Deployment,
                     functionPath, context.Request.QueryString.ToUriComponent(), baseUrl);
                 tasks.Add(responseMessagePromise);
@@ -280,6 +281,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         {
             foreach (string baseUrl in slimFaasSubscribeEvent.Value)
             {
+                logger.LogDebug("Sending event {EventName} to {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
                 Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, "",
                     functionPath, context.Request.QueryString.ToUriComponent(), baseUrl);
                 tasks.Add(responseMessagePromise);

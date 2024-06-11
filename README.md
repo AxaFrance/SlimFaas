@@ -247,6 +247,9 @@ spec:
             # Optional
             # name : POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED
             # value : "false" # default equivalent to false
+            # Optional
+            # name : SLIMFAAS_ALLOW_UNSECURE_SSL
+            # value : "false" # default equivalent to false
 
             # name : SLIMDATA_CONFIGURATION # represent SlimData internal configuration, more documentation here: https://dotnet.github.io/dotNext/features/cluster/raft.html
             # value : | #default values

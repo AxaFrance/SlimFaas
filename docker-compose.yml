@@ -2,6 +2,8 @@
 
 services:
   slimfaas:
+    extra_hosts:
+      - host.docker.internal:host-gateway
     image: docker.io/axaguildev/slimfaas:latest
     #build:
     #  context: .
@@ -16,6 +18,7 @@ services:
       - HOSTNAME=slimfaas-1
       - SLIMDATA_CONFIGURATION={"coldStart":"true"}
       - SLIMFAAS_PORTS=5000,5020
+      - SLIMFAAS_SUBSCRIBE_EVENTS=reload=>https://host.docker.internal:5002
   fibonacci:
     #image: docker.io/axaguildev/fibonacci:latest
     build:

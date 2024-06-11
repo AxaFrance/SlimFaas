@@ -149,29 +149,55 @@ if (replicasService?.Deployments.SlimFaas.Pods != null)
     Console.WriteLine($"Node started {currentPod.Name} {publicEndPoint}");
 }
 
+var allowUnsecureSSL = EnvironmentVariables.ReadBoolean(EnvironmentVariables.SlimFaasAllowUnsecureSSL, EnvironmentVariables.SlimFaasAllowUnsecureSSLDefault);
+
 serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
 serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
 serviceCollectionSlimFaas.AddSingleton<IWakeUpFunction, WakeUpFunction>();
 serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .ConfigureHttpClient((client =>
+    .ConfigureHttpClient(client =>
     {
         client.DefaultRequestVersion = HttpVersion.Version20;
         client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
-    }))
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true });
+    })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var httpClientHandler = new HttpClientHandler
+        {
+            AllowAutoRedirect = true
+        };
+        if (allowUnsecureSSL)
+        {
+            httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+        }
+
+        return httpClientHandler;
+    });
 
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
 
 serviceCollectionSlimFaas.AddScoped<ISendClient, SendClient>();
 serviceCollectionSlimFaas.AddHttpClient<ISendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .ConfigureHttpClient((client =>
+    .ConfigureHttpClient(client =>
     {
         client.DefaultRequestVersion = HttpVersion.Version20;
         client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
-    }))
+    })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var httpClientHandler = new HttpClientHandler
+        {
+            AllowAutoRedirect = true
+        };
+        if (allowUnsecureSSL)
+        {
+            httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+        }
 
+        return httpClientHandler;
+    })
     .AddPolicyHandler(GetRetryPolicy());
 
 if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
