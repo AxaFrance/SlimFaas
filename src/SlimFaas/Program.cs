@@ -154,11 +154,11 @@ serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
 serviceCollectionSlimFaas.AddSingleton<IWakeUpFunction, WakeUpFunction>();
 serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .ConfigureHttpClient((client =>
+    .ConfigureHttpClient(client =>
     {
         client.DefaultRequestVersion = HttpVersion.Version20;
         client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
-    }))
+    })
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {
         AllowAutoRedirect = true,
@@ -170,12 +170,16 @@ serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
 serviceCollectionSlimFaas.AddScoped<ISendClient, SendClient>();
 serviceCollectionSlimFaas.AddHttpClient<ISendClient, SendClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .ConfigureHttpClient((client =>
+    .ConfigureHttpClient(client =>
     {
         client.DefaultRequestVersion = HttpVersion.Version20;
         client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
-    }))
-
+    })
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        AllowAutoRedirect = true,
+        ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+    })
     .AddPolicyHandler(GetRetryPolicy());
 
 if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
