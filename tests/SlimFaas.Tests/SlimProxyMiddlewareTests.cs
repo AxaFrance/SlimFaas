@@ -49,8 +49,8 @@ internal class MemoryReplicas2ReplicasService : IReplicasService
                     PathsStartWithVisibility: new List<string>()
                     {
                         "Public:/compute",
-                        "Private:/computeprivate",
-                        "/computenoprefix",
+                        "Private:/private",
+                        "/noprefix",
                     },
                     Namespace: "default",
                     Pods: new List<PodInformation> {
@@ -159,10 +159,10 @@ public class ProxyMiddlewareTests
 
     [Theory]
     [InlineData("/function/fibonacci/compute", HttpStatusCode.OK)]
-    [InlineData("/function/fibonacci/computenotprefix", HttpStatusCode.OK)]
+    [InlineData("/function/fibonacci/noprefix", HttpStatusCode.OK)]
     [InlineData("/function/fibonacci/download", HttpStatusCode.OK)]
     [InlineData("/function/wrong/download", HttpStatusCode.NotFound)]
-    [InlineData("/function/fibonacci/computeprivate", HttpStatusCode.NotFound)]
+    [InlineData("/function/fibonacci/private", HttpStatusCode.NotFound)]
     public async Task CallFunctionInSyncModeAndReturnOk(string path, HttpStatusCode expected)
     {
         Mock<IWakeUpFunction> wakeUpFunctionMock = new();
