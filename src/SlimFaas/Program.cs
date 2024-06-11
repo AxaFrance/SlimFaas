@@ -149,6 +149,8 @@ if (replicasService?.Deployments.SlimFaas.Pods != null)
     Console.WriteLine($"Node started {currentPod.Name} {publicEndPoint}");
 }
 
+var allowUnsecureSSL = EnvironmentVariables.ReadBoolean(EnvironmentVariables.SlimFaasAllowUnsecureSSL, EnvironmentVariables.SlimFaasAllowUnsecureSSLDefault);
+
 serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
 serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
 serviceCollectionSlimFaas.AddSingleton<IWakeUpFunction, WakeUpFunction>();
@@ -159,10 +161,18 @@ serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
         client.DefaultRequestVersion = HttpVersion.Version20;
         client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
     })
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    .ConfigurePrimaryHttpMessageHandler(() =>
     {
-        AllowAutoRedirect = true,
-        ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+        var httpClientHandler = new HttpClientHandler
+        {
+            AllowAutoRedirect = true
+        };
+        if (allowUnsecureSSL)
+        {
+            httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+        }
+
+        return httpClientHandler;
     });
 
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
@@ -175,10 +185,18 @@ serviceCollectionSlimFaas.AddHttpClient<ISendClient, SendClient>()
         client.DefaultRequestVersion = HttpVersion.Version20;
         client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
     })
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    .ConfigurePrimaryHttpMessageHandler(() =>
     {
-        AllowAutoRedirect = true,
-        ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+        var httpClientHandler = new HttpClientHandler
+        {
+            AllowAutoRedirect = true
+        };
+        if (allowUnsecureSSL)
+        {
+            httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+        }
+
+        return httpClientHandler;
     })
     .AddPolicyHandler(GetRetryPolicy());
 
