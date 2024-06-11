@@ -79,7 +79,7 @@ internal class MemorySlimFaasQueue : ISlimFaasQueue
     public async Task EnqueueAsync(string key, byte[] message) => await Task.Delay(100);
 }
 
-internal record SendData(string FunctionName, string Path, string BaseUrl = null);
+internal record SendData(string FunctionName, string Path, string BaseUrl);
 
 internal class SendClientMock : ISendClient
 {
@@ -150,7 +150,7 @@ public class ProxyMiddlewareTests
             foreach (var time in sendClientMock.SendDatas)
             {
                 var p = time.BaseUrl + time.Path;
-                Assert.True(timesList.Contains(p));
+                Assert.Contains(p, timesList);
             }
         }
 
