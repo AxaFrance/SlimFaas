@@ -27,6 +27,7 @@ public class SendClient(HttpClient httpClient) : ISendClient
         string customRequestQuery = customRequest.Query;
         string targetUrl =
             ComputeTargetUrl(functionUrl, customRequestFunctionName, customRequestPath, customRequestQuery, _namespaceSlimFaas);
+        Console.WriteLine($"Sending request to {targetUrl}");
         HttpRequestMessage targetRequestMessage = CreateTargetMessage(customRequest, new Uri(targetUrl));
         if (context != null)
         {

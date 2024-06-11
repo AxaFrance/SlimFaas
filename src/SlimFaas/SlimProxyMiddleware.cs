@@ -304,6 +304,12 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             }
         }
 
+        foreach (Task<HttpResponseMessage> task in tasks)
+        {
+            Console.WriteLine( "status code " + task.Result.StatusCode);
+            Console.WriteLine( "content " + task.Result.Content.ReadAsStringAsync().Result);
+        }
+
         context.Response.StatusCode = 204;
     }
 
