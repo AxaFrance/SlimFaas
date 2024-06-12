@@ -89,7 +89,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         }
     }
 
-    private static Boolean MessageComeFromNamepaceInternal(ILogger<SlimProxyMiddleware> logger, HttpContext context, IReplicasService replicasService)
+    private static Boolean MessageComeFromNamespaceInternal(ILogger<SlimProxyMiddleware> logger, HttpContext context, IReplicasService replicasService)
     {
         IList<string> podIps = replicasService.Deployments.Pods.Select(p => p.Ip).ToList();
         var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
@@ -175,7 +175,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 if (splits.Length == 1 && splits[0] == eventName)
                 {
                     if (deploymentInformation.Visibility == FunctionVisibility.Public ||
-                        MessageComeFromNamepaceInternal(logger, context, replicasService))
+                        MessageComeFromNamespaceInternal(logger, context, replicasService))
                     {
                         result.Add(deploymentInformation);
                     }
@@ -184,7 +184,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 {
                     var visibility = splits[0];
                     var visibilityEnum = Enum.Parse<FunctionVisibility>(visibility, true);
-                    if(visibilityEnum == FunctionVisibility.Private && MessageComeFromNamepaceInternal(logger, context, replicasService))
+                    if(visibilityEnum == FunctionVisibility.Private && MessageComeFromNamespaceInternal(logger, context, replicasService))
                     {
                         result.Add(deploymentInformation);
                     } else if(visibilityEnum == FunctionVisibility.Public)
@@ -238,7 +238,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
 
         var visibility = GetFunctionVisibility(logger, function, functionPath);
 
-        if (visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(logger, context, replicasService))
+        if (visibility == FunctionVisibility.Private && !MessageComeFromNamespaceInternal(logger, context, replicasService))
         {
             context.Response.StatusCode = 404;
             return;
@@ -344,7 +344,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
 
         var visibility = GetFunctionVisibility(logger, function, functionPath);
 
-        if (visibility == FunctionVisibility.Private && !MessageComeFromNamepaceInternal(logger, context, replicasService))
+        if (visibility == FunctionVisibility.Private && !MessageComeFromNamespaceInternal(logger, context, replicasService))
         {
             context.Response.StatusCode = 404;
             return;

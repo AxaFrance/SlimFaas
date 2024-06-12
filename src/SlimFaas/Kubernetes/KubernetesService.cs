@@ -217,7 +217,7 @@ public class KubernetesService : IKubernetesService
                 DeploymentInformation deploymentInformation = new(
                     name,
                     kubeNamespace,
-                    podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
+                    podList.Where(p => deploymentListItem.Metadata.Name.StartsWith(p.DeploymentName)).ToList(),
                     deploymentListItem.Spec.Replicas ?? 0,
                     annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
                         ? int.Parse(annotationReplicasAtStart)
@@ -292,7 +292,7 @@ public class KubernetesService : IKubernetesService
                 DeploymentInformation deploymentInformation = new(
                     name,
                     kubeNamespace,
-                    podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
+                    podList.Where(p => deploymentListItem.Metadata.Name.StartsWith(p.DeploymentName)).ToList(),
                     deploymentListItem.Spec.Replicas ?? 0,
                     annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
                         ? int.Parse(annotationReplicasAtStart)
