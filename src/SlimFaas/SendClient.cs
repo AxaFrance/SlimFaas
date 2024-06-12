@@ -10,7 +10,7 @@ public interface ISendClient
         string functionQuery, string? baseUrl = null);
 }
 
-public class SendClient(HttpClient httpClient) : ISendClient
+public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISendClient
 {
     private readonly string _baseFunctionUrl =
         Environment.GetEnvironmentVariable(EnvironmentVariables.BaseFunctionUrl) ??
@@ -27,6 +27,7 @@ public class SendClient(HttpClient httpClient) : ISendClient
         string customRequestQuery = customRequest.Query;
         string targetUrl =
             ComputeTargetUrl(functionUrl, customRequestFunctionName, customRequestPath, customRequestQuery, _namespaceSlimFaas);
+        logger.LogDebug("Sending request to {TargetUrl}", targetUrl);
         HttpRequestMessage targetRequestMessage = CreateTargetMessage(customRequest, new Uri(targetUrl));
         if (context != null)
         {
@@ -41,8 +42,9 @@ public class SendClient(HttpClient httpClient) : ISendClient
     public async Task<HttpResponseMessage> SendHttpRequestSync(HttpContext context, string functionName,
         string functionPath, string functionQuery, string? baseUrl = null)
     {
-        string targetUri = ComputeTargetUrl(baseUrl ?? _baseFunctionUrl, functionName, functionPath, functionQuery, _namespaceSlimFaas);
-        HttpRequestMessage targetRequestMessage = CreateTargetMessage(context, new Uri(targetUri));
+        string targetUrl = ComputeTargetUrl(baseUrl ?? _baseFunctionUrl, functionName, functionPath, functionQuery, _namespaceSlimFaas);
+        logger.LogDebug("Sending request to {TargetUrl}", targetUrl);
+        HttpRequestMessage targetRequestMessage = CreateTargetMessage(context, new Uri(targetUrl));
         HttpResponseMessage responseMessage = await httpClient.SendAsync(targetRequestMessage,
             HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
         return responseMessage;

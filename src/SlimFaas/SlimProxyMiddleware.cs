@@ -249,6 +249,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         var slimFaasSubscribeEvents = _slimFaasSubscribeEvents.Where(s => s.Key == eventName);
         if (functions.Count <= 0 && !slimFaasSubscribeEvents.Any())
         {
+            logger.LogDebug("Return 404 from event: {EventName}", eventName);
             context.Response.StatusCode = 404;
             return;
         }
@@ -301,6 +302,18 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             foreach (DeploymentInformation function in functions)
             {
                 historyHttpService.SetTickLastCall(function.Deployment, lastSetTicks);
+            }
+        }
+
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            foreach (Task<HttpResponseMessage> task in tasks)
+            {
+                if (task.IsCompleted)
+                {
+                    using HttpResponseMessage responseMessage = task.Result;
+                    logger.LogDebug("Response from event {EventName} with status code {StatusCode}", eventName, responseMessage.StatusCode);
+                }
             }
         }
 
