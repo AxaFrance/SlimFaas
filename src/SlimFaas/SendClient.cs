@@ -27,7 +27,7 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
         string customRequestQuery = customRequest.Query;
         string targetUrl =
             ComputeTargetUrl(functionUrl, customRequestFunctionName, customRequestPath, customRequestQuery, _namespaceSlimFaas);
-        logger.LogDebug("Sending request to {TargetUrl}", targetUrl);
+        logger.LogDebug("Sending async request to {TargetUrl}", targetUrl);
         HttpRequestMessage targetRequestMessage = CreateTargetMessage(customRequest, new Uri(targetUrl));
         if (context != null)
         {
@@ -43,7 +43,7 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
         string functionPath, string functionQuery, string? baseUrl = null)
     {
         string targetUrl = ComputeTargetUrl(baseUrl ?? _baseFunctionUrl, functionName, functionPath, functionQuery, _namespaceSlimFaas);
-        logger.LogDebug("Sending request to {TargetUrl}", targetUrl);
+        logger.LogDebug("Sending sync request to {TargetUrl}", targetUrl);
         HttpRequestMessage targetRequestMessage = CreateTargetMessage(context, new Uri(targetUrl));
         HttpResponseMessage responseMessage = await httpClient.SendAsync(targetRequestMessage,
             HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
