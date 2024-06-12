@@ -205,7 +205,7 @@ spec:
             - name: BASE_FUNCTION_URL
               value: "http://{function_name}.{namespace}.svc.cluster.local:8080"
             - name: BASE_FUNCTION_POD_URL # require for publish route
-              value: "http://{pod_name}.{function_name}.{namespace}.svc.cluster.local:8080"
+              value: "http://{pod_ip}.svc.cluster.local:8080"
             - name: BASE_SLIMDATA_URL
               value: "http://{pod_name}.slimfaas.{namespace}.svc.cluster.local:3262/"  # Don't expose this port, it can also be like "http://{pod_ip}:3262/" but if you can use DNS it's better
             - name: SLIMFAAS_PORTS
