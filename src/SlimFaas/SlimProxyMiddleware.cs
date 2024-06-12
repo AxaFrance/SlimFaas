@@ -261,6 +261,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             historyHttpService.SetTickLastCall(function.Deployment, lastSetTicks);
             foreach (var pod in function.Pods)
             {
+                logger.LogDebug("Pod {PodName} is ready: {PodReady}", pod.Name, pod.Ready);
                 if (pod.Ready != true)
                 {
                     continue;
