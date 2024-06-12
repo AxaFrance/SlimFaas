@@ -106,7 +106,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
 
     private static bool IsInternalIp(string? ipAddress, IList<string> podIps)
     {
-        return ipAddress != null && podIps.Contains(ipAddress);
+        return ipAddress != null && podIps.Any(ipAddress.Contains);
     }
 
     private static void BuildStatusResponse(IReplicasService replicasService,
