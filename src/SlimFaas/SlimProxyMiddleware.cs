@@ -95,11 +95,21 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
         var remoteIp = context.Connection.RemoteIpAddress?.ToString();
         logger.LogDebug("ForwardedFor: {ForwardedFor}, RemoteIp: {RemoteIp}", forwardedFor, remoteIp);
+        if(logger.IsEnabled(LogLevel.Debug))
+        {
+            foreach (var podIp in podIps)
+            {
+                logger.LogDebug("PodIp: {PodIp}", podIp);
+            }
+        }
 
         if (IsInternalIp(forwardedFor, podIps) || IsInternalIp(remoteIp, podIps))
         {
+            logger.LogDebug("Request come from internal namespace ForwardedFor: {ForwardedFor}, RemoteIp: {RemoteIp}", forwardedFor, remoteIp);
+
             return true;
         }
+        logger.LogDebug("Request come from external namespace ForwardedFor: {ForwardedFor}, RemoteIp: {RemoteIp}", forwardedFor, remoteIp);
 
         return false;
     }
