@@ -1,5 +1,7 @@
 ﻿using System.Net;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace SlimFaas.Tests;
 
@@ -28,7 +30,9 @@ public class SendClientShould
             return await Task.FromResult(responseMessage);
         }));
 
-        SendClient sendClient = new SendClient(httpClient);
+        var mockLogger = new Mock<ILogger<SendClient>>();
+
+        SendClient sendClient = new(httpClient, mockLogger.Object);
         CustomRequest customRequest =
             new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new[] { "value1" } } },
                 new byte[1], "fibonacci", "health", httpMethod, "");
@@ -62,8 +66,8 @@ public class SendClientShould
             sendedRequest = request;
             return await Task.FromResult(responseMessage);
         }));
-
-        SendClient sendClient = new SendClient(httpClient);
+        var mockLogger = new Mock<ILogger<SendClient>>();
+        SendClient sendClient = new SendClient(httpClient, mockLogger.Object);
 
         DefaultHttpContext httpContext = new DefaultHttpContext();
         HttpRequest httpContextRequest = httpContext.Request;
