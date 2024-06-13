@@ -205,7 +205,7 @@ spec:
             - name: BASE_FUNCTION_URL
               value: "http://{function_name}.{namespace}.svc.cluster.local:8080"
             - name: BASE_FUNCTION_POD_URL # require for publish route
-              value: "http://{pod_name}.{function_name}.{namespace}.svc.cluster.local:8080"
+              value: "http://{pod_ip}.svc.cluster.local:8080"
             - name: BASE_SLIMDATA_URL
               value: "http://{pod_name}.slimfaas.{namespace}.svc.cluster.local:3262/"  # Don't expose this port, it can also be like "http://{pod_ip}:3262/" but if you can use DNS it's better
             - name: SLIMFAAS_PORTS
@@ -331,6 +331,9 @@ spec:
 - **SlimFaas/PathsStartWithVisibility** : ""
   - Comma separated list of path prefixed by the default visibility. example: "Private:/mypath/subpath,Public:/mypath2"
   - "Public:" or "Private:" are prefix that set the path visibility, if not set, "SlimFaas/DefaultVisibility" is used
+- **SlimFaas/ExcludeDeploymentsFromVisibilityPrivate** : ""
+  - Comma separated list of deployment names or statefulset names
+  - Message from that pods will be considered as public. It is useful if you want to exclude some pods from the private visibility, for example for a backend for frontend.
 - **SlimFaas/Schedule** : "" #json configuration
   - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00
 

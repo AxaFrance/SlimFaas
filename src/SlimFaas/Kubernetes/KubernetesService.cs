@@ -66,7 +66,9 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
     ScheduleConfig? Schedule = null,
     IList<string>? SubscribeEvents = null,
     FunctionVisibility Visibility = FunctionVisibility.Public,
-    IList<string>? PathsStartWithVisibility = null);
+    IList<string>? PathsStartWithVisibility = null,
+    IList<string>? ExcludeDeploymentsFromVisibilityPrivate = null
+    );
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
 
@@ -81,6 +83,7 @@ public class KubernetesService : IKubernetesService
     private const string SubscribeEvents = "SlimFaas/SubscribeEvents";
     private const string DefaultVisibility = "SlimFaas/DefaultVisibility";
     private const string PathsStartWithVisibility = "SlimFaas/PathsStartWithVisibility";
+    private const string ExcludeDeploymentsFromVisibilityPrivate = "SlimFaas/ExcludeDeploymentsFromVisibilityPrivate";
 
     private const string ReplicasStartAsSoonAsOneFunctionRetrieveARequest =
         "SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest";
@@ -182,7 +185,7 @@ public class KubernetesService : IKubernetesService
                             podList.Where(p => p.Name.StartsWith(deploymentListItem.Metadata.Name)).ToList()))
                 .FirstOrDefault();
 
-            IEnumerable<PodInformation> podInformations = podList as PodInformation[] ?? podList.ToArray();
+            IEnumerable<PodInformation> podInformations = podList.ToArray();
             AddDeployments(kubeNamespace, deploymentList, podInformations, deploymentInformationList, _logger);
             AddStatefulSets(kubeNamespace, statefulSetList, podInformations, deploymentInformationList, _logger);
 
@@ -217,7 +220,7 @@ public class KubernetesService : IKubernetesService
                 DeploymentInformation deploymentInformation = new(
                     name,
                     kubeNamespace,
-                    podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
+                    podList.Where(p => p.DeploymentName.StartsWith(name)).ToList(),
                     deploymentListItem.Spec.Replicas ?? 0,
                     annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
                         ? int.Parse(annotationReplicasAtStart)
@@ -245,7 +248,9 @@ public class KubernetesService : IKubernetesService
                         : FunctionVisibility.Public,
                     annotations.TryGetValue(PathsStartWithVisibility, out string? valueUrlsStartWithVisibility)
                         ? valueUrlsStartWithVisibility.Split(',').ToList()
-                        : new List<string>());
+                        : new List<string>(),
+                    annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>()
+                    );
                 deploymentInformationList.Add(deploymentInformation);
             }
             catch (Exception e)
@@ -292,7 +297,7 @@ public class KubernetesService : IKubernetesService
                 DeploymentInformation deploymentInformation = new(
                     name,
                     kubeNamespace,
-                    podList.Where(p => p.DeploymentName == deploymentListItem.Metadata.Name).ToList(),
+                    podList.Where(p => p.DeploymentName.StartsWith(name)).ToList(),
                     deploymentListItem.Spec.Replicas ?? 0,
                     annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
                         ? int.Parse(annotationReplicasAtStart)
@@ -317,7 +322,8 @@ public class KubernetesService : IKubernetesService
                         : new List<string>(),
                     annotations.TryGetValue(DefaultVisibility, out string? visibility)
                         ? Enum.Parse<FunctionVisibility>(visibility)
-                        : FunctionVisibility.Public);
+                        : FunctionVisibility.Public,
+                    annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>());
 
                 deploymentInformationList.Add(deploymentInformation);
             }

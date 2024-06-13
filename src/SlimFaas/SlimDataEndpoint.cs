@@ -14,6 +14,7 @@ public class SlimDataEndpoint
             baseSlimDataUrl = baseSlimDataUrl.Replace("{pod_name}", podInformation.Name);
             baseSlimDataUrl = baseSlimDataUrl.Replace("{pod_ip}", podInformation.Ip);
             baseSlimDataUrl = baseSlimDataUrl.Replace("{namespace}", namespaceSlimFaas);
+            baseSlimDataUrl = baseSlimDataUrl.Replace("{function_name}", podInformation.DeploymentName);
         }
 
         return baseSlimDataUrl;

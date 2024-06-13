@@ -109,8 +109,8 @@ public class ProxyMiddlewareTests
 
     [Theory]
     [InlineData("/publish-event/toto/hello", HttpStatusCode.NoContent, "http://localhost:5002/hello" )]
-    [InlineData("/publish-event/reload/hello", HttpStatusCode.NoContent, "http://fibonacci-2.{function_name}:8080//hello,http://fibonacci-1.{function_name}:8080//hello,http://localhost:5002/hello" )]
-    [InlineData("/publish-event/reloadnoprefix/hello", HttpStatusCode.NoContent,  "http://fibonacci-2.{function_name}:8080//hello,http://fibonacci-1.{function_name}:8080//hello")]
+    [InlineData("/publish-event/reload/hello", HttpStatusCode.NoContent, "http://fibonacci-2.fibonacci:8080//hello,http://fibonacci-1.fibonacci:8080//hello,http://localhost:5002/hello" )]
+    [InlineData("/publish-event/reloadnoprefix/hello", HttpStatusCode.NoContent,  "http://fibonacci-2.fibonacci:8080//hello,http://fibonacci-1.fibonacci:8080//hello")]
     [InlineData("/publish-event/wrong/download", HttpStatusCode.NotFound, null)]
     [InlineData("/publish-event/reloadprivate/hello", HttpStatusCode.NotFound, null)]
     public async Task CallPublishInSyncModeAndReturnOk(string path, HttpStatusCode expected, string? times)
