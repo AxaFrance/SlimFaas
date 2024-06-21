@@ -17,8 +17,8 @@ public enum FunctionType
 
 public record FunctionStatus(int NumberReady,
     int NumberRequested,
-    PodType PodType,
-    FunctionVisibility Visibility, string Name);
+    string PodType,
+    string Visibility, string Name);
 
 [JsonSerializable(typeof(FunctionStatus))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
@@ -176,8 +176,8 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         int numberRequested =
             functionDeploymentInformation.Replicas;
         var functionStatus = new FunctionStatus(numberReady, numberRequested,
-            functionDeploymentInformation.PodType,
-            functionDeploymentInformation.Visibility, functionDeploymentInformation.Deployment);
+            functionDeploymentInformation.PodType.ToString(),
+            functionDeploymentInformation.Visibility.ToString(), functionDeploymentInformation.Deployment);
         return functionStatus;
     }
 
