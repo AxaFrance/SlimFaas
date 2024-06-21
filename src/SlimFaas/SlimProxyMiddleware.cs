@@ -72,9 +72,10 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         if(contextRequest.Path.StartsWithSegments("/status-functions"))
         {
             IList<FunctionStatus> functionStatuses = replicasService.Deployments.Functions.Select(MapToFunctionStatus).ToList();
+            context.Response.StatusCode = 200;
             await contextResponse.WriteAsJsonAsync(functionStatuses,
                 ListFunctionStatusSerializerContext.Default.ListFunctionStatus);
-            context.Response.StatusCode = 200;
+
             return;
         }
 
