@@ -21,67 +21,91 @@ function useInterval(callback, delay) {
   }, [delay]);
 }
 
-function App({ name, url }) {
-  const [state, setState] = useState( {"status": "not_started"});
-  const [stateInterval, setInterval] = useState(true);
-  const [stateSeconds, setSeconds] = useState(0);
-  const [stateFibonacci, setFibonacci] = useState( {});
-  useInterval(() => {
-      if(stateInterval) {
-          setInterval(false);
-          fetch(url + '/status-function/' + name).then((res) => res.json()).then((data) => {
-              data.NumberReady = data.NumberReady || 0;
-              data.NumberRequested = data.NumberRequested || 0;
-              let status = data.NumberReady === data.NumberRequested ? "ready" : "loading";
-              if (data.NumberRequested === 0) status = "not_started";
-              setState({status: status});
-          }).then(() => {
-            setInterval(true);
-          });
-      }
-  }, 1000);
+function Main({url}) {
+    const [states, setStates] = useState([]);
+    const [stateInterval, setInterval] = useState(true);
+    const [stateSeconds, setSeconds] = useState(0);
+
+    useInterval(() => {
+        if(stateInterval) {
+            setInterval(false);
+            fetch(url + '/status-functions').then((res) => res.json()).then((data) => {
+                var result = data.map((item) => {
+                    const r = {};
+                    r.numberReady = item.NumberReady || 0;
+                    r.numberRequested = item.NumberRequested || 0;
+                    r.name = item.Name;
+                    r.visibility = item.Visibility;
+                    r.podType = item.PodType;
+                    let status = item.NumberReady === item.NumberRequested ? "ready" : "loading";
+                    if (item.NumberRequested === 0) status = "not_started";
+                    r.status = status;
+                    return r;
+                });
+                setStates(result);
+            }).then(() => {
+                setInterval(true);
+            });
+        }
+    }, 1000);
 
     useInterval(() => { setSeconds(stateSeconds+1) }, 1000);
+
+    return (<>
+        <h1>Time elapsed: {stateSeconds} seconds</h1>
+        <>{states.map(state =>
+            <Deployment data={state} url={url} />
+        )}</>
+    </>)
+}
+
+function Deployment({ data, url }) {
+  const [stateFibonacci, setFibonacci] = useState({});
 
   const postFibonacciAsync = () => {
     const start = performance.now();
       setFibonacci({"status": "loading"});
-    fetch( url +'/function/'+name + "/fibonacci", {
+    fetch(url +'/function/' + data.name + "/fibonacci" , {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ "input": 10 })
-    }).then((res) => res.json() ).then((data) => {
+    }).then((res) => {
+        if(res && res.status !== 200) {
+            return { "statusCode": res.status};
+        }
+        return res.json()
+    }).then((d) => {
       const end = performance.now();
-      const result = {...data, "duration_seconds": (end - start)/1000};
+      const result = {...d, "duration_seconds": ((end - start)/1000).toFixed(2)};
       console.log(result);
       setFibonacci(result);
     });
   }
 
   const postStartAsync = () => {
-        fetch( url +'/wake-function/'+name , { method: 'POST', body:"" });
+        fetch( url +'/wake-function/'+data.name , { method: 'POST', body:"" });
   }
 
   return (
-    <>
-      <h2>{name}</h2>
-        <div className="card">
+    <div className="deployment">
+      <h2>{data.name}</h2>
+        <div>
+            {data.name != "mysql" ?
             <button onClick={() => postFibonacciAsync()}>
                 Post Fibonacci(10)
-            </button>
+            </button> : <></>}
             <button onClick={() => postStartAsync()}>
                 Wake up
             </button>
             <p>
-                Seconds: {stateSeconds} <br/>
-               Environment status: {state.status} <br/>
+               Environment status: <span className={"environment_"+data.status}> {data.status}</span> <br/>
                Request status: {JSON.stringify(stateFibonacci)}
             </p>
         </div>
-    </>
+    </div>
   )
 }
 
-export default App
+export default Main

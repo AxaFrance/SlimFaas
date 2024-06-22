@@ -1,29 +1,28 @@
 #root {
-  max-width: 1280px;
   margin: 0 auto;
-  padding: 1rem;
-  text-align: center;
+
+
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.deployment {
+  color: #ffffff;
+  display: inline-block;
+    background-color: #14147e;
+    margin: 0.2rem;
+    padding: 0.2rem;
+    text-align: center;
+    width: 300px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.environment_not_started{
+    background-color: #7e0000;
 }
 
-.card {
-  padding: 1em;
+.environment_ready{
+    background-color: #2e9400;
 }
 
-.read-the-docs {
-  color: #888;
+.environment_loading {
+    background-color: #945400;
 }
+
