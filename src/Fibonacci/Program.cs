@@ -35,12 +35,42 @@ app.MapGet("/download", ([FromServices] ILogger<Fibonacci> logger) =>
 
 app.MapGet("/hello/{name}", ([FromServices] ILogger<Fibonacci> logger, string name) =>
 {
-    logger.LogInformation("Hello Called");
+    logger.LogInformation("Hello Called with name: {Name}", name);
     return $"Hello {name}!";
 });
 
 
 app.MapGet("/health", () => "OK");
+
+
+app.MapPost("/fibonacci4", (
+    [FromServices] ILogger<Fibonacci> logger,
+    [FromServices] Fibonacci fibonacci,
+    FibonacciInput input) =>
+{
+    logger.LogInformation("Fibonacci Internal Called");
+    using HttpClient client = new();
+    var response = client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci4/fibonacci", input).Result;
+    var output = response.Content.ReadFromJsonAsync<FibonacciOutput>().Result;
+    logger.LogInformation("Fibonacci Internal output: {Output}", output.Result);
+    return output;
+});
+
+
+app.MapPost("/send-private-fibonacci-event", (
+    [FromServices] ILogger<Fibonacci> logger,
+    [FromServices] Fibonacci fibonacci,
+    FibonacciInput input) =>
+{
+    logger.LogInformation("Fibonacci Internal Event Called");
+    using HttpClient client = new();
+    client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/publish-event/fibo-private", input);
+    logger.LogInformation("Fibonacci Internal Event End");
+});
+
+
+
+
 
 app.Run();
 

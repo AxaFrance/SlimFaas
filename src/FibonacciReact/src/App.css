@@ -4,6 +4,11 @@
 
 }
 
+button{
+    padding: 0.1rem;
+    margin: 0.1rem;
+}
+
 .deployment {
   color: #ffffff;
   display: inline-block;
@@ -11,7 +16,7 @@
     margin: 0.2rem;
     padding: 0.2rem;
     text-align: center;
-    width: 300px;
+    width: 320px;
 }
 
 .environment_not_started{
