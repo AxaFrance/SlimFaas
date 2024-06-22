@@ -89,9 +89,9 @@ function Deployment({ data, url }) {
         fetch( url +'/wake-function/'+data.name , { method: 'POST', body:"" });
   }
 
-    const publicEventFibonacciAsync = ( method = "fibonacci" ) => {
+    const eventFibonacciAsync = ( method = "fibonacci", eventName = "fibo-public" ) => {
         setFibonacci({"status": "loading"});
-        fetch(url +'/publish-event/fibo-public/' + method , {
+        fetch(url +'/publish-event/' + eventName + "/" + method , {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -120,26 +120,40 @@ function Deployment({ data, url }) {
       <h2>{data.name}</h2>
         <div>
             {data.name !== "mysql" ?
+                <>
                 <button onClick={() => postFibonacciAsync()}>
                     Post /fibonacci 10
                 </button>
-                : <></>}
-            {(data.name !== "mysql" && data.name !== "fibonacci4") ?
-                <button onClick={() => postFibonacciAsync("fibonacci4")}>
-                    Post /fibonacci4 10
+                <button onClick={() => eventFibonacciAsync()}>
+                    Send event: fibo-public
                 </button>
-                : <></>}
-            <button onClick={() => publicEventFibonacciAsync()}>
-                Send event: fibo-public
-            </button>
-            <button onClick={() => publicEventFibonacciAsync()}>
-                Post /send-private-fibonacci-event 10
-            </button>
-            <button onClick={() => postStartAsync()}>
-                Wake up
-            </button>
-            <p>
-                Environment status: <span className={"environment_" + data.status}> {data.status}</span> <br/>
+                <button onClick={() => eventFibonacciAsync()}>
+            Send event: fibo-public
+        </button>
+        <button onClick={() => eventFibonacciAsync("fibonacci", "fibo-private")}>
+            Send event: fibo-private
+        </button>
+        <button onClick={() => privateEventFibonacciAsync()}>
+            Post /send-private-fibonacci-event 10
+        </button>
+                </>
+        : <></>
+        }
+        {(data.name !== "mysql" && data.name !== "fibonacci4") ?
+            <>
+                <button onClick={() => postFibonacciAsync("fibonacci4")}>
+                Post /fibonacci4 10
+                </button>
+
+                </>
+        : <></>
+        }
+
+        <button onClick={() => postStartAsync()}>
+            Wake up
+        </button>
+        <p>
+        Environment status: <span className={"environment_" + data.status}> {data.status}</span> <br/>
                 Request status: {JSON.stringify(stateFibonacci)}
             </p>
         </div>

@@ -308,7 +308,6 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         List<Task<HttpResponseMessage>> tasks = new();
         foreach (DeploymentInformation function in functions)
         {
-            historyHttpService.SetTickLastCall(function.Deployment, lastSetTicks);
             foreach (var pod in function.Pods)
             {
                 logger.LogDebug("Pod {PodName} is ready: {PodReady}", pod.Name, pod.Ready);
@@ -316,6 +315,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 {
                     continue;
                 }
+                historyHttpService.SetTickLastCall(function.Deployment, lastSetTicks);
 
                 string baseFunctionPodUrl =
                     Environment.GetEnvironmentVariable(EnvironmentVariables.BaseFunctionPodUrl) ??

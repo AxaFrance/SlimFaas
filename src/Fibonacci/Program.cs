@@ -64,7 +64,8 @@ app.MapPost("/send-private-fibonacci-event", (
 {
     logger.LogInformation("Fibonacci Internal Event Called");
     using HttpClient client = new();
-    client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/publish-event/fibo-private", input);
+    var response = client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/publish-event/fibo-private/fibonacci", input).Result;
+    logger.LogInformation("Response status code: {StatusCode}", response.StatusCode);
     logger.LogInformation("Fibonacci Internal Event End");
 });
 

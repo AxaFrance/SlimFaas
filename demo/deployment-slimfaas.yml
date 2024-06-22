@@ -84,7 +84,7 @@ spec:
       serviceAccountName: slimfaas
       containers:
         - name: slimfaas
-          image: axaguildev/slimfaas:latest
+          image: axaguildev/slimfaas:pr-65-594
           livenessProbe:
             httpGet:
               path: /health
@@ -97,7 +97,7 @@ spec:
             - name: BASE_FUNCTION_URL
               value: "http://{function_name}.{namespace}.svc.cluster.local:5000"
             - name: BASE_FUNCTION_POD_URL # require for publish route
-              value: "http://{pod_name}.{function_name}.{namespace}.svc.cluster.local:8080"
+              value: "http://{pod_ip}:5000"
             - name: BASE_SLIMDATA_URL
               value: "http://{pod_ip}:3262/"
             - name: NAMESPACE
