@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
+import logo from './AXA.png'
 
 function useInterval(callback, delay) {
   const savedCallback = useRef();
@@ -52,11 +53,17 @@ function Main({url}) {
     useInterval(() => { setSeconds(stateSeconds+1) }, 1000);
 
     return (<>
-        <h1>Time elapsed: {stateSeconds} seconds</h1>
-        <>{states.map(state =>
-            <Deployment data={state} url={url} />
+        <h1 className="title"><img src={logo} alt="logo" className="logo"/>
+            SlimFaas demo ({stateSeconds} s)
+        </h1>
+            <div className="main">
+
+
+
+    <>{states.map(state =>
+            <Deployment data={state} url={url}/>
         )}</>
-    </>)
+    </div></>)
 }
 
 function Deployment({ data, url }) {
