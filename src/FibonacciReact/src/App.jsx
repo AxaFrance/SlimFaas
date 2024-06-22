@@ -26,6 +26,7 @@ function Main({url}) {
     const [states, setStates] = useState([]);
     const [stateInterval, setInterval] = useState(true);
     const [stateSeconds, setSeconds] = useState(0);
+    const [stateLatestUrl, setLatestUrl] = useState("");
 
     useInterval(() => {
         if(stateInterval) {
@@ -54,26 +55,26 @@ function Main({url}) {
 
     return (<>
         <h1 className="title"><img src={logo} alt="logo" className="logo"/>
-            SlimFaas demo ({stateSeconds} s)
+            SlimFaas {stateSeconds} s {stateLatestUrl}
         </h1>
             <div className="main">
 
 
 
     <>{states.map(state =>
-            <Deployment data={state} url={url}/>
+            <Deployment data={state} url={url} setLatestUrl={setLatestUrl} />
         )}</>
     </div></>)
 }
 
-function Deployment({ data, url }) {
+function Deployment({ data, url, setLatestUrl }) {
   const [stateFibonacci, setFibonacci] = useState({});
-
-
   const postFibonacciAsync = ( method = "fibonacci" ) => {
     const start = performance.now();
       setFibonacci({"status": "loading"});
-    fetch(url +'/function/' + data.name + "/" + method , {
+      const sendUrl = url +'/function/' + data.name + "/" + method;
+      setLatestUrl(sendUrl);
+    fetch(sendUrl , {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -93,12 +94,16 @@ function Deployment({ data, url }) {
   }
 
   const postStartAsync = () => {
-        fetch( url +'/wake-function/'+data.name , { method: 'POST', body:"" });
+      const sendLatestUrl = url +'/wake-function/'+data.name;
+        setLatestUrl(sendLatestUrl);
+        fetch( sendLatestUrl , { method: 'POST', body:"" });
   }
 
     const eventFibonacciAsync = ( method = "fibonacci", eventName = "fibo-public" ) => {
         setFibonacci({"status": "loading"});
-        fetch(url +'/publish-event/' + eventName + "/" + method , {
+        const sendLatestUrl = url +'/publish-event/' + eventName + "/" + method;
+        setLatestUrl(sendLatestUrl);
+        fetch(sendLatestUrl , {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -111,7 +116,9 @@ function Deployment({ data, url }) {
 
     const privateEventFibonacciAsync = ( method = "send-private-fibonacci-event" ) => {
         setFibonacci({"status": "loading"});
-        fetch(url +'/function/' + data.name + "/" + method , {
+        const sendLatestUrl = url +'/function/' + data.name + "/" + method;
+        setLatestUrl(sendLatestUrl);
+        fetch(sendLatestUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

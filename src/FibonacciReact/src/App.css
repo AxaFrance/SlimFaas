@@ -8,18 +8,23 @@
 }
 
 .logo{
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     margin: 0.5rem;
+    float: left;
 }
 
 .title{
+    width: 100%;
+    font-size: 1.2rem;
     margin: 0;
     padding-top: 0;
     padding-bottom: 0;
     position: fixed;
     background-color: rgba(255, 255, 255, 0.86);
     z-index: 10;
+    word-wrap: break-word;
+    margin-right: 40px;
 }
 
 button{
