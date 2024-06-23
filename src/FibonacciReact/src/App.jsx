@@ -64,6 +64,7 @@ function Main({url}) {
     <>{states.map(state =>
             <Deployment data={state} url={url} setLatestUrl={setLatestUrl} />
         )}</>
+                <Buttons url={url} setLatestUrl={setLatestUrl} />
     </div></>)
 }
 
@@ -96,7 +97,9 @@ function Deployment({ data, url, setLatestUrl }) {
   const postStartAsync = () => {
       const sendLatestUrl = url +'/wake-function/'+data.name;
         setLatestUrl(sendLatestUrl);
-        fetch( sendLatestUrl , { method: 'POST', body:"" });
+        fetch( sendLatestUrl , { method: 'POST', body:"" }).then((res) => {
+            setFibonacci({ "statusCode": res.status});
+        });
   }
 
     const eventFibonacciAsync = ( method = "fibonacci", eventName = "fibo-public" ) => {
@@ -131,22 +134,13 @@ function Deployment({ data, url, setLatestUrl }) {
 
   return (
     <div className="deployment">
-      <h2>{data.name}</h2>
+        <h2>{data.name} <span className={"environment_" + data.status}> {data.status}</span></h2>
         <div>
             {data.name !== "mysql" ?
                 <>
                 <button onClick={() => postFibonacciAsync()}>
                     Post /fibonacci 10
                 </button>
-                <button onClick={() => eventFibonacciAsync()}>
-                    Send event: fibo-public
-                </button>
-                <button onClick={() => eventFibonacciAsync()}>
-            Send event: fibo-public
-        </button>
-        <button onClick={() => eventFibonacciAsync("fibonacci", "fibo-private")}>
-            Send event: fibo-private
-        </button>
         <button onClick={() => privateEventFibonacciAsync()}>
             Post /send-private-fibonacci-event 10
         </button>
@@ -167,12 +161,51 @@ function Deployment({ data, url, setLatestUrl }) {
             Wake up
         </button>
         <p>
-        Environment status: <span className={"environment_" + data.status}> {data.status}</span> <br/>
                 Request status: {JSON.stringify(stateFibonacci)}
             </p>
         </div>
     </div>
   )
+}
+
+function Buttons({ url, setLatestUrl }) {
+    const [stateFibonacci, setFibonacci] = useState({});
+
+    const eventFibonacciAsync = ( method = "fibonacci", eventName = "fibo-public" ) => {
+        setFibonacci({"status": "loading"});
+        const sendLatestUrl = url +'/publish-event/' + eventName + "/" + method;
+        setLatestUrl(sendLatestUrl);
+        fetch(sendLatestUrl , {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ "input": 10 })
+        }).then((res) => {
+            setFibonacci({ "statusCode": res.status});
+        });
+    }
+
+
+    return (
+        <div className="buttons">
+            <h2>Events</h2>
+            <div>
+                <>
+                    <button onClick={() => eventFibonacciAsync()}>
+                        Send event: fibo-public
+                    </button>
+                    <button onClick={() => eventFibonacciAsync("fibonacci", "fibo-private")}>
+                        Send event: fibo-private
+                    </button>
+                </>
+
+                <p>
+                    Request status: {JSON.stringify(stateFibonacci)}
+                </p>
+            </div>
+        </div>
+    )
 }
 
 export default Main

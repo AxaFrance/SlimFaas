@@ -17,14 +17,15 @@
 .title{
     width: 100%;
     font-size: 1.2rem;
-    margin: 0;
     padding-top: 0;
     padding-bottom: 0;
     position: fixed;
-    background-color: rgba(255, 255, 255, 0.86);
+    background-color: rgba(255, 255, 255, 0.96);
     z-index: 10;
     word-wrap: break-word;
-    margin-right: 40px;
+    margin: 0 40px 0 0;
+    top: 0;
+    color: #3131ab;
 }
 
 button{
@@ -54,3 +55,12 @@ button{
     background-color: #945400;
 }
 
+.buttons {
+    color: #ffffff;
+    display: inline-block;
+    background-color: #757575;
+    margin: 0.2rem;
+    padding: 0.2rem;
+    text-align: center;
+    width: 320px;
+}
