@@ -17,7 +17,6 @@ Why use SlimFaas?
   - Very useful to inform end users that your infrastructure is starting
 - Plug and Play: just deploy a standard pod
   - No impact on your current kubernetes manifests: just add an annotation to the pod you want to auto-scale
-
 - Very **Slim** and very **Fast**
 
 ![slim-faas-ram-cpu.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/slim-faas-ram-cpu.png)
