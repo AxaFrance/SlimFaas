@@ -12,7 +12,7 @@ Why use SlimFaas?
 - Synchronous Publish event via HTTP calls (events) to every replicas which deployment subscribe to the event name
 - Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
 - Private and Public functions
-- Private functions can be accessed only by internal namespace http call from pods
+  - Private functions can be accessed only by internal namespace http call from pods
 - Mind Changer: REST API that show the status of your functions and allow to wake up your infrastructure
   - Very useful to inform end users that your infrastructure is starting
 - Plug and Play: just deploy a standard pod
@@ -40,7 +40,7 @@ kubectl apply -f deployment-functions.yml
 # Install MySql
 kubectl apply -f deployment-mysql.yml
 # to run Single Page webapp demo (optional) on http://localhost:8000
-docker run -p 8000:8000 --rm axaguildev/fibonacci-webapp:pr-65-592
+docker run -p 8000:8000 --rm axaguildev/fibonacci-webapp:latest
 ```
 
 
