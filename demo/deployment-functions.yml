@@ -20,6 +20,7 @@ spec:
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest: "10"
         SlimFaas/DependsOn: "fibonacci2"
+        SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
         #SlimFaas/Schedule: |
         #          {"Culture":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time": "21:00","Value":20},{"Time":"07:00","Value": 10}]}}
     spec:
@@ -66,6 +67,7 @@ spec:
         SlimFaas/ReplicasAtStart: "1"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
+        SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
     spec:
       serviceAccountName: default
       containers:
@@ -112,6 +114,7 @@ spec:
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
         SlimFaas/DependsOn: "mysql"
+        SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
     spec:
       serviceAccountName: default
       containers:
@@ -157,6 +160,9 @@ spec:
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
         SlimFaas/NumberParallelRequest : "10"
+        SlimFaas/DefaultVisibility : "Private"
+        SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
+
     spec:
       serviceAccountName: default
       containers:

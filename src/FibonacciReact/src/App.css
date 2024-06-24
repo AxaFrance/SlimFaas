@@ -1,29 +1,66 @@
 #root {
-  max-width: 1280px;
   margin: 0 auto;
-  padding: 1rem;
-  text-align: center;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.main {
+    position: absolute;
+  margin-top: 5rem;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.logo{
+    width: 40px;
+    height: 40px;
+    margin: 0.5rem;
+    float: left;
 }
 
-.card {
-  padding: 1em;
+.title{
+    width: 100%;
+    font-size: 1.2rem;
+    padding-top: 0;
+    padding-bottom: 0;
+    position: fixed;
+    background-color: rgba(255, 255, 255, 0.96);
+    z-index: 10;
+    word-wrap: break-word;
+    margin: 0 40px 0 0;
+    top: 0;
+    color: #3131ab;
 }
 
-.read-the-docs {
-  color: #888;
+button{
+    padding: 0.1rem;
+    margin: 0.1rem;
+}
+
+.deployment {
+  color: #ffffff;
+  display: inline-block;
+    background-color: #14147e;
+    margin: 0.2rem;
+    padding: 0.2rem;
+    text-align: center;
+    width: 320px;
+}
+
+.environment_not_started{
+    background-color: #7e0000;
+}
+
+.environment_ready{
+    background-color: #2e9400;
+}
+
+.environment_loading {
+    background-color: #945400;
+}
+
+.buttons {
+    color: #ffffff;
+    display: inline-block;
+    background-color: #757575;
+    margin: 0.2rem;
+    padding: 0.2rem;
+    text-align: center;
+    width: 320px;
 }

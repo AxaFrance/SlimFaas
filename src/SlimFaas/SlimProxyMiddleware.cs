@@ -15,11 +15,20 @@ public enum FunctionType
     NotAFunction
 }
 
-public record FunctionStatus(int NumberReady, int NumberRequested);
+public record FunctionStatus(int NumberReady,
+    int NumberRequested,
+    string PodType,
+    string Visibility, string Name);
 
 [JsonSerializable(typeof(FunctionStatus))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 public partial class FunctionStatusSerializerContext : JsonSerializerContext
+{
+}
+
+[JsonSerializable(typeof(List<FunctionStatus>))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class ListFunctionStatusSerializerContext : JsonSerializerContext
 {
 }
 
@@ -58,8 +67,20 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         }
 
         HttpRequest contextRequest = context.Request;
-        (string functionPath, string functionName, FunctionType functionType) = GetFunctionInfo(logger, contextRequest);
         HttpResponse contextResponse = context.Response;
+
+        if(contextRequest.Path.StartsWithSegments("/status-functions"))
+        {
+            IList<FunctionStatus> functionStatuses = replicasService.Deployments.Functions.Select(MapToFunctionStatus).ToList();
+            context.Response.StatusCode = 200;
+            await contextResponse.WriteAsJsonAsync(functionStatuses,
+                ListFunctionStatusSerializerContext.Default.ListFunctionStatus);
+
+            return;
+        }
+
+        (string functionPath, string functionName, FunctionType functionType) = GetFunctionInfo(logger, contextRequest);
+
 
         switch (functionType)
         {
@@ -135,24 +156,29 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     private static void BuildStatusResponse(IReplicasService replicasService,
         string functionName, HttpResponse contextResponse)
     {
-        DeploymentInformation? function = SearchFunction(replicasService, functionName);
-        if (function != null)
+        DeploymentInformation? functionDeploymentInformation = SearchFunction(replicasService, functionName);
+        if (functionDeploymentInformation != null)
         {
-            DeploymentInformation? functionDeploymentInformation =
-                replicasService.Deployments.Functions.FirstOrDefault(f => f.Deployment == functionName);
-            int numberReady = functionDeploymentInformation == null
-                ? 0
-                : functionDeploymentInformation.Pods.Count(p => p.Ready.HasValue && p.Ready.Value);
-            int numberRequested =
-                functionDeploymentInformation?.Replicas ?? 0;
+            FunctionStatus functionStatus = MapToFunctionStatus(functionDeploymentInformation);
             contextResponse.StatusCode = 200;
-            contextResponse.WriteAsJsonAsync(new FunctionStatus(numberReady, numberRequested),
+            contextResponse.WriteAsJsonAsync(functionStatus,
                 FunctionStatusSerializerContext.Default.FunctionStatus);
         }
         else
         {
             contextResponse.StatusCode = 404;
         }
+    }
+
+    private static FunctionStatus MapToFunctionStatus(DeploymentInformation functionDeploymentInformation)
+    {
+        int numberReady = functionDeploymentInformation.Pods.Count(p => p.Ready.HasValue && p.Ready.Value);
+        int numberRequested =
+            functionDeploymentInformation.Replicas;
+        var functionStatus = new FunctionStatus(numberReady, numberRequested,
+            functionDeploymentInformation.PodType.ToString(),
+            functionDeploymentInformation.Visibility.ToString(), functionDeploymentInformation.Deployment);
+        return functionStatus;
     }
 
     private static void BuildWakeResponse(IReplicasService replicasService, IWakeUpFunction wakeUpFunction,
@@ -282,7 +308,6 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         List<Task<HttpResponseMessage>> tasks = new();
         foreach (DeploymentInformation function in functions)
         {
-            historyHttpService.SetTickLastCall(function.Deployment, lastSetTicks);
             foreach (var pod in function.Pods)
             {
                 logger.LogDebug("Pod {PodName} is ready: {PodReady}", pod.Name, pod.Ready);
@@ -290,6 +315,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 {
                     continue;
                 }
+                historyHttpService.SetTickLastCall(function.Deployment, lastSetTicks);
 
                 string baseFunctionPodUrl =
                     Environment.GetEnvironmentVariable(EnvironmentVariables.BaseFunctionPodUrl) ??

@@ -256,8 +256,9 @@ public class ProxyMiddlewareTests
     }
 
     [Theory]
-    [InlineData("/status-function/fibonacci", HttpStatusCode.OK, "{\"NumberReady\":1,\"NumberRequested\":0}")]
+    [InlineData("/status-function/fibonacci", HttpStatusCode.OK, "{\"NumberReady\":1,\"NumberRequested\":0,\"PodType\":\"Deployment\",\"Visibility\":\"Public\",\"Name\":\"fibonacci\"}")]
     [InlineData("/status-function/wrong", HttpStatusCode.NotFound, "")]
+    [InlineData("/status-functions", HttpStatusCode.OK, "[{\"NumberReady\":1,\"NumberRequested\":0,\"PodType\":\"Deployment\",\"Visibility\":\"Public\",\"Name\":\"fibonacci\"}]")]
     public async Task GetStatusFunctionAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode,
         string expectedBody)
     {
