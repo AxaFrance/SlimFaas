@@ -27,7 +27,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci1
-          image: axaguildev/fibonacci:pr-65-597
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -72,7 +72,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci2
-          image: axaguildev/fibonacci:pr-65-597
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -119,7 +119,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci3
-          image: axaguildev/fibonacci:pr-65-597
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -167,7 +167,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: fibonacci4
-          image: axaguildev/fibonacci:pr-65-597
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health

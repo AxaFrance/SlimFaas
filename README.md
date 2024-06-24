@@ -11,10 +11,13 @@ Why use SlimFaas?
   - Allows you to limit the number of parallel HTTP requests for each underlying function
 - Synchronous Publish event via HTTP calls (events) to every replicas which deployment subscribe to the event name
 - Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
+- Private and Public functions
+- Private functions can be accessed only by internal namespace http call from pods
 - Mind Changer: REST API that show the status of your functions and allow to wake up your infrastructure
   - Very useful to inform end users that your infrastructure is starting
 - Plug and Play: just deploy a standard pod
   - No impact on your current kubernetes manifests: just add an annotation to the pod you want to auto-scale
+
 - Very **Slim** and very **Fast**
 
 ![slim-faas-ram-cpu.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/slim-faas-ram-cpu.png)
@@ -60,9 +63,14 @@ Just wake up function:
 - http://localhost:30021/wake-function/fibonacci3
 
 Get function status:
-- http://localhost:30021/status-function/fibonacci1 => {"NumberReady":1,"numberRequested":1}
-- http://localhost:30021/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1}
-- http://localhost:30021/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1}
+- http://localhost:30021/status-function/fibonacci1 => {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci1"}
+- http://localhost:30021/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci2"}
+- http://localhost:30021/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci3"}
+
+List all function status:
+- http://localhost:30021/status-functions => [{"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci1"},
+                                              {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci2"},
+                                              {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci3"}]
 
 Send event to every function replicas (which deployment subscribe to the event name) in synchronous way:
 
@@ -382,6 +390,9 @@ Instead of creating many pods, SlimFaas use internally many workers in the same 
 By default, **SlimData** use a second HTTP port 3262 to expose its API. Don't expose it and keep it internal.
 
 SlimFaas requires at least 3 nodes in production. 2 nodes are required to keep the database in a consistent state.
+
+![slimdata.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/slimdata.png)
+
 If you want to use just one pod for testing purpose, you can use this env variable:
 - SLIMDATA_CONFIGURATION: '{"coldStart":"true"}'
 
