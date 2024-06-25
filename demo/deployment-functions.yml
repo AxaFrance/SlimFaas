@@ -65,7 +65,7 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "30"
         SlimFaas/NumberParallelRequest : "10"
         SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
     spec:
@@ -111,7 +111,7 @@ spec:
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "30"
         SlimFaas/NumberParallelRequest : "10"
         SlimFaas/DependsOn: "mysql"
         SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
