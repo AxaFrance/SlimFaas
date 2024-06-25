@@ -101,16 +101,14 @@ public class ReplicasService(IKubernetesService kubernetesService,
                                               TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow)) <
                                               TimeSpan.FromTicks(DateTime.UtcNow.Ticks);
             int currentScale = deploymentInformation.Replicas;
-            logger.LogInformation("Current {Deployment} scale ", deploymentInformation.Deployment, currentScale);
             if (timeElapsedWithoutRequest)
             {
-                logger.LogInformation("Time elapsed without request for {Deployment}", deploymentInformation.Deployment);
                 if (currentScale <= deploymentInformation.ReplicasMin)
                 {
                     continue;
                 }
 
-                logger.LogInformation("Scale down {Deployment} from {CurrentScale} to {ReplicasMin}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasMin);
+                logger.LogInformation("Scale down {Deployment} from {currentScale} to {ReplicasMin}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasMin);
                 Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
                     Replicas: deploymentInformation.ReplicasMin,
                     Deployment: deploymentInformation.Deployment,
