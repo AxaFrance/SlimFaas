@@ -17,7 +17,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
     public CommandInterpreter Interpreter { get; }
 
     public  SlimPersistentState(string path)
-        : base(path, 50, new Options { InitialPartitionSize = 50 * 8, UseCaching = true, UseLegacyBinaryFormat = false })
+        : base(path, 50, new Options { InitialPartitionSize = 50 * 8, UseCaching = true, UseLegacyBinaryFormat = true })
     {
         Interpreter = SlimDataInterpreter.InitInterpreter(_state);
     }
