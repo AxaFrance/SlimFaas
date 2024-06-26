@@ -147,7 +147,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
                 tasks.Add(task);
             }
-            else if (currentScale is 0 && DependsOnReady(deploymentInformation))
+            else if ((currentScale is 0 || currentScale < deploymentInformation.ReplicasMin) && DependsOnReady(deploymentInformation))
             {
                 logger.LogInformation("Scale up {Deployment} from {currentScale} to {Replica at start}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasAtStart);
                 Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
