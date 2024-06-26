@@ -299,22 +299,29 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         var slimFaasSubscribeEvents = _slimFaasSubscribeEvents.Where(s => s.Key == eventName);
         if (functions.Count <= 0 && !slimFaasSubscribeEvents.Any())
         {
-            logger.LogDebug("Return 404 from event: {EventName}", eventName);
+            logger.LogDebug("Publish-event {EventName} : Return 404 from event", eventName);
             context.Response.StatusCode = 404;
             return;
         }
         var lastSetTicks = DateTime.UtcNow.Ticks;
+
+        List<DeploymentInformation> calledFunctions = new();
 
         List<Task<HttpResponseMessage>> tasks = new();
         foreach (DeploymentInformation function in functions)
         {
             foreach (var pod in function.Pods)
             {
-                logger.LogDebug("Pod {PodName} is ready: {PodReady}", pod.Name, pod.Ready);
-                if (pod.Ready != true)
+                if (pod.Ready is not true)
                 {
                     continue;
                 }
+
+                if (!calledFunctions.Contains(function))
+                {
+                    calledFunctions.Add(function);
+                }
+                logger.LogInformation("Publish-event {EventName} : Deployment {Deployment} Pod {PodName} is ready: {PodReady}", eventName, function.Deployment, pod.Name, pod.Ready);
                 historyHttpService.SetTickLastCall(function.Deployment, lastSetTicks);
 
                 string baseFunctionPodUrl =
@@ -350,7 +357,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             }
 
             lastSetTicks = DateTime.UtcNow.Ticks;
-            foreach (DeploymentInformation function in functions)
+            foreach (DeploymentInformation function in calledFunctions)
             {
                 historyHttpService.SetTickLastCall(function.Deployment, lastSetTicks);
             }
