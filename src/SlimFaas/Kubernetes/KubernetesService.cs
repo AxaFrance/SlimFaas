@@ -67,7 +67,8 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
     IList<string>? SubscribeEvents = null,
     FunctionVisibility Visibility = FunctionVisibility.Public,
     IList<string>? PathsStartWithVisibility = null,
-    IList<string>? ExcludeDeploymentsFromVisibilityPrivate = null
+    IList<string>? ExcludeDeploymentsFromVisibilityPrivate = null,
+    string ResourceVersion = ""
     );
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
@@ -249,7 +250,8 @@ public class KubernetesService : IKubernetesService
                     annotations.TryGetValue(PathsStartWithVisibility, out string? valueUrlsStartWithVisibility)
                         ? valueUrlsStartWithVisibility.Split(',').ToList()
                         : new List<string>(),
-                    annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>()
+                    annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
+                    deploymentListItem.Metadata.ResourceVersion
                     );
                 deploymentInformationList.Add(deploymentInformation);
             }
@@ -323,7 +325,11 @@ public class KubernetesService : IKubernetesService
                     annotations.TryGetValue(DefaultVisibility, out string? visibility)
                         ? Enum.Parse<FunctionVisibility>(visibility)
                         : FunctionVisibility.Public,
-                    annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>());
+                    annotations.TryGetValue(PathsStartWithVisibility, out string? valueUrlsStartWithVisibility)
+                        ? valueUrlsStartWithVisibility.Split(',').ToList()
+                        : new List<string>(),
+                    annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
+                    deploymentListItem.Metadata.ResourceVersion);
 
                 deploymentInformationList.Add(deploymentInformation);
             }
