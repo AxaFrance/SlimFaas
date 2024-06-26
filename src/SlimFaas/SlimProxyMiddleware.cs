@@ -299,7 +299,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         var slimFaasSubscribeEvents = _slimFaasSubscribeEvents.Where(s => s.Key == eventName);
         if (functions.Count <= 0 && !slimFaasSubscribeEvents.Any())
         {
-            logger.LogDebug("Return 404 from event: {EventName}", eventName);
+            logger.LogDebug("Publish-event {EventName} : Return 404 from event", eventName);
             context.Response.StatusCode = 404;
             return;
         }
@@ -310,11 +310,11 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         {
             foreach (var pod in function.Pods)
             {
-                logger.LogDebug("Pod {PodName} is ready: {PodReady}", pod.Name, pod.Ready);
-                if (pod.Ready != true)
+                if (pod.Ready is not true)
                 {
                     continue;
                 }
+                logger.LogInformation("Publish-event {EventName} : Deployment {Deployment} Pod {PodName} is ready: {PodReady}", eventName, function.Deployment, pod.Name, pod.Ready);
                 historyHttpService.SetTickLastCall(function.Deployment, lastSetTicks);
 
                 string baseFunctionPodUrl =
