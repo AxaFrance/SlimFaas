@@ -128,7 +128,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
 
             bool timeElapsedWithoutRequest = TimeSpan.FromTicks(tickLastCall) +
-                                              TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow)) < TimeSpan.FromTicks(DateTime.UtcNow.Ticks)
+                                              TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow)) < TimeSpan.FromTicks(DateTime.UtcNow.Ticks);
 
             if (logger.IsEnabled(LogLevel.Information))
             {
