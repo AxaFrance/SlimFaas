@@ -136,7 +136,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                            TimeSpan.FromSeconds(
                                GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow)) -
                            TimeSpan.FromTicks(DateTime.UtcNow.Ticks);
-                logger.LogInformation("Time elapsed without request for {Deployment} is {TimeElapsedWithoutRequest}s", deploymentInformation.Deployment, time.Seconds);
+                logger.LogInformation("Time without request for {Deployment} is {TimeElapsedWithoutRequest}s", deploymentInformation.Deployment, time.Seconds);
             }
             int currentScale = deploymentInformation.Replicas;
             if (timeElapsedWithoutRequest)
