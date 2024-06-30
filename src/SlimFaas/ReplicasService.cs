@@ -126,9 +126,9 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     tickLastCall = ticksLastCall[information.Deployment];
             }
 
-
+            var timeToWaitSeconds = TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow));
             bool timeElapsedWithoutRequest = TimeSpan.FromTicks(tickLastCall) +
-                                              TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow)) < TimeSpan.FromTicks(DateTime.UtcNow.Ticks);
+                timeToWaitSeconds < TimeSpan.FromTicks(DateTime.UtcNow.Ticks);
 
             if (logger.IsEnabled(LogLevel.Information))
             {
@@ -136,7 +136,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                            TimeSpan.FromSeconds(
                                GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow)) -
                            TimeSpan.FromTicks(DateTime.UtcNow.Ticks);
-                logger.LogInformation("Time without request for {Deployment} is {TimeElapsedWithoutRequest}s", deploymentInformation.Deployment, time.Seconds);
+                logger.LogInformation("Time without request for {Deployment} is {TimeElapsedWithoutRequest}s {TickLastCall} {TimeToWait}" , deploymentInformation.Deployment, time.TotalSeconds, tickLastCall, timeToWaitSeconds);
             }
             int currentScale = deploymentInformation.Replicas;
             if (timeElapsedWithoutRequest)
