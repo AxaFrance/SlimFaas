@@ -126,6 +126,8 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     tickLastCall = ticksLastCall[information.Deployment];
             }
 
+            logger.LogInformation("CheckScaleAsync {Deployment} {TickLastCall}", deploymentInformation.Deployment, tickLastCall);
+            logger.LogInformation("CheckScaleAsync {Deployment} {TimeToWait}", deploymentInformation.Deployment, DateTime.UtcNow.Ticks);
             var timeToWaitSeconds = TimeSpan.FromSeconds(GetTimeoutSecondBeforeSetReplicasMin(deploymentInformation, DateTime.UtcNow));
             bool timeElapsedWithoutRequest = (TimeSpan.FromTicks(tickLastCall) +
                 timeToWaitSeconds) < TimeSpan.FromTicks(DateTime.UtcNow.Ticks);
