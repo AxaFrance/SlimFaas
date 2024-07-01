@@ -29,12 +29,12 @@ public class HistorySynchronizationWorker(IReplicasService replicasService,
                     long ticksMemory = historyHttpMemoryService.GetTicksLastCall(function.Deployment);
                     if (ticksInDatabase > ticksMemory)
                     {
-                        logger.LogInformation("HistorySynchronizationWorker: Synchronizing history for {Function} to {Ticks} from Database", function.Deployment, ticksInDatabase);
+                        logger.LogDebug("HistorySynchronizationWorker: Synchronizing history for {Function} to {Ticks} from Database", function.Deployment, ticksInDatabase);
                         historyHttpMemoryService.SetTickLastCall(function.Deployment, ticksInDatabase);
                     }
                     else if (ticksInDatabase < ticksMemory)
                     {
-                        logger.LogInformation("HistorySynchronizationWorker: Synchronizing history for {Function} to {Ticks} from Memory", function.Deployment, ticksMemory);
+                        logger.LogDebug("HistorySynchronizationWorker: Synchronizing history for {Function} to {Ticks} from Memory", function.Deployment, ticksMemory);
                         await historyHttpDatabaseService.SetTickLastCallAsync(function.Deployment, ticksMemory);
                     }
                 }
