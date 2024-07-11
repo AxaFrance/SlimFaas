@@ -16,8 +16,6 @@
     <ItemGroup>
         <PackageReference Include="DotNext.AspNetCore.Cluster" Version="5.7.3" />
         <PackageReference Include="MemoryPack" Version="1.21.1" />
-        <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="8.0.7" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     </ItemGroup>
 
 </Project>
