@@ -369,7 +369,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             {
                 if (task.IsCompleted)
                 {
-                    using HttpResponseMessage responseMessage = task.Result;
+                    HttpResponseMessage responseMessage = task.Result;
                     logger.LogDebug("Response from event {EventName} with status code {StatusCode}", eventName, responseMessage.StatusCode);
                 }
             }
