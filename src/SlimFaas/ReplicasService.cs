@@ -154,7 +154,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
                     tasks.Add(task);
                 }
-                else (currentScale == deploymentInformation.ReplicasMin)
+                else if (currentScale == deploymentInformation.ReplicasMin)
                 {
                     continue;
                 } else {
