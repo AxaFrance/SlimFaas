@@ -140,17 +140,35 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     deploymentInformation.Deployment, time);
             }
             int currentScale = deploymentInformation.Replicas;
-            if (timeElapsedWithoutRequest && currentScale > deploymentInformation.ReplicasMin)
+            if (timeElapsedWithoutRequest)
             {
-                logger.LogInformation("Scale down {Deployment} from {currentScale} to {ReplicasMin}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasMin);
-                Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
-                    Replicas: deploymentInformation.ReplicasMin,
-                    Deployment: deploymentInformation.Deployment,
-                    Namespace: kubeNamespace,
-                    PodType: deploymentInformation.PodType
-                ));
+                if(currentScale < deploymentInformation.ReplicasMin)
+                {
+                    logger.LogInformation("Scale up {Deployment} from {currentScale} to {Replica at start}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasAtStart);
+                    Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
+                        Replicas: deploymentInformation.ReplicasMin,
+                        Deployment: deploymentInformation.Deployment,
+                        Namespace: kubeNamespace,
+                        PodType: deploymentInformation.PodType
+                    ));
 
-                tasks.Add(task);
+                    tasks.Add(task);
+                }
+                else (currentScale == deploymentInformation.ReplicasMin)
+                {
+                    continue;
+                } else {
+                    logger.LogInformation("Scale down {Deployment} from {currentScale} to {ReplicasMin}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasMin);
+                    Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
+                        Replicas: deploymentInformation.ReplicasMin,
+                        Deployment: deploymentInformation.Deployment,
+                        Namespace: kubeNamespace,
+                        PodType: deploymentInformation.PodType
+                    ));
+
+                    tasks.Add(task);
+                }
+
             }
             else if ((currentScale is 0 || currentScale < deploymentInformation.ReplicasMin) && DependsOnReady(deploymentInformation))
             {
