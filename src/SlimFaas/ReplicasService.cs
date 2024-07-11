@@ -140,13 +140,8 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     deploymentInformation.Deployment, time);
             }
             int currentScale = deploymentInformation.Replicas;
-            if (timeElapsedWithoutRequest)
+            if (timeElapsedWithoutRequest && currentScale > deploymentInformation.ReplicasMin)
             {
-                if (currentScale <= deploymentInformation.ReplicasMin)
-                {
-                    continue;
-                }
-
                 logger.LogInformation("Scale down {Deployment} from {currentScale} to {ReplicasMin}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasMin);
                 Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
                     Replicas: deploymentInformation.ReplicasMin,
