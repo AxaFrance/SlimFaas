@@ -363,17 +363,16 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             }
         }
 
-        if (logger.IsEnabled(LogLevel.Debug))
+        /*if (logger.IsEnabled(LogLevel.Debug))
         {
             foreach (Task<HttpResponseMessage> task in tasks)
             {
                 if (task.IsCompleted)
                 {
-                    HttpResponseMessage responseMessage = task.Result;
-                    logger.LogDebug("Response from event {EventName} with status code {StatusCode}", eventName, responseMessage.StatusCode);
+                    logger.LogDebug("Response from event {EventName}", eventName);
                 }
             }
-        }
+        }*/
 
         context.Response.StatusCode = 204;
     }
