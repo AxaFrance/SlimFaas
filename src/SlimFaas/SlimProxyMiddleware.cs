@@ -306,8 +306,10 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         var lastSetTicks = DateTime.UtcNow.Ticks;
 
         List<DeploymentInformation> calledFunctions = new();
+        CustomRequest customRequest =
+            await InitCustomRequest(context, context.Request, "", functionPath);
 
-        List<Task<HttpResponseMessage>> tasks = new();
+        List<Task> tasks = new();
         foreach (DeploymentInformation function in functions)
         {
             foreach (var pod in function.Pods)
@@ -330,9 +332,8 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
 
                 var baseUrl = SlimDataEndpoint.Get(pod, baseFunctionPodUrl);
                 logger.LogDebug("Sending event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, function.Deployment, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
-                Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, function.Deployment,
-                    functionPath, context.Request.QueryString.ToUriComponent(), baseUrl);
-                tasks.Add(responseMessagePromise);
+                Task task = SendRequest(context, sendClient, customRequest with {FunctionName =  function.Deployment}, baseUrl, logger, eventName);
+                tasks.Add(task);
             }
         }
 
@@ -341,9 +342,8 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             foreach (string baseUrl in slimFaasSubscribeEvent.Value)
             {
                 logger.LogDebug("Sending event {EventName} to {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
-                Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, "",
-                    functionPath, context.Request.QueryString.ToUriComponent(), baseUrl);
-                tasks.Add(responseMessagePromise);
+                Task task = SendRequest(context, sendClient, customRequest with {FunctionName = ""}, baseUrl, logger, eventName);
+                tasks.Add(task);
             }
         }
 
@@ -363,19 +363,24 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             }
         }
 
-        if (logger.IsEnabled(LogLevel.Debug))
-        {
-            foreach (Task<HttpResponseMessage> task in tasks)
-            {
-                if (task.IsCompleted)
-                {
-                    using HttpResponseMessage responseMessage = task.Result;
-                    logger.LogDebug("Response from event {EventName} with status code {StatusCode}", eventName, responseMessage.StatusCode);
-                }
-            }
-        }
-
         context.Response.StatusCode = 204;
+    }
+
+    private static async Task SendRequest(HttpContext context, ISendClient sendClient, CustomRequest customRequest, string baseUrl, ILogger<SlimProxyMiddleware> logger, string eventName)
+    {
+        try
+        {
+            using HttpResponseMessage responseMessage = await sendClient.SendHttpRequestAsync(customRequest, context, baseUrl);
+            logger.LogDebug(
+                "Response from event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent} is {StatusCode}",
+                eventName, customRequest.FunctionName, baseUrl, customRequest.Path, context.Request.QueryString.ToUriComponent(),
+                responseMessage.StatusCode);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error in sending event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent}",
+                eventName, customRequest.FunctionName, baseUrl, customRequest.Path, context.Request.QueryString.ToUriComponent());
+        }
     }
 
     private async Task BuildSyncResponseAsync(HttpContext context, HistoryHttpMemoryService historyHttpService,
