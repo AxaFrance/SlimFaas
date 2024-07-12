@@ -307,7 +307,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
 
         List<DeploymentInformation> calledFunctions = new();
 
-        List<Task<HttpResponseMessage>> tasks = new();
+        List<Task> tasks = new();
         foreach (DeploymentInformation function in functions)
         {
             foreach (var pod in function.Pods)
@@ -330,9 +330,8 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
 
                 var baseUrl = SlimDataEndpoint.Get(pod, baseFunctionPodUrl);
                 logger.LogDebug("Sending event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, function.Deployment, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
-                Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, function.Deployment,
-                    functionPath, context.Request.QueryString.ToUriComponent(), baseUrl);
-                tasks.Add(responseMessagePromise);
+                Task task = SendRequest(context, sendClient, functionPath, function.Deployment, baseUrl, logger, eventName);
+                tasks.Add(task);
             }
         }
 
@@ -341,9 +340,8 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             foreach (string baseUrl in slimFaasSubscribeEvent.Value)
             {
                 logger.LogDebug("Sending event {EventName} to {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
-                Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, "",
-                    functionPath, context.Request.QueryString.ToUriComponent(), baseUrl);
-                tasks.Add(responseMessagePromise);
+                Task task = SendRequest(context, sendClient, functionPath, "", baseUrl, logger, eventName);
+                tasks.Add(task);
             }
         }
 
@@ -363,18 +361,16 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             }
         }
 
-        /*if (logger.IsEnabled(LogLevel.Debug))
-        {
-            foreach (Task<HttpResponseMessage> task in tasks)
-            {
-                if (task.IsCompleted)
-                {
-                    logger.LogDebug("Response from event {EventName}", eventName);
-                }
-            }
-        }*/
-
         context.Response.StatusCode = 204;
+    }
+
+    private static async Task SendRequest(HttpContext context, ISendClient sendClient, string functionPath,
+        string deploymentName, string baseUrl, ILogger<SlimProxyMiddleware> logger, string eventName)
+    {
+        using HttpResponseMessage responseMessage = await sendClient.SendHttpRequestSync(context, deploymentName,
+            functionPath, context.Request.QueryString.ToUriComponent(), baseUrl);
+        logger.LogDebug("Response from event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent} is {StatusCode}", eventName, deploymentName, baseUrl, functionPath, context.Request.QueryString.ToUriComponent(), responseMessage.StatusCode);
+
     }
 
     private async Task BuildSyncResponseAsync(HttpContext context, HistoryHttpMemoryService historyHttpService,
