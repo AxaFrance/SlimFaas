@@ -367,10 +367,20 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     private static async Task SendRequest(HttpContext context, ISendClient sendClient, string functionPath,
         string deploymentName, string baseUrl, ILogger<SlimProxyMiddleware> logger, string eventName)
     {
-        using HttpResponseMessage responseMessage = await sendClient.SendHttpRequestSync(context, deploymentName,
-            functionPath, context.Request.QueryString.ToUriComponent(), baseUrl);
-        logger.LogDebug("Response from event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent} is {StatusCode}", eventName, deploymentName, baseUrl, functionPath, context.Request.QueryString.ToUriComponent(), responseMessage.StatusCode);
-
+        try
+        {
+            using HttpResponseMessage responseMessage = await sendClient.SendHttpRequestSync(context, deploymentName,
+                functionPath, context.Request.QueryString.ToUriComponent(), baseUrl);
+            logger.LogDebug(
+                "Response from event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent} is {StatusCode}",
+                eventName, deploymentName, baseUrl, functionPath, context.Request.QueryString.ToUriComponent(),
+                responseMessage.StatusCode);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error in sending event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent}",
+                eventName, deploymentName, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
+        }
     }
 
     private async Task BuildSyncResponseAsync(HttpContext context, HistoryHttpMemoryService historyHttpService,
