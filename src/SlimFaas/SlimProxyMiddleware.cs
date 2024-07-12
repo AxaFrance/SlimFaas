@@ -332,8 +332,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
 
                 var baseUrl = SlimDataEndpoint.Get(pod, baseFunctionPodUrl);
                 logger.LogDebug("Sending event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, function.Deployment, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
-                customRequest.FunctionName = function.Deployment;
-                Task task = SendRequest(context, sendClient, customRequest, baseUrl, logger, eventName);
+                Task task = SendRequest(context, sendClient, customRequest with {FunctionName =  function.Deployment}, baseUrl, logger, eventName);
                 tasks.Add(task);
             }
         }
@@ -343,8 +342,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             foreach (string baseUrl in slimFaasSubscribeEvent.Value)
             {
                 logger.LogDebug("Sending event {EventName} to {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
-                customRequest.FunctionName = "";
-                Task task = SendRequest(context, sendClient, customRequest, baseUrl, logger, eventName);
+                Task task = SendRequest(context, sendClient, customRequest with {FunctionName = ""}, baseUrl, logger, eventName);
                 tasks.Add(task);
             }
         }
