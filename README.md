@@ -155,12 +155,12 @@ spec:
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
-        SlimFaas/Schedule : |
+        SlimFaas/Schedule: |
             {"TimeZoneID":"Europe/Paris","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
-        SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment or statefulset names
-        SlimFaas/SubscribeEvents : "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
-        SlimFaas/DefaultVisibility : "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
-        SlimFaas/UrlsPathStartWithVisibility : "Private:/mypath/subPath,Private:/mysecondpath" # Public or Private (private can be accessed only by internal namespace https call from pods)
+        SlimFaas/DependsOn: "mysql,fibonacci2" # comma separated list of deployment or statefulset names
+        SlimFaas/SubscribeEvents: "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
+        SlimFaas/DefaultVisibility: "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
+        SlimFaas/UrlsPathStartWithVisibility: "Private:/mypath/subPath,Private:/mysecondpath" # Public or Private (private can be accessed only by internal namespace https call from pods)
     spec:
       serviceAccountName: default
       containers:

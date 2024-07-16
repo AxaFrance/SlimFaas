@@ -198,6 +198,9 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
     private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string timeZoneID)
     {
+        Console.WriteLine(" dateTime: " + dateTime);
+        Console.WriteLine(" hours: " + hours);
+        Console.WriteLine(" minutes: " + minutes);
         TzdbDateTimeZoneSource source = TzdbDateTimeZoneSource.Default;
         LocalDateTime local = new LocalDateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes);
         Console.WriteLine(" timeZoneID: " + timeZoneID);
