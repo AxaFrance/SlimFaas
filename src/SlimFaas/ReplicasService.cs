@@ -208,7 +208,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
         Console.WriteLine(" zonedDateTime: " + zonedDateTime);
         var datetimeUtc = zonedDateTime.ToDateTimeUtc();
         Console.WriteLine(" dateUtc: " + datetimeUtc);
-        return datetimeUtc
+        return datetimeUtc;
     }
 
     public static long? GetLastTicksFromSchedule(DeploymentInformation deploymentInformation, DateTime nowUtc)
