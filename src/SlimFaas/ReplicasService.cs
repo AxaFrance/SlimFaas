@@ -200,9 +200,15 @@ public class ReplicasService(IKubernetesService kubernetesService,
     {
         TzdbDateTimeZoneSource source = TzdbDateTimeZoneSource.Default;
         LocalDateTime local = new LocalDateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes);
+        Console.WriteLine(" timeZoneID: " + timeZoneID);
+        Console.WriteLine(" source: " + source);
+        Console.WriteLine(" local: " + local);
         DateTimeZone dateTimeZone = source.ForId(timeZoneID);
         ZonedDateTime zonedDateTime = local.InZoneLeniently(dateTimeZone);
-        return zonedDateTime.ToDateTimeUtc();
+        Console.WriteLine(" zonedDateTime: " + zonedDateTime);
+        var datetimeUtc = zonedDateTime.ToDateTimeUtc();
+        Console.WriteLine(" dateUtc: " + datetimeUtc);
+        return datetimeUtc
     }
 
     public static long? GetLastTicksFromSchedule(DeploymentInformation deploymentInformation, DateTime nowUtc)
@@ -214,7 +220,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
         var dateTime = DateTime.MinValue;
         var dates = new List<DateTime>();
-        
+
         foreach (var defaultSchedule in deploymentInformation.Schedule.Default.WakeUp)
         {
             var splits = defaultSchedule.Split(':');
@@ -278,7 +284,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
             if (times.Count >= 2)
             {
-                /* 
+                /*
                     Convert to ticks to prevent schedule elements, when moving to utc time, from taking precedence when they shoudln't.
                     For instance: 1am in French would become 11pm of the day before in utc hour.
                     This would make it take precedence over almost every other time.
@@ -294,7 +300,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 {
                     return orderedTimes[^1].Value;
                 }
-                
+
                 return times.OrderBy(t => CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.TimeZoneID).Ticks).Last().Value;
             }
             else if (times.Count == 1)
