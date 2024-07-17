@@ -347,7 +347,7 @@ spec:
 
 ````bash
 {
-  "TimeZoneID":"Europe/Paris",
+  "TimeZoneID":"Europe/Paris", # Time Zone ID can be found here: https://nodatime.org/TimeZones
   "Default":{
     "WakeUp":["07:00"], // Wake up your infrastructure at 07:00
     "ScaleDownTimeout":[
