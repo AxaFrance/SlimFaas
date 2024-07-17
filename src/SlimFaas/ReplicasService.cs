@@ -194,10 +194,12 @@ public class ReplicasService(IKubernetesService kubernetesService,
         }
     }
 
-    record TimeToScaleDownTimeout(int Hours, int Minutes, int Value);
+    record TimeToScaleDownTimeout(int Hours, int Minutes, int Value, DateTime DateTime);
 
     private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string timeZoneID)
     {
+        Console.WriteLine("CreateDateTime");
+        Console.WriteLine("Hours: " + hours + " Minutes: " + minutes);
         Console.WriteLine(" dateTime: " + dateTime);
         Console.WriteLine(" hours: " + hours);
         Console.WriteLine(" minutes: " + minutes);
@@ -241,7 +243,6 @@ public class ReplicasService(IKubernetesService kubernetesService,
             dates.Add(date);
         }
 
-
         foreach (var date in dates)
         {
             if (date <= nowUtc && date > dateTime)
@@ -269,6 +270,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
         if (deploymentInformation.Schedule is { Default: not null })
         {
             List<TimeToScaleDownTimeout> times = new();
+            Console.WriteLine("-------------------ScaleDownTimeout-------------------");
             foreach (var defaultSchedule in deploymentInformation.Schedule.Default.ScaleDownTimeout)
             {
                 var splits = defaultSchedule.Time.Split(':');
@@ -282,7 +284,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 }
 
                 var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.TimeZoneID);
-                times.Add(new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value));
+                times.Add(new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value, date));
             }
 
             if (times.Count >= 2)
@@ -293,8 +295,9 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     This would make it take precedence over almost every other time.
                     Therefore, comparing only the total amount of minutes, as was done before, would not work.
                 */
+                Console.WriteLine("-------------------times.Count >= 2-------------------");
                 List<TimeToScaleDownTimeout> orderedTimes = times
-                    .Select(t => new {Time = t, CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.TimeZoneID).Ticks})
+                    .Select(t => new {Time = t, t.DateTime.Ticks})
                     .Where(t => t.Ticks < nowUtc.Ticks)
                     .OrderBy(t => t.Ticks)
                     .Select(t => t.Time)
@@ -304,12 +307,13 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     return orderedTimes[^1].Value;
                 }
 
-                return times.OrderBy(t => CreateDateTime(nowUtc, t.Hours, t.Minutes, deploymentInformation.Schedule.TimeZoneID).Ticks).Last().Value;
+                return times.OrderBy(t => t.DateTime.Ticks).Last().Value;
             }
             else if (times.Count == 1)
             {
+                Console.WriteLine("-------------------times.Count == 1-------------------");
                 var time = times.First();
-                return (CreateDateTime(nowUtc, time.Hours, time.Minutes, deploymentInformation.Schedule.TimeZoneID).Ticks < nowUtc.Ticks) ?
+                return (time.DateTime.Ticks < nowUtc.Ticks) ?
                     time.Value : deploymentInformation.TimeoutSecondBeforeSetReplicasMin;
             }
         }
