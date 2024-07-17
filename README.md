@@ -105,14 +105,14 @@ SlimFaas act as an HTTP proxy with 2 modes:
 
 - Synchronous http://slimfaas/function/myfunction = > HTTP response function
 
-![sync_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/sync_http_call.PNG)
+![sync_http_call.PNG](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/sync_http_call.PNG)
 
 ### Asynchronous HTTP call
 
 - Asynchronous http://slimfaas/async-function/myfunction => HTTP 201
   - Tail using SlimData database included in SlimFaas pod
 
-![async_http_call.PNG](https://github.com/AxaFrance/slimfaas/blob/main/documentation/async_http_call.PNG)
+![async_http_call.PNG](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/async_http_call.PNG)
 
 ### Wake HTTP call
 
@@ -125,7 +125,7 @@ To publish the message to every replicas in "Ready" state of the function
 
 - HTTP POST http://slimfaas/publish-event/my-event-name {"data":"my-event-data"}
 
-![publish_sync_call.png](https://github.com/AxaFrance/slimfaas/blob/main/documentation/publish_sync_call.png)
+![publish_sync_call.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/publish_sync_call.png)
 
 ## How to install
 
@@ -155,12 +155,12 @@ spec:
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
-        SlimFaas/Schedule : |
-            {"Culture":"fr-FR","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
-        SlimFaas/DependsOn : "mysql,fibonacci2" # comma separated list of deployment or statefulset names
-        SlimFaas/SubscribeEvents : "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
-        SlimFaas/DefaultVisibility : "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
-        SlimFaas/UrlsPathStartWithVisibility : "Private:/mypath/subPath,Private:/mysecondpath" # Public or Private (private can be accessed only by internal namespace https call from pods)
+        SlimFaas/Schedule: |
+            {"TimeZoneID":"Europe/Paris","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
+        SlimFaas/DependsOn: "mysql,fibonacci2" # comma separated list of deployment or statefulset names
+        SlimFaas/SubscribeEvents: "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
+        SlimFaas/DefaultVisibility: "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
+        SlimFaas/UrlsPathStartWithVisibility: "Private:/mypath/subPath,Private:/mysecondpath" # Public or Private (private can be accessed only by internal namespace https call from pods)
     spec:
       serviceAccountName: default
       containers:
@@ -341,13 +341,13 @@ spec:
 - **SlimFaas/ExcludeDeploymentsFromVisibilityPrivate** : ""
   - Comma separated list of deployment names or statefulset names
   - Message from that pods will be considered as public. It is useful if you want to exclude some pods from the private visibility, for example for a backend for frontend.
-- **SlimFaas/Schedule** : "" #json configuration
-  - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00
+- **SlimFaas/Schedule** : json configuration
+  - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00. Time zones are defined as IANA time zones. The full list is available [here](https://nodatime.org/TimeZones)
 
 
 ````bash
 {
-  "Culture":"fr-FR", // Time zone culture, example: en-US,  CultureInfo in .NET https://learn.microsoft.com/en-us/dotnet/api/system.globalization.cultureinfo?view=net-8.0
+  "TimeZoneID":"Europe/Paris", # Time Zone ID can be found here: https://nodatime.org/TimeZones
   "Default":{
     "WakeUp":["07:00"], // Wake up your infrastructure at 07:00
     "ScaleDownTimeout":[

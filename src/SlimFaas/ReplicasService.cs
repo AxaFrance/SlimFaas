@@ -1,7 +1,6 @@
-﻿using System.Globalization;
-using SlimFaas.Kubernetes;
-using System.Text.Json.Serialization;
-using System.Text.Json;
+﻿using SlimFaas.Kubernetes;
+using NodaTime;
+using NodaTime.TimeZones;
 
 namespace SlimFaas;
 
@@ -152,6 +151,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 else {
                     logger.LogInformation("Scale down {Deployment} from {currentScale} to {ReplicasMin}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasMin);
                 }
+
                 Task<ReplicaRequest?> task = kubernetesService.ScaleAsync(new ReplicaRequest(
                     Replicas: deploymentInformation.ReplicasMin,
                     Deployment: deploymentInformation.Deployment,
@@ -194,11 +194,16 @@ public class ReplicasService(IKubernetesService kubernetesService,
         }
     }
 
-    record TimeToScaleDownTimeout(int Hours, int Minutes, int Value);
+    record TimeToScaleDownTimeout(int Hours, int Minutes, int Value, DateTime DateTime);
 
-    private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string culture)
+    private static DateTime CreateDateTime(DateTime dateTime, int hours, int minutes, string timeZoneID)
     {
-        return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes, 0, new CultureInfo(culture).Calendar).ToUniversalTime();
+        TzdbDateTimeZoneSource source = TzdbDateTimeZoneSource.Default;
+        LocalDateTime local = new(dateTime.Year, dateTime.Month, dateTime.Day, hours, minutes);
+        DateTimeZone dateTimeZone = source.ForId(timeZoneID);
+        ZonedDateTime zonedDateTime = local.InZoneLeniently(dateTimeZone);
+        var datetimeUtc = zonedDateTime.ToDateTimeUtc();
+        return datetimeUtc;
     }
 
     public static long? GetLastTicksFromSchedule(DeploymentInformation deploymentInformation, DateTime nowUtc)
@@ -210,6 +215,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
         var dateTime = DateTime.MinValue;
         var dates = new List<DateTime>();
+
         foreach (var defaultSchedule in deploymentInformation.Schedule.Default.WakeUp)
         {
             var splits = defaultSchedule.Split(':');
@@ -223,10 +229,9 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 continue;
             }
 
-            var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
+            var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.TimeZoneID);
             dates.Add(date);
         }
-
 
         foreach (var date in dates)
         {
@@ -267,22 +272,36 @@ public class ReplicasService(IKubernetesService kubernetesService,
                     continue;
                 }
 
-                var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.Culture);
-                times.Add( new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value));
+                var date = CreateDateTime(nowUtc, hours, minutes, deploymentInformation.Schedule.TimeZoneID);
+                times.Add(new TimeToScaleDownTimeout(date.Hour, date.Minute, defaultSchedule.Value, date));
             }
 
             if (times.Count >= 2)
             {
+                /*
+                    Convert to ticks to prevent schedule elements, when moving to utc time, from taking precedence when they shoudln't.
+                    For instance: 1am in French would become 11pm of the day before in utc hour.
+                    This would make it take precedence over almost every other time.
+                    Therefore, comparing only the total amount of minutes, as was done before, would not work.
+                */
                 List<TimeToScaleDownTimeout> orderedTimes = times
-                    .Where(t => t.Hours*60 + t.Minutes < nowUtc.Hour*60 + nowUtc.Minute)
-                    .OrderBy(t => t.Hours * 60+ t.Minutes)
+                    .Select(t => new {Time = t, t.DateTime.Ticks})
+                    .Where(t => t.Ticks < nowUtc.Ticks)
+                    .OrderBy(t => t.Ticks)
+                    .Select(t => t.Time)
                     .ToList();
                 if (orderedTimes.Count >= 1)
                 {
                     return orderedTimes[^1].Value;
                 }
 
-                return times.OrderBy(t => t.Hours * 60+ t.Minutes).Last().Value;
+                return times.OrderBy(t => t.DateTime.Ticks).Last().Value;
+            }
+            else if (times.Count == 1)
+            {
+                var time = times.First();
+                return (time.DateTime.Ticks < nowUtc.Ticks) ?
+                    time.Value : deploymentInformation.TimeoutSecondBeforeSetReplicasMin;
             }
         }
 
