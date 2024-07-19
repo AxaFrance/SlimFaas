@@ -344,22 +344,6 @@ public class KubernetesService : IKubernetesService
     {
         foreach (V1Pod? item in v1PodList.Items)
         {
-            Console.WriteLine("item.Metadata.GenerateName");
-            // COnsole to print deplyment associated with the pod
-            Console.WriteLine(item.Metadata.OwnerReferences[0].Name);
-            Console.WriteLine(item.Metadata.GenerateName);
-
-
-            Console.WriteLine(item.Metadata.Name);
-            Console.WriteLine(item.Metadata.NamespaceProperty);
-            Console.WriteLine(item.Status.PodIP);
-            Console.WriteLine(item.Status.ContainerStatuses.Count);
-            foreach (V1ContainerStatus statusContainer in item.Status.ContainerStatuses)
-            {
-                Console.WriteLine(statusContainer.Name);
-                Console.WriteLine(statusContainer?.Ready);
-                Console.WriteLine(statusContainer?.Started);
-            }
             string? podIp = item.Status.PodIP;
             if (string.IsNullOrEmpty(podIp))
             {
@@ -370,7 +354,7 @@ public class KubernetesService : IKubernetesService
             bool ready = containerStatus?.Ready ?? false;
             bool started = containerStatus?.Started ?? false;
             string? podName = item.Metadata.Name;
-            string deploymentName = ExtractPodDeploymentNameFrom(item.Metadata.Name);
+            string deploymentName = item.Metadata.OwnerReferences.Count > 0 ? item.Metadata.OwnerReferences[0].Name : ExtractPodDeploymentNameFrom(item.Metadata.Name);
 
             PodInformation podInformation = new(podName, started, ready, podIp, deploymentName);
             Console.WriteLine($"Pod {podName} started: {started} ready: {ready} ip: {podIp} deployment: {deploymentName}");
