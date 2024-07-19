@@ -366,7 +366,7 @@ public class KubernetesService : IKubernetesService
             bool ready = containerStatus?.Ready ?? false;
             bool started = containerStatus?.Started ?? false;
             string? podName = item.Metadata.Name;
-            string deploymentName = ExtractPodDeploymentNameFrom(item.Metadata.GenerateName);
+            string deploymentName = ExtractPodDeploymentNameFrom(item.Metadata.Name);
 
             PodInformation podInformation = new(podName, started, ready, podIp, deploymentName);
             Console.WriteLine($"Pod {podName} started: {started} ready: {ready} ip: {podIp} deployment: {deploymentName}");
@@ -377,13 +377,22 @@ public class KubernetesService : IKubernetesService
     public static string ExtractPodDeploymentNameFrom(string generalName)
     {
         string[] names = generalName.Split('-');
-        if (names.Length <= 1)
+        var length = names.Length;
+        if (length <= 1)
         {
             return generalName;
         }
 
+        var last = names[length - 1];
+        bool isNumeric = int.TryParse(last, out _);
+        var lengthToTest = 2;
+        if (isNumeric)
+        {
+            lengthToTest =1;
+        }
+
         StringBuilder realName = new(names[0]);
-        for (int i = 1; i < names.Length - 2; i++)
+        for (int i = 1; i < length - lengthToTest; i++)
         {
             realName.Append($"-{names[i]}");
         }
