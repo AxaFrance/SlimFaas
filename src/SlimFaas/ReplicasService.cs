@@ -318,31 +318,12 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
         foreach (string dependOn in deploymentInformation.DependsOn)
         {
-            Console.WriteLine("DependOn: " + dependOn);
-            Console.WriteLine("Pods ready: " + Deployments.Functions.Where(f => f.Deployment == dependOn)
-                .Sum(f => f.Pods.Count(p => p.Ready.HasValue && p.Ready.Value)));
-            Console.WriteLine("Pods not ready: " + Deployments.Functions.Where(f => f.Deployment == dependOn)
-                .Sum(f => f.Pods.Count(p => p.Ready.HasValue && !p.Ready.Value)));
-
-            // Pods count started
-            Console.WriteLine("Pods count started: " + Deployments.Functions.Where(f => f.Deployment == dependOn)
-                .Sum(f => f.Pods.Count(p => p.Started.HasValue && p.Started.Value)));
-            // Pods count not started
-            Console.WriteLine("Pods count not started: " + Deployments.Functions.Where(f => f.Deployment == dependOn)
-                .Sum(f => f.Pods.Count(p => p.Started.HasValue && !p.Started.Value)));
-
-            Console.WriteLine("Pods count: " + Deployments.Functions.Where(f => f.Deployment == dependOn)
-                .Sum(f => f.Pods.Count));
-
             if (Deployments.Functions.Where(f => f.Deployment == dependOn)
                 .Any(f => f.Pods.Count(p => p.Ready.HasValue && p.Ready.Value) < f.ReplicasAtStart ))
             {
-                Console.WriteLine("DependOn not ready: " + dependOn);
                 return false;
             }
-            Console.WriteLine("DependOn ready");
         }
-        Console.WriteLine("All DependOn ready");
         return true;
     }
 }
