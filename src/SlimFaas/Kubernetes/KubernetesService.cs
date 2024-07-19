@@ -345,7 +345,11 @@ public class KubernetesService : IKubernetesService
         foreach (V1Pod? item in v1PodList.Items)
         {
             Console.WriteLine("item.Metadata.GenerateName");
+            // COnsole to print deplyment associated with the pod
+            Console.WriteLine(item.Metadata.OwnerReferences[0].Name);
             Console.WriteLine(item.Metadata.GenerateName);
+
+
             Console.WriteLine(item.Metadata.Name);
             Console.WriteLine(item.Metadata.NamespaceProperty);
             Console.WriteLine(item.Status.PodIP);
