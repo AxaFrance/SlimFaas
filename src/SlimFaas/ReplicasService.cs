@@ -324,6 +324,16 @@ public class ReplicasService(IKubernetesService kubernetesService,
             Console.WriteLine("Pods not ready: " + Deployments.Functions.Where(f => f.Deployment == dependOn)
                 .Sum(f => f.Pods.Count(p => p.Ready.HasValue && !p.Ready.Value)));
 
+            // Pods count started
+            Console.WriteLine("Pods count started: " + Deployments.Functions.Where(f => f.Deployment == dependOn)
+                .Sum(f => f.Pods.Count(p => p.Started.HasValue && p.Started.Value)));
+            // Pods count not started
+            Console.WriteLine("Pods count not started: " + Deployments.Functions.Where(f => f.Deployment == dependOn)
+                .Sum(f => f.Pods.Count(p => p.Started.HasValue && !p.Started.Value)));
+
+            Console.WriteLine("Pods count: " + Deployments.Functions.Where(f => f.Deployment == dependOn)
+                .Sum(f => f.Pods.Count));
+
             if (Deployments.Functions.Where(f => f.Deployment == dependOn)
                 .Any(f => f.Pods.Count(p => p.Ready.HasValue && p.Ready.Value) < f.ReplicasAtStart ))
             {
