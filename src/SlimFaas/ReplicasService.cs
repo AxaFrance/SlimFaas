@@ -71,9 +71,10 @@ public class ReplicasService(IKubernetesService kubernetesService,
                                                   "with {PodType} pod type \n" +
                                                   "with {ResourceVersion} resource version \n"+
                                                   "with {NumberParallelRequest} number parallel request \n",
+                                                  "with dependOn {DependsOn}  \n",
                                 deploymentInformation.Deployment, deploymentInformation.Replicas, deploymentInformation.ReplicasAtStart, deploymentInformation.ReplicasMin,
                                 deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest, deploymentInformation.TimeoutSecondBeforeSetReplicasMin,
-                                deploymentInformation.PodType, deploymentInformation.ResourceVersion, deploymentInformation.NumberParallelRequest);
+                                deploymentInformation.PodType, deploymentInformation.ResourceVersion, deploymentInformation.NumberParallelRequest, deploymentInformation.DependsOn);
 
                         }
                     }
@@ -317,13 +318,21 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
         foreach (string dependOn in deploymentInformation.DependsOn)
         {
+            Console.WriteLine("DependOn: " + dependOn);
+            Console.WriteLine("Pods ready: " + Deployments.Functions.Where(f => f.Deployment == dependOn)
+                .Sum(f => f.Pods.Count(p => p.Ready.HasValue && p.Ready.Value)));
+            Console.WriteLine("Pods not ready: " + Deployments.Functions.Where(f => f.Deployment == dependOn)
+                .Sum(f => f.Pods.Count(p => p.Ready.HasValue && !p.Ready.Value)));
+
             if (Deployments.Functions.Where(f => f.Deployment == dependOn)
                 .Any(f => f.Pods.Count(p => p.Ready.HasValue && p.Ready.Value) < f.ReplicasAtStart ))
             {
+                Console.WriteLine("DependOn not ready: " + dependOn);
                 return false;
             }
+            Console.WriteLine("DependOn ready");
         }
-
+        Console.WriteLine("All DependOn ready");
         return true;
     }
 }
