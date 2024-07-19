@@ -344,6 +344,7 @@ public class KubernetesService : IKubernetesService
     {
         foreach (V1Pod? item in v1PodList.Items)
         {
+            Console.WriteLine("item.Metadata.GenerateName");
             Console.WriteLine(item.Metadata.GenerateName);
             Console.WriteLine(item.Metadata.Name);
             Console.WriteLine(item.Metadata.NamespaceProperty);
@@ -368,6 +369,7 @@ public class KubernetesService : IKubernetesService
             string deploymentName = ExtractPodDeploymentNameFrom(item.Metadata.GenerateName);
 
             PodInformation podInformation = new(podName, started, ready, podIp, deploymentName);
+            Console.WriteLine($"Pod {podName} started: {started} ready: {ready} ip: {podIp} deployment: {deploymentName}");
             yield return podInformation;
         }
     }
