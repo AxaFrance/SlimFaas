@@ -344,6 +344,17 @@ public class KubernetesService : IKubernetesService
     {
         foreach (V1Pod? item in v1PodList.Items)
         {
+            Console.WriteLine(item.Metadata.GenerateName);
+            Console.WriteLine(item.Metadata.Name);
+            Console.WriteLine(item.Metadata.NamespaceProperty);
+            Console.WriteLine(item.Status.PodIP);
+            Console.WriteLine(item.Status.ContainerStatuses.Count);
+            foreach (V1ContainerStatus statusContainer in item.Status.ContainerStatuses)
+            {
+                Console.WriteLine(statusContainer.Name);
+                Console.WriteLine(statusContainer?.Ready);
+                Console.WriteLine(statusContainer?.Started);
+            }
             string? podIp = item.Status.PodIP;
             if (string.IsNullOrEmpty(podIp))
             {
