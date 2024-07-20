@@ -13,7 +13,7 @@ public record SlimDataState(
 public class SlimDataInterpreter : CommandInterpreter
 {
 
-    public SlimDataState SlimDataState = new SlimDataState(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, ReadOnlyMemory<byte>>(), new Dictionary<string, List<ReadOnlyMemory<byte>>>());
+    public SlimDataState SlimDataState = new(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, ReadOnlyMemory<byte>>(), new Dictionary<string, List<ReadOnlyMemory<byte>>>());
 
     [CommandHandler]
     public ValueTask ListRightPopAsync(ListRightPopCommand addHashSetCommand, CancellationToken token)
