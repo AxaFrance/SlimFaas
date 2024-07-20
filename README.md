@@ -313,7 +313,7 @@ spec:
 ````
 
 > [!WARNING]
-> Yours service metadata name must be the same as the SlimFaas Deployment/StatefulSet name
+> Yours **service name** must be the same as the SlimFaas **Deployment/StatefulSet name**
 
 
 
