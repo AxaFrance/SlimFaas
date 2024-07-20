@@ -312,6 +312,10 @@ spec:
           targetPort: 3262
 ````
 
+> [!WARNING]
+> Yours service metadata name must be the same as the SlimFaas Deployment/StatefulSet name
+
+
 
 ### SlimFaas Annotations with defaults values
 - **SlimFaas/Function**: "true"
