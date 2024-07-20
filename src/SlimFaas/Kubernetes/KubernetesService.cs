@@ -354,38 +354,10 @@ public class KubernetesService : IKubernetesService
             bool ready = containerStatus?.Ready ?? false;
             bool started = containerStatus?.Started ?? false;
             string? podName = item.Metadata.Name;
-            string deploymentName = item.Metadata.OwnerReferences.Count > 0 ? item.Metadata.OwnerReferences[0].Name : ExtractPodDeploymentNameFrom(item.Metadata.Name);
-
+            string deploymentName = item.Metadata.OwnerReferences[0].Name;
             PodInformation podInformation = new(podName, started, ready, podIp, deploymentName);
-            Console.WriteLine($"Pod {podName} started: {started} ready: {ready} ip: {podIp} deployment: {deploymentName}");
             yield return podInformation;
         }
-    }
-
-    public static string ExtractPodDeploymentNameFrom(string generalName)
-    {
-        string[] names = generalName.Split('-');
-        var length = names.Length;
-        if (length <= 1)
-        {
-            return generalName;
-        }
-
-        var last = names[length - 1];
-        bool isNumeric = int.TryParse(last, out _);
-        var lengthToTest = 2;
-        if (isNumeric)
-        {
-            lengthToTest =1;
-        }
-
-        StringBuilder realName = new(names[0]);
-        for (int i = 1; i < length - lengthToTest; i++)
-        {
-            realName.Append($"-{names[i]}");
-        }
-
-        return realName.ToString();
     }
 
 }
