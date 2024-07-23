@@ -74,6 +74,7 @@ serviceCollectionSlimFaas.AddHostedService<SlimWorker>();
 serviceCollectionSlimFaas.AddHostedService<ScaleReplicasWorker>();
 serviceCollectionSlimFaas.AddHostedService<ReplicasSynchronizationWorker>();
 serviceCollectionSlimFaas.AddHostedService<HistorySynchronizationWorker>();
+serviceCollectionSlimFaas.AddHostedService<HealthWorker>();
 serviceCollectionSlimFaas.AddHttpClient();
 serviceCollectionSlimFaas.AddSingleton<ISlimFaasQueue, SlimFaasSlimFaasQueue>();
 serviceCollectionSlimFaas.AddSingleton<ISlimDataStatus, SlimDataStatus>();
