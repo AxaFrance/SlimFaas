@@ -1,8 +1,9 @@
 ﻿using DotNext.Net.Cluster.Consensus.Raft;
+using SlimFaas.Database;
 
 namespace SlimFaas;
 
-public class HealthWorker(IHostApplicationLifetime  hostApplicationLifetime, IRaftCluster raftCluster,
+public class HealthWorker(IHostApplicationLifetime  hostApplicationLifetime, IRaftCluster raftCluster, SlimDataStatus slimDataStatus,
         ILogger<HealthWorker> logger,
         int delay = EnvironmentVariables.HealthWorkerDelayMillisecondsDefault,
         int delayToExitSeconds = EnvironmentVariables.HealthWorkerDelayToExitSecondsDefault)
@@ -15,6 +16,7 @@ public class HealthWorker(IHostApplicationLifetime  hostApplicationLifetime, IRa
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await slimDataStatus.WaitForReadyAsync();
         TimeSpan timeSpan = TimeSpan.FromSeconds(0);
         while (stoppingToken.IsCancellationRequested == false)
         {
