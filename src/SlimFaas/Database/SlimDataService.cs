@@ -12,12 +12,16 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
     : IDatabaseService
 {
     public const string HttpClientName = "SlimDataHttpClient";
+    private const int MaxAttemptCount = 3;
+    private readonly TimeSpan _retryInterval = TimeSpan.FromSeconds(1);
+    private readonly TimeSpan _timeMaxToWaitForLeader = TimeSpan.FromMilliseconds(3000);
+
     private ISupplier<SlimDataPayload> SimplePersistentState =>
         serviceProvider.GetRequiredService<ISupplier<SlimDataPayload>>();
 
     public async Task<byte[]?> GetAsync(string key)
     {
-        return await Retry.Do(() => DoGetAsync(key), TimeSpan.FromSeconds(1), logger, 5);
+        return await Retry.Do(() => DoGetAsync(key), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task<byte[]?> DoGetAsync(string key)
@@ -36,7 +40,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task SetAsync(string key, byte[] value)
     {
-        await Retry.Do(() =>DoSetAsync(key, value), TimeSpan.FromSeconds(1), logger, 5);
+        await Retry.Do(() =>DoSetAsync(key, value), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task DoSetAsync(string key,  byte[] value)
@@ -63,7 +67,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task HashSetAsync(string key, IDictionary<string, string> values)
     {
-        await Retry.Do(() =>DoHashSetAsync(key, values), TimeSpan.FromSeconds(1), logger, 5);
+        await Retry.Do(() =>DoHashSetAsync(key, values), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task DoHashSetAsync(string key, IDictionary<string, string> values)
@@ -94,7 +98,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task<IDictionary<string, string>> HashGetAllAsync(string key)
     {
-        return await Retry.Do(() =>DoHashGetAllAsync(key), TimeSpan.FromSeconds(1), logger, 5);
+        return await Retry.Do(() =>DoHashGetAllAsync(key), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task<IDictionary<string, string>> DoHashGetAllAsync(string key)
@@ -116,7 +120,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task ListLeftPushAsync(string key, byte[] field)
     {
-        await Retry.Do(() =>DoListLeftPushAsync(key, field), TimeSpan.FromSeconds(1), logger, 5);
+        await Retry.Do(() =>DoListLeftPushAsync(key, field), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task DoListLeftPushAsync(string key, byte[] field)
@@ -142,7 +146,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task<IList<byte[]>> ListRightPopAsync(string key, int count = 1)
     {
-        return await Retry.Do(() =>DoListRightPopAsync(key, count), TimeSpan.FromSeconds(1), logger, 5);
+        return await Retry.Do(() =>DoListRightPopAsync(key, count), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task<IList<byte[]>> DoListRightPopAsync(string key, int count = 1)
@@ -176,7 +180,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task<long> ListLengthAsync(string key)
     {
-        return await Retry.Do(() =>DoListLengthAsync(key), TimeSpan.FromSeconds(1), logger, 5);
+        return await Retry.Do(() =>DoListLengthAsync(key), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task<long> DoListLengthAsync(string key)
@@ -196,13 +200,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     private async Task<EndPoint> GetAndWaitForLeader()
     {
-        int numberWaitMaximum = 10;
-        while (cluster.Leader == null && numberWaitMaximum > 0)
-        {
-            await Task.Delay(500);
-            numberWaitMaximum--;
-        }
-
+        await cluster.WaitForLeadershipAsync(_timeMaxToWaitForLeader);
         if (cluster.Leader == null)
         {
             throw new DataException("No leader found");
