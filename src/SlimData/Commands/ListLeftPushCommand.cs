@@ -29,7 +29,7 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
         where TReader : notnull, IAsyncBinaryReader
     {
         var key = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token).ConfigureAwait(false);
-        using var value = await reader.ReadAsync(LengthFormat.Compressed).ConfigureAwait(false);
+        using var value = await reader.ReadAsync(LengthFormat.Compressed, token: token).ConfigureAwait(false);
         return new ListLeftPushCommand
         {
             Key = key.ToString(),

@@ -38,8 +38,8 @@ public struct AddHashSetCommand : ISerializable<AddHashSetCommand>
         
         foreach (var (key, value) in Value)
         {
-            await writer.EncodeAsync(key.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);;
-            await writer.EncodeAsync(value.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);;
+            await writer.EncodeAsync(key.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
+            await writer.EncodeAsync(value.AsMemory(), context, LengthFormat.LittleEndian, token).ConfigureAwait(false);
         }
     }
 
