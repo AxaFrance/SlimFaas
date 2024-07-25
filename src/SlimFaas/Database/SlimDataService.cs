@@ -200,7 +200,13 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     private async Task<EndPoint> GetAndWaitForLeader()
     {
-        await cluster.WaitForLeadershipAsync(_timeMaxToWaitForLeader);
+        TimeSpan timeWaited = TimeSpan.Zero;
+        while (cluster.Leader == null && timeWaited < _timeMaxToWaitForLeader)
+        {
+            await Task.Delay(500);
+            timeWaited += TimeSpan.FromMilliseconds(500);
+        }
+
         if (cluster.Leader == null)
         {
             throw new DataException("No leader found");
