@@ -147,7 +147,7 @@ public class RaftClusterTests
                     }
 
                     services.AddSingleton<IDatabaseService, SlimDataService>();
-                    services.AddHttpClient<IDatabaseService, SlimDataService>()
+                    services.AddHttpClient(SlimDataService.HttpClientName)
                         .SetHandlerLifetime(TimeSpan.FromMinutes(5))
                         .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true });
                 })
@@ -211,7 +211,7 @@ public class RaftClusterTests
             { SlimPersistentState.LogLocation, GetTemporaryDirectory() }
         };
 
-        LeaderTracker listener = new LeaderTracker();
+        LeaderTracker listener = new();
         using IHost host1 = CreateHost<Startup>(3262, config1, listener);
         await host1.StartAsync();
         Assert.True(GetLocalClusterView(host1).Readiness.IsCompletedSuccessfully);

@@ -155,7 +155,7 @@ var allowUnsecureSSL = EnvironmentVariables.ReadBoolean(EnvironmentVariables.Sli
 serviceCollectionSlimFaas.AddHostedService<SlimDataSynchronizationWorker>();
 serviceCollectionSlimFaas.AddSingleton<IDatabaseService, SlimDataService>();
 serviceCollectionSlimFaas.AddSingleton<IWakeUpFunction, WakeUpFunction>();
-serviceCollectionSlimFaas.AddHttpClient<IDatabaseService, SlimDataService>()
+serviceCollectionSlimFaas.AddHttpClient(SlimDataService.HttpClientName)
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .ConfigureHttpClient(client =>
     {

@@ -8,9 +8,10 @@ using SlimData.Commands;
 
 namespace SlimFaas.Database;
 #pragma warning disable CA2252
-public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProvider, IRaftCluster cluster, ILogger<SlimDataService> logger)
+public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvider serviceProvider, IRaftCluster cluster, ILogger<SlimDataService> logger)
     : IDatabaseService
 {
+    public const string HttpClientName = "SlimDataHttpClient";
     private ISupplier<SlimDataPayload> SimplePersistentState =>
         serviceProvider.GetRequiredService<ISupplier<SlimDataPayload>>();
 
@@ -51,6 +52,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         {
             HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/AddKeyValue?key={key}"));
             request.Content = new ByteArrayContent(value);
+            using var httpClient = httpClientFactory.CreateClient(HttpClientName);
             HttpResponseMessage response = await httpClient.SendAsync(request);
             if ((int)response.StatusCode >= 500)
             {
@@ -80,7 +82,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
             {
                 multipart.Add(new StringContent(value.Value), value.Key);
             }
-
+            using var httpClient = httpClientFactory.CreateClient(HttpClientName);
             HttpResponseMessage response =
                 await httpClient.PostAsync(new Uri($"{endpoint}SlimData/AddHashset"), multipart);
             if ((int)response.StatusCode >= 500)
@@ -89,7 +91,6 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
             }
         }
     }
-
 
     public async Task<IDictionary<string, string>> HashGetAllAsync(string key)
     {
@@ -130,6 +131,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         {
             HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListLeftPush?key={key}"));
             request.Content = new ByteArrayContent(field);
+            using var httpClient = httpClientFactory.CreateClient(HttpClientName);
             HttpResponseMessage response = await httpClient.SendAsync(request);
             if ((int)response.StatusCode >= 500)
             {
@@ -159,6 +161,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
             multipart.Add(new StringContent(count.ToString()), key);
 
             request.Content = multipart;
+            using var httpClient = httpClientFactory.CreateClient(HttpClientName);
             HttpResponseMessage response = await httpClient.SendAsync(request);
             if ((int)response.StatusCode >= 500)
             {
