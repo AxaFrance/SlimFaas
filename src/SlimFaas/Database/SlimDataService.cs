@@ -27,13 +27,13 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
     private async Task<byte[]?> DoGetAsync(string key)
     {
         await GetAndWaitForLeader();
-        /*if (cluster.LeadershipToken.IsCancellationRequested)
+        if (cluster.LeadershipToken.IsCancellationRequested)
         {
-            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
+            /*if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
             {
                 await cluster.ApplyReadBarrierAsync();
-            }
-        }*/
+            }*/
+        }
         SlimDataPayload data = SimplePersistentState.Invoke();
         return data.KeyValues.TryGetValue(key, out ReadOnlyMemory<byte> value) ? value.ToArray() : null;
     }

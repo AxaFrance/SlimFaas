@@ -238,17 +238,19 @@ public class RaftClusterTests
 
         await databaseServiceSlave.SetAsync("key1", MemoryPackSerializer.Serialize("value1") );
         Assert.Equal("value1", MemoryPackSerializer.Deserialize<string>(await databaseServiceMaster.GetAsync("key1")));
+        await GetLocalClusterView(host1).ForceReplicationAsync();
         Assert.Equal("value1", MemoryPackSerializer.Deserialize<string>(await databaseServiceSlave.GetAsync("key1")));
 
         await databaseServiceSlave.HashSetAsync("hashsetKey1",
             new Dictionary<string, string> { { "field1", "value1" }, { "field2", "value2" } });
+        await GetLocalClusterView(host1).ForceReplicationAsync();
         IDictionary<string, string> hashGet = await databaseServiceSlave.HashGetAllAsync("hashsetKey1");
 
         Assert.Equal("value1", hashGet["field1"]);
         Assert.Equal("value2", hashGet["field2"]);
 
        await databaseServiceSlave.ListLeftPushAsync("listKey1",   MemoryPackSerializer.Serialize("value1"));
-
+       await GetLocalClusterView(host1).ForceReplicationAsync();
         long listLength = await databaseServiceSlave.ListLengthAsync("listKey1");
         Assert.Equal(1, listLength);
 
