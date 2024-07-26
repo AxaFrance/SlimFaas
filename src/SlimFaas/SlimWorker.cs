@@ -44,10 +44,10 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                 int? numberLimitProcessingTasks = ComputeNumberLimitProcessingTasks(slimFaas, function);
                 setTickLastCallCounterDictionary[functionDeployment]++;
                 int functionReplicas = function.Replicas;
-                long queueLenght = await UpdateTickLastCallIfRequestStillInProgress(functionReplicas,
+                long queueLength = await UpdateTickLastCallIfRequestStillInProgress(functionReplicas,
                     setTickLastCallCounterDictionary,
                     functionDeployment, numberProcessingTasks);
-                if (functionReplicas == 0 || queueLenght <= 0)
+                if (functionReplicas == 0 || queueLength <= 0)
                 {
                     continue;
                 }
