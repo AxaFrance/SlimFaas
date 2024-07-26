@@ -29,9 +29,9 @@ public class Endpoints
 
         var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
         var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
-        var source =
-            CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
-                cluster.LeadershipToken);
+        var source = new CancellationTokenSource();
+           // CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
+             //   cluster.LeadershipToken);
         try
         {
             await respondDelegate(cluster, provider, source);
