@@ -54,10 +54,10 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         }
         else
         {
-            HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/AddKeyValue?key={key}"));
+            using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/AddKeyValue?key={key}"));
             request.Content = new ByteArrayContent(value);
             using var httpClient = httpClientFactory.CreateClient(HttpClientName);
-            HttpResponseMessage response = await httpClient.SendAsync(request);
+            using HttpResponseMessage response = await httpClient.SendAsync(request);
             if ((int)response.StatusCode >= 500)
             {
                 throw new DataException("Error in calling SlimData HTTP Service");
@@ -87,7 +87,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
                 multipart.Add(new StringContent(value.Value), value.Key);
             }
             using var httpClient = httpClientFactory.CreateClient(HttpClientName);
-            HttpResponseMessage response =
+            using HttpResponseMessage response =
                 await httpClient.PostAsync(new Uri($"{endpoint}SlimData/AddHashset"), multipart);
             if ((int)response.StatusCode >= 500)
             {
@@ -133,7 +133,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         }
         else
         {
-            HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListLeftPush?key={key}"));
+            using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListLeftPush?key={key}"));
             request.Content = new ByteArrayContent(field);
             using var httpClient = httpClientFactory.CreateClient(HttpClientName);
             HttpResponseMessage response = await httpClient.SendAsync(request);
@@ -160,13 +160,13 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         }
         else
         {
-            HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListRightPop"));
+            using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListRightPop"));
             MultipartFormDataContent multipart = new();
             multipart.Add(new StringContent(count.ToString()), key);
 
             request.Content = multipart;
             using var httpClient = httpClientFactory.CreateClient(HttpClientName);
-            HttpResponseMessage response = await httpClient.SendAsync(request);
+            using HttpResponseMessage response = await httpClient.SendAsync(request);
             if ((int)response.StatusCode >= 500)
             {
                 throw new DataException("Error in calling SlimData HTTP Service");
