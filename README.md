@@ -257,6 +257,12 @@ spec:
             # Optional
             # name : SLIMFAAS_ALLOW_UNSECURE_SSL
             # value : "false" # default equivalent to false
+            # Optional
+            # name: HEALTH_WORKER_DELAY_MILLISECONDS
+            # value: "1000" # default equivalent to 1 seconds
+            # Optional
+            # name: HEALTH_WORKER_DELAY_TO_EXIT_SECONDS
+            # value: "60" # default equivalent to 10 seconds
 
             # name : SLIMDATA_CONFIGURATION # represent SlimData internal configuration, more documentation here: https://dotnet.github.io/dotNext/features/cluster/raft.html
             # value : | #default values
