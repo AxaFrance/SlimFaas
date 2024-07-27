@@ -27,13 +27,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
     private async Task<byte[]?> DoGetAsync(string key)
     {
         await GetAndWaitForLeader();
-        if (cluster.LeadershipToken.IsCancellationRequested)
-        {
-            /*if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
-            {
-                await cluster.ApplyReadBarrierAsync();
-            }*/
-        }
+        await MasterWaitForleaseToken();
         SlimDataPayload data = SimplePersistentState.Invoke();
         return data.KeyValues.TryGetValue(key, out ReadOnlyMemory<byte> value) ? value.ToArray() : null;
     }
@@ -104,13 +98,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
     private async Task<IDictionary<string, string>> DoHashGetAllAsync(string key)
     {
         await GetAndWaitForLeader();
-        /*if (cluster.LeadershipToken.IsCancellationRequested)
-        {
-            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
-            {
-                await cluster.ApplyReadBarrierAsync();
-            }
-        }*/
+        await MasterWaitForleaseToken();
 
         SlimDataPayload data = SimplePersistentState.Invoke();
         return data.Hashsets.TryGetValue(key, out Dictionary<string, string>? value)
@@ -186,16 +174,20 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
     private async Task<long> DoListLengthAsync(string key)
     {
         await GetAndWaitForLeader();
-        /*if (cluster.LeadershipToken.IsCancellationRequested)
-        {
-            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
-            {
-                await cluster.ApplyReadBarrierAsync();
-            }
-        }*/
+        await MasterWaitForleaseToken();
+
         SlimDataPayload data = SimplePersistentState.Invoke();
         long result = data.Queues.TryGetValue(key, out List<ReadOnlyMemory<byte>>? value) ? value.Count : 0L;
         return result;
+    }
+
+    private async Task MasterWaitForleaseToken()
+    {
+        while (cluster.TryGetLeaseToken(out var leaseToken) && leaseToken.IsCancellationRequested)
+        {
+            Console.WriteLine("Master node is waiting for lease token");
+            await Task.Delay(10);
+        }
     }
 
     private async Task<EndPoint> GetAndWaitForLeader()
