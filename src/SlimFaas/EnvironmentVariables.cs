@@ -40,6 +40,12 @@ public static class EnvironmentVariables
     public const string ScaleReplicasWorkerDelayMilliseconds = "SCALE_REPLICAS_WORKER_DELAY_MILLISECONDS";
     public const int ScaleReplicasWorkerDelayMillisecondsDefault = 1000;
 
+    public const string HealthWorkerDelayMilliseconds = "HEALTH_WORKER_DELAY_MILLISECONDS";
+    public const int HealthWorkerDelayMillisecondsDefault = 1000;
+
+    public const string HealthWorkerDelayToExitSeconds = "HEALTH_WORKER_DELAY_TO_EXIT_SECONDS";
+    public const int HealthWorkerDelayToExitSecondsDefault = 60;
+
     public const string PodScaledUpByDefaultWhenInfrastructureHasNeverCalled =
         "POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED";
 

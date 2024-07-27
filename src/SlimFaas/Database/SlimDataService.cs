@@ -8,34 +8,33 @@ using SlimData.Commands;
 
 namespace SlimFaas.Database;
 #pragma warning disable CA2252
-public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProvider, IRaftCluster cluster, ILogger<SlimDataService> logger)
+public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvider serviceProvider, IRaftCluster cluster, ILogger<SlimDataService> logger)
     : IDatabaseService
 {
+    public const string HttpClientName = "SlimDataHttpClient";
+    private const int MaxAttemptCount = 3;
+    private readonly TimeSpan _retryInterval = TimeSpan.FromSeconds(1);
+    private readonly TimeSpan _timeMaxToWaitForLeader = TimeSpan.FromMilliseconds(3000);
+
     private ISupplier<SlimDataPayload> SimplePersistentState =>
         serviceProvider.GetRequiredService<ISupplier<SlimDataPayload>>();
 
     public async Task<byte[]?> GetAsync(string key)
     {
-        return await Retry.Do(() => DoGetAsync(key), TimeSpan.FromSeconds(1), logger, 5);
+        return await Retry.Do(() => DoGetAsync(key), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task<byte[]?> DoGetAsync(string key)
     {
         await GetAndWaitForLeader();
-        if (cluster.LeadershipToken.IsCancellationRequested)
-        {
-            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
-            {
-                await cluster.ApplyReadBarrierAsync();
-            }
-        }
+        await MasterWaitForleaseToken();
         SlimDataPayload data = SimplePersistentState.Invoke();
         return data.KeyValues.TryGetValue(key, out ReadOnlyMemory<byte> value) ? value.ToArray() : null;
     }
 
     public async Task SetAsync(string key, byte[] value)
     {
-        await Retry.Do(() =>DoSetAsync(key, value), TimeSpan.FromSeconds(1), logger, 5);
+        await Retry.Do(() =>DoSetAsync(key, value), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task DoSetAsync(string key,  byte[] value)
@@ -49,9 +48,10 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         }
         else
         {
-            HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/AddKeyValue?key={key}"));
+            using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/AddKeyValue?key={key}"));
             request.Content = new ByteArrayContent(value);
-            HttpResponseMessage response = await httpClient.SendAsync(request);
+            using var httpClient = httpClientFactory.CreateClient(HttpClientName);
+            using HttpResponseMessage response = await httpClient.SendAsync(request);
             if ((int)response.StatusCode >= 500)
             {
                 throw new DataException("Error in calling SlimData HTTP Service");
@@ -61,7 +61,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task HashSetAsync(string key, IDictionary<string, string> values)
     {
-        await Retry.Do(() =>DoHashSetAsync(key, values), TimeSpan.FromSeconds(1), logger, 5);
+        await Retry.Do(() =>DoHashSetAsync(key, values), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task DoHashSetAsync(string key, IDictionary<string, string> values)
@@ -80,8 +80,8 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
             {
                 multipart.Add(new StringContent(value.Value), value.Key);
             }
-
-            HttpResponseMessage response =
+            using var httpClient = httpClientFactory.CreateClient(HttpClientName);
+            using HttpResponseMessage response =
                 await httpClient.PostAsync(new Uri($"{endpoint}SlimData/AddHashset"), multipart);
             if ((int)response.StatusCode >= 500)
             {
@@ -90,22 +90,15 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         }
     }
 
-
     public async Task<IDictionary<string, string>> HashGetAllAsync(string key)
     {
-        return await Retry.Do(() =>DoHashGetAllAsync(key), TimeSpan.FromSeconds(1), logger, 5);
+        return await Retry.Do(() =>DoHashGetAllAsync(key), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task<IDictionary<string, string>> DoHashGetAllAsync(string key)
     {
         await GetAndWaitForLeader();
-        if (cluster.LeadershipToken.IsCancellationRequested)
-        {
-            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
-            {
-                await cluster.ApplyReadBarrierAsync();
-            }
-        }
+        await MasterWaitForleaseToken();
 
         SlimDataPayload data = SimplePersistentState.Invoke();
         return data.Hashsets.TryGetValue(key, out Dictionary<string, string>? value)
@@ -115,7 +108,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task ListLeftPushAsync(string key, byte[] field)
     {
-        await Retry.Do(() =>DoListLeftPushAsync(key, field), TimeSpan.FromSeconds(1), logger, 5);
+        await Retry.Do(() =>DoListLeftPushAsync(key, field), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task DoListLeftPushAsync(string key, byte[] field)
@@ -128,8 +121,9 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         }
         else
         {
-            HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListLeftPush?key={key}"));
+            using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListLeftPush?key={key}"));
             request.Content = new ByteArrayContent(field);
+            using var httpClient = httpClientFactory.CreateClient(HttpClientName);
             HttpResponseMessage response = await httpClient.SendAsync(request);
             if ((int)response.StatusCode >= 500)
             {
@@ -140,7 +134,7 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task<IList<byte[]>> ListRightPopAsync(string key, int count = 1)
     {
-        return await Retry.Do(() =>DoListRightPopAsync(key, count), TimeSpan.FromSeconds(1), logger, 5);
+        return await Retry.Do(() =>DoListRightPopAsync(key, count), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task<IList<byte[]>> DoListRightPopAsync(string key, int count = 1)
@@ -154,12 +148,13 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
         }
         else
         {
-            HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListRightPop"));
+            using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListRightPop"));
             MultipartFormDataContent multipart = new();
             multipart.Add(new StringContent(count.ToString()), key);
 
             request.Content = multipart;
-            HttpResponseMessage response = await httpClient.SendAsync(request);
+            using var httpClient = httpClientFactory.CreateClient(HttpClientName);
+            using HttpResponseMessage response = await httpClient.SendAsync(request);
             if ((int)response.StatusCode >= 500)
             {
                 throw new DataException("Error in calling SlimData HTTP Service");
@@ -173,31 +168,35 @@ public class SlimDataService(HttpClient httpClient, IServiceProvider serviceProv
 
     public async Task<long> ListLengthAsync(string key)
     {
-        return await Retry.Do(() =>DoListLengthAsync(key), TimeSpan.FromSeconds(1), logger, 5);
+        return await Retry.Do(() =>DoListLengthAsync(key), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task<long> DoListLengthAsync(string key)
     {
         await GetAndWaitForLeader();
-        if (cluster.LeadershipToken.IsCancellationRequested)
-        {
-            if (!cluster.TryGetLeaseToken(out var leaseToken) || leaseToken.IsCancellationRequested)
-            {
-                await cluster.ApplyReadBarrierAsync();
-            }
-        }
+        await MasterWaitForleaseToken();
+
         SlimDataPayload data = SimplePersistentState.Invoke();
         long result = data.Queues.TryGetValue(key, out List<ReadOnlyMemory<byte>>? value) ? value.Count : 0L;
         return result;
     }
 
+    private async Task MasterWaitForleaseToken()
+    {
+        while (cluster.TryGetLeaseToken(out var leaseToken) && leaseToken.IsCancellationRequested)
+        {
+            Console.WriteLine("Master node is waiting for lease token");
+            await Task.Delay(10);
+        }
+    }
+
     private async Task<EndPoint> GetAndWaitForLeader()
     {
-        int numberWaitMaximum = 10;
-        while (cluster.Leader == null && numberWaitMaximum > 0)
+        TimeSpan timeWaited = TimeSpan.Zero;
+        while (cluster.Leader == null && timeWaited < _timeMaxToWaitForLeader)
         {
             await Task.Delay(500);
-            numberWaitMaximum--;
+            timeWaited += TimeSpan.FromMilliseconds(500);
         }
 
         if (cluster.Leader == null)

@@ -32,15 +32,15 @@ public class HistorySynchronizationWorker(IReplicasService replicasService,
                     if (ticksInDatabase > nowTicks)
                     {
                         logger.LogWarning(
-                            "HistorySynchronizationWorker: ticksInDatabase is superior to now ticks {TimeSpan}",
-                            TimeSpan.FromTicks(ticksInDatabase - nowTicks));
+                            "HistorySynchronizationWorker: ticksInDatabase is superior to now ticks {TimeSpan} for {Function}",
+                            TimeSpan.FromTicks(ticksInDatabase - nowTicks), function.Deployment);
                         ticksInDatabase = nowTicks;
                     }
                     if (ticksMemory > nowTicks)
                     {
                         logger.LogWarning(
-                            "HistorySynchronizationWorker: ticksMemory is superior to now ticks {TimeSpan}",
-                            TimeSpan.FromTicks(ticksMemory - nowTicks));
+                            "HistorySynchronizationWorker: ticksMemory is superior to now ticks {TimeSpan} for {Function}",
+                            TimeSpan.FromTicks(ticksMemory - nowTicks), function.Deployment);
                         ticksMemory = nowTicks;
                     }
 

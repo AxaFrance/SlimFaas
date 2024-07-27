@@ -29,8 +29,7 @@ public class Endpoints
 
         var cluster = context.RequestServices.GetRequiredService<IRaftCluster>();
         var provider = context.RequestServices.GetRequiredService<SlimPersistentState>();
-        var source =
-            CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
+        var source = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted,
                 cluster.LeadershipToken);
         try
         {
@@ -78,8 +77,7 @@ public class Endpoints
         var logEntry =
             provider.Interpreter.CreateLogEntry(
                 new AddHashSetCommand { Key = key, Value = dictionary }, cluster.Term);
-        await provider.AppendAsync(logEntry, source.Token);
-        await provider.CommitAsync(source.Token);
+        await cluster.ReplicateAsync(logEntry, source.Token);
     }
 
     public static Task ListRightPop(HttpContext context)
@@ -93,8 +91,7 @@ public class Endpoints
             if (string.IsNullOrEmpty(key) || !int.TryParse(value, out var count))
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsync("GetKeyValue key is empty or value is not a number",
-                    context.RequestAborted);
+                await context.Response.WriteAsync("GetKeyValue key is empty or value is not a number", context.RequestAborted);
                 return;
             }
             
@@ -109,6 +106,11 @@ public class Endpoints
     {
         var values = new ListString();
         values.Items = new List<byte[]>();
+        while (cluster.TryGetLeaseToken(out var leaseToken) && leaseToken.IsCancellationRequested)
+        {
+            Console.WriteLine("Master node is waiting for lease token");
+            await Task.Delay(10);
+        }
         var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
         if (queues.TryGetValue(key, out var queue))
         {
@@ -122,8 +124,7 @@ public class Endpoints
                 provider.Interpreter.CreateLogEntry(
                     new ListRightPopCommand { Key = key, Count = count },
                     cluster.Term);
-            await provider.AppendAsync(logEntry, source.Token);
-            await provider.CommitAsync(source.Token);
+            await cluster.ReplicateAsync(logEntry, source.Token);
         }
 
         return values;
@@ -155,8 +156,7 @@ public class Endpoints
         var logEntry =
             provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
                 cluster.Term);
-        await provider.AppendAsync(logEntry, source.Token);
-        await provider.CommitAsync(source.Token);
+        await cluster.ReplicateAsync(logEntry, source.Token);
     }
 
     private static (string key, string value) GetKeyValue(IFormCollection form)
@@ -199,7 +199,6 @@ public class Endpoints
         var logEntry =
             provider.Interpreter.CreateLogEntry(new AddKeyValueCommand { Key = key, Value = value },
                 cluster.Term);
-        await provider.AppendAsync(logEntry, source.Token);
-        await provider.CommitAsync(source.Token);
+        await cluster.ReplicateAsync(logEntry, source.Token);
     }
 }

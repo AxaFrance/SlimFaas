@@ -100,7 +100,7 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
             {
                 var key = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
                     .ConfigureAwait(false);
-                using var value = await reader.ReadAsync(LengthFormat.Compressed).ConfigureAwait(false);
+                using var value = await reader.ReadAsync(LengthFormat.Compressed, token: token).ConfigureAwait(false);
                 keysValues.Add(key.ToString(), value.Memory);
             }
 
@@ -115,7 +115,7 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                 var queue = new List<ReadOnlyMemory<byte>>(countQueue);
                 while (countQueue-- > 0)
                 {
-                    using var value = await reader.ReadAsync(LengthFormat.Compressed).ConfigureAwait(false);
+                    using var value = await reader.ReadAsync(LengthFormat.Compressed, token: token).ConfigureAwait(false);
                     queue.Add(value.Memory);
                 }
 
