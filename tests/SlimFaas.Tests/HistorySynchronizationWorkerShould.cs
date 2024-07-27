@@ -40,7 +40,7 @@ public class HistorySynchronizationWorkerShould
             historyHttpMemoryService, historyHttpRedisService, logger.Object, slimDataStatus.Object, 100);
 
         Task task = service.StartAsync(CancellationToken.None);
-        await Task.Delay(200);
+        await Task.Delay(500);
         long ticksFirstCallAsync = historyHttpMemoryService.GetTicksLastCall("fibonacci1");
         Assert.Equal(firstTicks, ticksFirstCallAsync);
 

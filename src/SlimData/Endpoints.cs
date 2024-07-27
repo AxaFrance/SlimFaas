@@ -77,8 +77,7 @@ public class Endpoints
         var logEntry =
             provider.Interpreter.CreateLogEntry(
                 new AddHashSetCommand { Key = key, Value = dictionary }, cluster.Term);
-        await provider.AppendAsync(logEntry, source.Token);
-        await provider.CommitAsync(source.Token);
+        await cluster.ReplicateAsync(logEntry, source.Token);
     }
 
     public static Task ListRightPop(HttpContext context)
@@ -92,8 +91,7 @@ public class Endpoints
             if (string.IsNullOrEmpty(key) || !int.TryParse(value, out var count))
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsync("GetKeyValue key is empty or value is not a number",
-                    context.RequestAborted);
+                await context.Response.WriteAsync("GetKeyValue key is empty or value is not a number", context.RequestAborted);
                 return;
             }
             
@@ -126,8 +124,7 @@ public class Endpoints
                 provider.Interpreter.CreateLogEntry(
                     new ListRightPopCommand { Key = key, Count = count },
                     cluster.Term);
-            await provider.AppendAsync(logEntry, source.Token);
-            await provider.CommitAsync(source.Token);
+            await cluster.ReplicateAsync(logEntry, source.Token);
         }
 
         return values;
@@ -159,8 +156,7 @@ public class Endpoints
         var logEntry =
             provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
                 cluster.Term);
-        await provider.AppendAsync(logEntry, source.Token);
-        await provider.CommitAsync(source.Token);
+        await cluster.ReplicateAsync(logEntry, source.Token);
     }
 
     private static (string key, string value) GetKeyValue(IFormCollection form)
@@ -203,7 +199,6 @@ public class Endpoints
         var logEntry =
             provider.Interpreter.CreateLogEntry(new AddKeyValueCommand { Key = key, Value = value },
                 cluster.Term);
-        await provider.AppendAsync(logEntry, source.Token);
-        await provider.CommitAsync(source.Token);
+        await cluster.ReplicateAsync(logEntry, source.Token);
     }
 }
