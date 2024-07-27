@@ -108,6 +108,11 @@ public class Endpoints
     {
         var values = new ListString();
         values.Items = new List<byte[]>();
+        while (cluster.TryGetLeaseToken(out var leaseToken) && leaseToken.IsCancellationRequested)
+        {
+            Console.WriteLine("Master node is waiting for lease token");
+            await Task.Delay(10);
+        }
         var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
         if (queues.TryGetValue(key, out var queue))
         {
