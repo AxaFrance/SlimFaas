@@ -262,14 +262,14 @@ spec:
             # value : | #default values
             #    {
             #      "partitioning":"false",
-            #      "lowerElectionTimeout":"400",
-            #      "upperElectionTimeout":"800",
-            #      "requestTimeout":"00:01:20.0000000",
-            #      "rpcTimeout":"00:00:40.0000000",
+            #      "lowerElectionTimeout":"150",
+            #      "upperElectionTimeout":"300",
+            #      "requestTimeout":"00:00:00.3000000",
+            #      "rpcTimeout":"00:00:00.1500000",
             #      "coldStart":"false",
             #      "requestJournal:memoryLimit":"5",
             #      "requestJournal:expiration":"00:01:00",
-            #      "heartbeatThreshold":"0.4",
+            #      "heartbeatThreshold":"0.5",
             #   }
           volumeMounts:
             - name: slimfaas-volume

@@ -216,15 +216,15 @@ string coldStart = replicasService != null && replicasService.Deployments.SlimFa
 Dictionary<string, string> slimDataDefaultConfiguration = new()
 {
     { "partitioning", "false" },
-    { "lowerElectionTimeout", "400" },
-    { "upperElectionTimeout", "800" },
-    { "requestTimeout", "00:01:20.0000000" },
-    { "rpcTimeout", "00:00:40.0000000" },
+    { "lowerElectionTimeout", "150" },
+    { "upperElectionTimeout", "300" },
+    { "requestTimeout", "00:00:00.3000000" },
+    { "rpcTimeout", "00:00:00.1500000" },
     { "publicEndPoint", publicEndPoint },
     { coldstart, coldStart },
     { "requestJournal:memoryLimit", "5" },
     { "requestJournal:expiration", "00:01:00" },
-    { "heartbeatThreshold", "0.2" }
+    { "heartbeatThreshold", "0.5" }
 };
 foreach (KeyValuePair<string,string> keyValuePair in slimDataDefaultConfiguration)
 {
