@@ -21,33 +21,49 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
     public async Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest,
         HttpContext? context = null, string? baseUrl = null)
     {
-        string functionUrl = baseUrl ?? _baseFunctionUrl;
-        string customRequestFunctionName = customRequest.FunctionName;
-        string customRequestPath = customRequest.Path;
-        string customRequestQuery = customRequest.Query;
-        string targetUrl =
-            ComputeTargetUrl(functionUrl, customRequestFunctionName, customRequestPath, customRequestQuery, _namespaceSlimFaas);
-        logger.LogDebug("Sending async request to {TargetUrl}", targetUrl);
-        HttpRequestMessage targetRequestMessage = CreateTargetMessage(customRequest, new Uri(targetUrl));
-        if (context != null)
+        try
         {
-            return await httpClient.SendAsync(targetRequestMessage,
-                HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
-        }
+            string functionUrl = baseUrl ?? _baseFunctionUrl;
+            string customRequestFunctionName = customRequest.FunctionName;
+            string customRequestPath = customRequest.Path;
+            string customRequestQuery = customRequest.Query;
+            string targetUrl =
+                ComputeTargetUrl(functionUrl, customRequestFunctionName, customRequestPath, customRequestQuery, _namespaceSlimFaas);
+            logger.LogDebug("Sending async request to {TargetUrl}", targetUrl);
+            HttpRequestMessage targetRequestMessage = CreateTargetMessage(customRequest, new Uri(targetUrl));
+            if (context != null)
+            {
+                return await httpClient.SendAsync(targetRequestMessage,
+                    HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
+            }
 
-        return await httpClient.SendAsync(targetRequestMessage,
-            HttpCompletionOption.ResponseHeadersRead);
+            return await httpClient.SendAsync(targetRequestMessage,
+                HttpCompletionOption.ResponseHeadersRead);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error in SendHttpRequestAsync to {FunctionName} to {FunctionPath} ", customRequest.FunctionName, customRequest.FunctionName);
+            throw;
+        }
     }
 
     public async Task<HttpResponseMessage> SendHttpRequestSync(HttpContext context, string functionName,
         string functionPath, string functionQuery, string? baseUrl = null)
     {
-        string targetUrl = ComputeTargetUrl(baseUrl ?? _baseFunctionUrl, functionName, functionPath, functionQuery, _namespaceSlimFaas);
-        logger.LogDebug("Sending sync request to {TargetUrl}", targetUrl);
-        HttpRequestMessage targetRequestMessage = CreateTargetMessage(context, new Uri(targetUrl));
-        HttpResponseMessage responseMessage = await httpClient.SendAsync(targetRequestMessage,
-            HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
-        return responseMessage;
+        try
+        {
+            string targetUrl = ComputeTargetUrl(baseUrl ?? _baseFunctionUrl, functionName, functionPath, functionQuery, _namespaceSlimFaas);
+            logger.LogDebug("Sending sync request to {TargetUrl}", targetUrl);
+            HttpRequestMessage targetRequestMessage = CreateTargetMessage(context, new Uri(targetUrl));
+            HttpResponseMessage responseMessage = await httpClient.SendAsync(targetRequestMessage,
+                HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
+            return responseMessage;
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error in SendHttpRequestSync to {FunctionName} to {FunctionPath} ", functionName, functionPath);
+            throw;
+        }
     }
 
     private void CopyFromOriginalRequestContentAndHeaders(CustomRequest context, HttpRequestMessage requestMessage)
@@ -72,7 +88,7 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
 
     private HttpRequestMessage CreateTargetMessage(CustomRequest context, Uri targetUri)
     {
-        HttpRequestMessage requestMessage = new HttpRequestMessage();
+        HttpRequestMessage requestMessage = new();
         CopyFromOriginalRequestContentAndHeaders(context, requestMessage);
 
         requestMessage.RequestUri = targetUri;
@@ -133,7 +149,7 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
 
     private HttpRequestMessage CreateTargetMessage(HttpContext context, Uri targetUri)
     {
-        HttpRequestMessage requestMessage = new HttpRequestMessage();
+        HttpRequestMessage requestMessage = new();
         CopyFromOriginalRequestContentAndHeaders(context, requestMessage);
 
         requestMessage.RequestUri = targetUri;
@@ -152,13 +168,14 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
     private void CopyFromOriginalRequestContentAndHeaders(HttpContext context, HttpRequestMessage requestMessage)
     {
         string requestMethod = context.Request.Method;
+        context.Request.EnableBuffering(bufferThreshold: 1024 * 100, bufferLimit: 200 * 1024 * 1024);
 
         if (!HttpMethods.IsGet(requestMethod) &&
             !HttpMethods.IsHead(requestMethod) &&
             !HttpMethods.IsDelete(requestMethod) &&
             !HttpMethods.IsTrace(requestMethod))
         {
-            StreamContent streamContent = new StreamContent(context.Request.Body);
+            StreamContent streamContent = new(context.Request.Body);
             requestMessage.Content = streamContent;
         }
 
