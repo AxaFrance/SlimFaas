@@ -43,6 +43,7 @@ spec:
               memory: "96Mi"
               cpu: "50m"
             requests:
+              ephemeral-storage: "200Mi"
               memory: "96Mi"
               cpu: "10m"
           ports:
@@ -88,6 +89,7 @@ spec:
               memory: "96Mi"
               cpu: "50m"
             requests:
+              ephemeral-storage: "200Mi"
               memory: "96Mi"
               cpu: "10m"
           ports:
@@ -135,6 +137,7 @@ spec:
               memory: "96Mi"
               cpu: "50m"
             requests:
+              ephemeral-storage: "200Mi"
               memory: "96Mi"
               cpu: "10m"
           ports:
@@ -183,6 +186,7 @@ spec:
               memory: "96Mi"
               cpu: "50m"
             requests:
+              ephemeral-storage: "200Mi"
               memory: "96Mi"
               cpu: "10m"
           ports:
