@@ -25,6 +25,7 @@ spec:
         #          {"TimeZoneID":"Europe/Paris","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time": "21:00","Value":20},{"Time":"07:00","Value": 10}]}}
     spec:
       serviceAccountName: default
+      automountServiceAccountToken: false
       containers:
         - name: fibonacci1
           image: axaguildev/fibonacci:latest
@@ -71,6 +72,7 @@ spec:
         SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
     spec:
       serviceAccountName: default
+      automountServiceAccountToken: false
       containers:
         - name: fibonacci2
           image: axaguildev/fibonacci:latest
@@ -119,6 +121,7 @@ spec:
         SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
     spec:
       serviceAccountName: default
+      automountServiceAccountToken: false
       containers:
         - name: fibonacci3
           image: axaguildev/fibonacci:latest
@@ -165,9 +168,9 @@ spec:
         SlimFaas/NumberParallelRequest : "10"
         SlimFaas/DefaultVisibility : "Private"
         SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
-
     spec:
       serviceAccountName: default
+      automountServiceAccountToken: false
       containers:
         - name: fibonacci4
           image: axaguildev/fibonacci:latest
