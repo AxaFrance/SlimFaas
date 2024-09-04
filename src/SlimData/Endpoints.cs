@@ -101,33 +101,42 @@ public class Endpoints
         });
     }
 
+    private static SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
     public static async Task<ListString> ListRightPopCommand(SlimPersistentState provider, string key, int count, IRaftCluster cluster,
         CancellationTokenSource source)
     {
         var values = new ListString();
         values.Items = new List<byte[]>();
-        while (cluster.TryGetLeaseToken(out var leaseToken) && leaseToken.IsCancellationRequested)
+        await semaphoreSlim.WaitAsync();
+        try
         {
-            Console.WriteLine("Master node is waiting for lease token");
-            await Task.Delay(10);
-        }
-        var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
-        if (queues.TryGetValue(key, out var queue))
-        {
-            for (var i = 0; i < count; i++)
+            while (cluster.TryGetLeaseToken(out var leaseToken) && leaseToken.IsCancellationRequested)
             {
-                if (queue.Count <= i) break;
-                values.Items.Add(queue[i].ToArray());
+                Console.WriteLine("Master node is waiting for lease token");
+                await Task.Delay(10);
             }
-            
-            var logEntry =
-                provider.Interpreter.CreateLogEntry(
-                    new ListRightPopCommand { Key = key, Count = count },
-                    cluster.Term);
-            await cluster.ReplicateAsync(logEntry, source.Token);
+            var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
+            if (queues.TryGetValue(key, out var queue))
+            {
+                for (var i = 0; i < count; i++)
+                {
+                    if (queue.Count <= i) break;
+                    values.Items.Add(queue[i].ToArray());
+                }
+                
+                var logEntry =
+                    provider.Interpreter.CreateLogEntry(
+                        new ListRightPopCommand { Key = key, Count = count },
+                        cluster.Term);
+                await cluster.ReplicateAsync(logEntry, source.Token);
+            }
         }
-
+        finally
+        {
+            semaphoreSlim.Release();
+        }
         return values;
+        
     }
 
     public static Task ListLeftPush(HttpContext context)
