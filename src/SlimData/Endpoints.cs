@@ -100,14 +100,23 @@ public class Endpoints
             await context.Response.Body.WriteAsync(bin, context.RequestAborted);
         });
     }
-
-    private static SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
+    
+    private static readonly IDictionary<string,SemaphoreSlim> SemaphoreSlims = new Dictionary<string, SemaphoreSlim>();
     public static async Task<ListString> ListRightPopCommand(SlimPersistentState provider, string key, int count, IRaftCluster cluster,
         CancellationTokenSource source)
     {
         var values = new ListString();
         values.Items = new List<byte[]>();
-        await semaphoreSlim.WaitAsync();
+
+        if(SemaphoreSlims.TryGetValue(key, out var semaphoreSlim))
+        {
+            await semaphoreSlim.WaitAsync();
+        }
+        else
+        {
+            SemaphoreSlims[key] = new SemaphoreSlim(1, 1);
+            await SemaphoreSlims[key].WaitAsync();
+        }
         try
         {
             while (cluster.TryGetLeaseToken(out var leaseToken) && leaseToken.IsCancellationRequested)
@@ -133,7 +142,7 @@ public class Endpoints
         }
         finally
         {
-            semaphoreSlim.Release();
+            SemaphoreSlims[key].Release();
         }
         return values;
         
