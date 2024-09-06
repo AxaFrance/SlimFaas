@@ -6,17 +6,20 @@ namespace SlimFaas;
 public class HealthWorker(IHostApplicationLifetime  hostApplicationLifetime, IRaftCluster raftCluster, ISlimDataStatus slimDataStatus,
         ILogger<HealthWorker> logger,
         int delay = EnvironmentVariables.HealthWorkerDelayMillisecondsDefault,
-        int delayToExitSeconds = EnvironmentVariables.HealthWorkerDelayToExitSecondsDefault)
+        int delayToExitSeconds = EnvironmentVariables.HealthWorkerDelayToExitSecondsDefault,
+        int delayToStartHealthCheck = EnvironmentVariables.HealthWorkerDelayToStartHealthCheckSecondsDefault)
     : BackgroundService
 {
     private readonly int _delay =
         EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.HealthWorkerDelayMilliseconds, delay);
     private readonly int _delayToExitSeconds =
         EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.HealthWorkerDelayToExitSeconds, delayToExitSeconds);
+    private readonly int _delayToStartHealthCheck =
+        EnvironmentVariables.ReadInteger(logger, EnvironmentVariables.HealthWorkerDelayToStartHealthCheckSeconds, delayToStartHealthCheck);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await slimDataStatus.WaitForReadyAsync();
+        await Task.Delay(1000 * _delayToStartHealthCheck, stoppingToken);
         TimeSpan timeSpan = TimeSpan.FromSeconds(0);
         while (stoppingToken.IsCancellationRequested == false)
         {

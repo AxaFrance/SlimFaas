@@ -46,6 +46,9 @@ public static class EnvironmentVariables
     public const string HealthWorkerDelayToExitSeconds = "HEALTH_WORKER_DELAY_TO_EXIT_SECONDS";
     public const int HealthWorkerDelayToExitSecondsDefault = 60;
 
+    public const string HealthWorkerDelayToStartHealthCheckSeconds = "HEALTH_WORKER_DELAY_TO_START_HEALTH_CHECK_SECONDS";
+    public const int HealthWorkerDelayToStartHealthCheckSecondsDefault = 20;
+
     public const string PodScaledUpByDefaultWhenInfrastructureHasNeverCalled =
         "POD_SCALED_UP_BY_DEFAULT_WHEN_INFRASTRUCTURE_HAS_NEVER_CALLED";
 
