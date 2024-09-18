@@ -12,7 +12,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
 
     private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), 
         new Dictionary<string, ReadOnlyMemory<byte>>(), 
-        new Dictionary<string, List<ReadOnlyMemory<byte>>>()
+        new Dictionary<string, List<QueueElement>>()
         );
     public CommandInterpreter Interpreter { get; }
 
@@ -67,7 +67,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
     {
         private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), 
             new Dictionary<string, ReadOnlyMemory<byte>>(), 
-            new Dictionary<string, List<ReadOnlyMemory<byte>>>()
+            new Dictionary<string, List<QueueElement>>()
             );   
         private readonly CommandInterpreter _interpreter;
 

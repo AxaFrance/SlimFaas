@@ -6,14 +6,16 @@ namespace SlimData;
 public record SlimDataState(
     Dictionary<string, Dictionary<string, string>> hashsets,
     Dictionary<string, ReadOnlyMemory<byte>> keyValues,
-    Dictionary<string, List<ReadOnlyMemory<byte>>> queues);
+    Dictionary<string, List<QueueElement>> queues);
+
+public record QueueElement(ReadOnlyMemory<byte> Value, int RetryNumber=0, long LastAccessTimeStamp=0);
 
 
 #pragma warning restore CA2252
 public class SlimDataInterpreter : CommandInterpreter
 {
 
-    public SlimDataState SlimDataState = new(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, ReadOnlyMemory<byte>>(), new Dictionary<string, List<ReadOnlyMemory<byte>>>());
+    public SlimDataState SlimDataState = new(new Dictionary<string, Dictionary<string, string>>(), new Dictionary<string, ReadOnlyMemory<byte>>(), new Dictionary<string, List<QueueElement>>());
 
     [CommandHandler]
     public ValueTask ListRightPopAsync(ListRightPopCommand addHashSetCommand, CancellationToken token)
@@ -21,11 +23,11 @@ public class SlimDataInterpreter : CommandInterpreter
         return DoListRightPopAsync(addHashSetCommand, SlimDataState.queues);
     }
 
-    internal static ValueTask DoListRightPopAsync(ListRightPopCommand addHashSetCommand, Dictionary<string, List<ReadOnlyMemory<byte>>> queues)
+    internal static ValueTask DoListRightPopAsync(ListRightPopCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
     {
         if (queues.TryGetValue(addHashSetCommand.Key, out var queue))
             for (var i = 0; i < addHashSetCommand.Count; i++)
-                if (queue.Count > 0)    
+                if (queue.Count > 0)
                     queue.RemoveAt(0);
                 else
                     break;
@@ -39,12 +41,12 @@ public class SlimDataInterpreter : CommandInterpreter
         return DoListLeftPushAsync(addHashSetCommand, SlimDataState.queues);
     }
     
-    internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand addHashSetCommand, Dictionary<string, List<ReadOnlyMemory<byte>>> queues)
+    internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
     {
-        if (queues.TryGetValue(addHashSetCommand.Key, out List<ReadOnlyMemory<byte>>? value))
-            value.Add(addHashSetCommand.Value);
+        if (queues.TryGetValue(addHashSetCommand.Key, out List<QueueElement>? value))
+            value.Add(new QueueElement(addHashSetCommand.Value));
         else
-            queues.Add(addHashSetCommand.Key, new List<ReadOnlyMemory<byte>> { addHashSetCommand.Value });
+            queues.Add(addHashSetCommand.Key, new List<QueueElement>() {new(addHashSetCommand.Value)});
 
         return default;
     }
@@ -82,7 +84,7 @@ public class SlimDataInterpreter : CommandInterpreter
         return default;
     }
     
-    internal static ValueTask DoHandleSnapshotAsync(LogSnapshotCommand command, Dictionary<string, ReadOnlyMemory<byte>> keyValues, Dictionary<string, Dictionary<string, string>> hashsets, Dictionary<string, List<ReadOnlyMemory<byte>>>  queues)
+    internal static ValueTask DoHandleSnapshotAsync(LogSnapshotCommand command, Dictionary<string, ReadOnlyMemory<byte>> keyValues, Dictionary<string, Dictionary<string, string>> hashsets, Dictionary<string, List<QueueElement>>  queues)
     {
         keyValues.Clear();
         foreach (var keyValue in command.keysValues)
