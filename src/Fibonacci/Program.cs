@@ -69,11 +69,6 @@ app.MapPost("/fibonacci-recursive", async (
             client.PostAsJsonAsync(
                 "http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci1/fibonacci-recursive",
                 new FibonacciInput() { Input = input.Input - 2 });
-        if (response1.Result.IsSuccessStatusCode || response2.Result.IsSuccessStatusCode)
-        {
-            throw new Exception("Request Fail");
-        }
-
         var result1 =
             JsonConvert.DeserializeObject<FibonacciOutput>(await response1.Result.Content.ReadAsStringAsync());
         logger.LogInformation("Current result1: {Result}", result1.Result);
@@ -105,9 +100,6 @@ app.MapPost("/send-private-fibonacci-event", (
     logger.LogInformation("Response status code: {StatusCode}", response.StatusCode);
     logger.LogInformation("Fibonacci Internal Event End");
 });
-
-
-
 
 
 app.Run();
