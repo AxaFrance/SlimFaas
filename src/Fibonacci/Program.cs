@@ -74,11 +74,11 @@ app.MapPost("/fibonacci-recursive", async (
         var response1 =
             client.PostAsJsonAsync(
                 "http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci1/fibonacci-recursive",
-                new FibonacciInput() { Input = input.Input - 1 }, FibonacciInput.Default.FibonacciInput);
+                new FibonacciInput() { Input = input.Input - 1 }, FibonacciInputSerializerContext.Default.FibonacciInput);
         var response2 =
             client.PostAsJsonAsync(
                 "http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci1/fibonacci-recursive",
-                new FibonacciInput() { Input = input.Input - 2 }, FibonacciInput.Default.FibonacciInput);
+                new FibonacciInput() { Input = input.Input - 2 }, FibonacciInputSerializerContext.Default.FibonacciInput);
         var result1 = JsonSerializer.Deserialize(await response1.Result.Content.ReadAsStringAsync(),
             FibonacciRecursiveOutputSerializerContext.Default.FibonacciRecursiveOutput);
         logger.LogInformation("Current result1: {Result}", result1.Result);
