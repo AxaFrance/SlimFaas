@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 IServiceCollection serviceCollection = builder.Services;
@@ -43,16 +44,29 @@ app.MapGet("/hello/{name}", ([FromServices] ILogger<Fibonacci> logger, string na
 app.MapGet("/health", () => "OK");
 
 
-app.MapPost("/fibonacci-recursive", (
+app.MapPost("/fibonacci-recursive", async (
     [FromServices] ILogger<Fibonacci> logger,
     [FromServices] Fibonacci fibonacci,
     FibonacciInput input) =>
 {
-    logger.LogInformation("Fibonacci Internal Called");
+    logger.LogInformation("Fibonacci Recursive Internal Called");
     using HttpClient client = new();
-    var response = client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci1/fibonacci-recursive", input).Result;
-    var output = response.Content.ReadFromJsonAsync<FibonacciOutput>().Result;
-    logger.LogInformation("Fibonacci Internal output: {Output}", output.Result);
+    var output = new FibonacciOutput();
+    if (input.Input <= 2)
+    {
+        output.Result = 1;
+        return output;
+    }
+    var response1 = client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci1/fibonacci-recursive", new FibonacciInput(){ Input = input.Input-1});
+    var response2 = client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci1/fibonacci-recursive", new FibonacciInput(){ Input = input.Input-2});
+    if (response1.Result.IsSuccessStatusCode || response2.Result.IsSuccessStatusCode)
+    {
+        throw new Exception("Request Fail");
+    }
+    var result1 = JsonConvert.DeserializeObject<FibonacciOutput>(await response1.Result.Content.ReadAsStringAsync());
+    var result2 = JsonConvert.DeserializeObject<FibonacciOutput>(await response2.Result.Content.ReadAsStringAsync());
+    output.Result = result1.Result + result2.Result;
+    logger.LogInformation("Current output: {Result}", output.Result);
     return output;
 });
 
@@ -62,7 +76,7 @@ app.MapPost("/send-private-fibonacci-event", (
     [FromServices] Fibonacci fibonacci,
     FibonacciInput input) =>
 {
-    logger.LogInformation("Fibonacci Internal Event Called");
+    logger.LogInformation("Fibonacci Private Event Called");
     using HttpClient client = new();
     var response = client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/publish-event/fibo-private/fibonacci", input).Result;
     logger.LogInformation("Response status code: {StatusCode}", response.StatusCode);
@@ -88,10 +102,10 @@ internal class Fibonacci
     }
 }
 
-public record FibonacciInput{
+public record FibonacciInput {
     public int Input { get; set; }
 }
 
-public record FibonacciOutput{
+public record FibonacciOutput {
     public int Result { get; set; }
 }
