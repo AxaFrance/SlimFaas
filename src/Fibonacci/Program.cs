@@ -5,6 +5,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 IServiceCollection serviceCollection = builder.Services;
 serviceCollection.AddSingleton<Fibonacci, Fibonacci>();
 serviceCollection.AddCors();
+serviceCollection.AddHttpClient();
 
 WebApplication app = builder.Build();
 app.UseCors(builder => builder
@@ -47,10 +48,10 @@ app.MapGet("/health", () => "OK");
 app.MapPost("/fibonacci-recursive", async (
     [FromServices] ILogger<Fibonacci> logger,
     [FromServices] Fibonacci fibonacci,
+    [FromServices] HttpClient client,
     FibonacciInput input) =>
 {
     logger.LogInformation("Fibonacci Recursive Internal Called: {Input}", input.Input);
-    using HttpClient client = new();
     var output = new FibonacciOutput();
     if (input.Input <= 2)
     {
@@ -76,10 +77,10 @@ app.MapPost("/fibonacci-recursive", async (
 app.MapPost("/send-private-fibonacci-event", (
     [FromServices] ILogger<Fibonacci> logger,
     [FromServices] Fibonacci fibonacci,
+    [FromServices] HttpClient client,
     FibonacciInput input) =>
 {
     logger.LogInformation("Fibonacci Private Event Called");
-    using HttpClient client = new();
     var response = client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/publish-event/fibo-private/fibonacci", input).Result;
     logger.LogInformation("Response status code: {StatusCode}", response.StatusCode);
     logger.LogInformation("Fibonacci Internal Event End");
