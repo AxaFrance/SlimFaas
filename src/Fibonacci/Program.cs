@@ -49,7 +49,7 @@ app.MapPost("/fibonacci-recursive", async (
     [FromServices] Fibonacci fibonacci,
     FibonacciInput input) =>
 {
-    logger.LogInformation("Fibonacci Recursive Internal Called");
+    logger.LogInformation("Fibonacci Recursive Internal Called: {Input}", input.Input);
     using HttpClient client = new();
     var output = new FibonacciOutput();
     if (input.Input <= 2)
@@ -64,7 +64,9 @@ app.MapPost("/fibonacci-recursive", async (
         throw new Exception("Request Fail");
     }
     var result1 = JsonConvert.DeserializeObject<FibonacciOutput>(await response1.Result.Content.ReadAsStringAsync());
+    logger.LogInformation("Current result1: {Result}", result1.Result);
     var result2 = JsonConvert.DeserializeObject<FibonacciOutput>(await response2.Result.Content.ReadAsStringAsync());
+    logger.LogInformation("Current result2: {Result}", result2.Result);
     output.Result = result1.Result + result2.Result;
     logger.LogInformation("Current output: {Result}", output.Result);
     return output;
