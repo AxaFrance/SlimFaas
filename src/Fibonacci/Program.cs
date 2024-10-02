@@ -29,7 +29,7 @@ app.MapPost("/fibonacci", (
     var output = new FibonacciOutput();
     output.Result = fibonacci.Run(input.Input);
     logger.LogInformation("Fibonacci output: {Output}", output.Result);
-    return output;
+    return Results.Ok(output);
 });
 
 app.MapGet("/download", ([FromServices] ILogger<Fibonacci> logger) =>
@@ -63,7 +63,7 @@ app.MapPost("/fibonacci-recursive", async (
         {
             output.Result = 1;
             output.NumberCall = 1;
-            return output;
+            return Results.Ok(output);
         }
 
         var response1 =
@@ -84,14 +84,13 @@ app.MapPost("/fibonacci-recursive", async (
         output.Result = result1.Result + result2.Result;
         output.NumberCall = result1.NumberCall + result2.NumberCall + 1;
         logger.LogInformation("Current output: {Result}", output.Result);
-        return output;
+        return Results.Ok(output);
     }
     catch (Exception ex)
     {
         logger.LogError(ex, "Error in Fibonacci Recursive Internal");
     }
-
-    return new FibonacciRecursiveOutput();
+    return Results.BadRequest(new FibonacciRecursiveOutput());
 });
 
 
