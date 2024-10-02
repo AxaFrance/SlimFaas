@@ -1,5 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 IServiceCollection serviceCollection = builder.Services;
@@ -65,16 +66,17 @@ app.MapPost("/fibonacci-recursive", async (
         var response1 =
             client.PostAsJsonAsync(
                 "http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci1/fibonacci-recursive",
-                new FibonacciInput() { Input = input.Input - 1 });
+                new FibonacciInput() { Input = input.Input - 1 }, FibonacciInputSerializerContext.Default.FibonacciInput);
         var response2 =
             client.PostAsJsonAsync(
                 "http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci1/fibonacci-recursive",
-                new FibonacciInput() { Input = input.Input - 2 });
-        var result1 =
-            JsonConvert.DeserializeObject<FibonacciRecursiveOutput>(await response1.Result.Content.ReadAsStringAsync());
+                new FibonacciInput() { Input = input.Input - 2 }, FibonacciInputSerializerContext.Default.FibonacciInput);
+        var result1 = JsonSerializer.Deserialize(await response1.Result.Content.ReadAsStringAsync(),
+                FibonacciRecursiveOutputSerializerContext.Default.FibonacciRecursiveOutput);
         logger.LogInformation("Current result1: {Result}", result1.Result);
-        var result2 =
-            JsonConvert.DeserializeObject<FibonacciRecursiveOutput>(await response2.Result.Content.ReadAsStringAsync());
+        var result2 = JsonSerializer.Deserialize(await response2.Result.Content.ReadAsStringAsync(),
+            FibonacciRecursiveOutputSerializerContext.Default.FibonacciRecursiveOutput);
+
         logger.LogInformation("Current result2: {Result}", result2.Result);
         output.Result = result1.Result + result2.Result;
         output.NumberCall = result1.NumberCall + result2.NumberCall + 1;
@@ -97,7 +99,7 @@ app.MapPost("/send-private-fibonacci-event", (
     FibonacciInput input) =>
 {
     logger.LogInformation("Fibonacci Private Event Called");
-    var response = client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/publish-event/fibo-private/fibonacci", input).Result;
+    var response = client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/publish-event/fibo-private/fibonacci", input, FibonacciInputSerializerContext.Default.FibonacciInput).Result;
     logger.LogInformation("Response status code: {StatusCode}", response.StatusCode);
     logger.LogInformation("Fibonacci Internal Event End");
 });
@@ -122,6 +124,13 @@ public record FibonacciInput {
     public int Input { get; set; }
 }
 
+[JsonSerializable(typeof(FibonacciInput))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class FibonacciInputSerializerContext : JsonSerializerContext
+{
+}
+
+
 public record FibonacciOutput {
     public int Result { get; set; }
 }
@@ -129,5 +138,11 @@ public record FibonacciOutput {
 public record FibonacciRecursiveOutput {
     public int Result { get; set; }
     public int NumberCall { get; set; }
+}
+
+[JsonSerializable(typeof(FibonacciRecursiveOutput))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class FibonacciRecursiveOutputSerializerContext : JsonSerializerContext
+{
 }
 
