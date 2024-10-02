@@ -15,8 +15,6 @@ app.UseCors(builder => builder
     .AllowAnyHeader()
 );
 
-
-
 app.MapPost("/fibonacci", (
     [FromServices] ILogger<Fibonacci> logger,
     [FromServices] Fibonacci fibonacci,
@@ -130,9 +128,15 @@ public partial class FibonacciInputSerializerContext : JsonSerializerContext
 {
 }
 
-
 public record FibonacciOutput {
     public int Result { get; set; }
+}
+
+
+[JsonSerializable(typeof(FibonacciOutput))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class FibonacciOutputSerializerContext : JsonSerializerContext
+{
 }
 
 public record FibonacciRecursiveOutput {
