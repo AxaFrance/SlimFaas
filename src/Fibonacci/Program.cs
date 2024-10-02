@@ -54,10 +54,11 @@ app.MapPost("/fibonacci-recursive", async (
     try
     {
         logger.LogInformation("Fibonacci Recursive Internal Called: {Input}", input.Input);
-        var output = new FibonacciOutput();
+        var output = new FibonacciRecursiveOutput();
         if (input.Input <= 2)
         {
             output.Result = 1;
+            output.NumberCall = 1;
             return output;
         }
 
@@ -70,12 +71,13 @@ app.MapPost("/fibonacci-recursive", async (
                 "http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci1/fibonacci-recursive",
                 new FibonacciInput() { Input = input.Input - 2 });
         var result1 =
-            JsonConvert.DeserializeObject<FibonacciOutput>(await response1.Result.Content.ReadAsStringAsync());
+            JsonConvert.DeserializeObject<FibonacciRecursiveOutput>(await response1.Result.Content.ReadAsStringAsync());
         logger.LogInformation("Current result1: {Result}", result1.Result);
         var result2 =
-            JsonConvert.DeserializeObject<FibonacciOutput>(await response2.Result.Content.ReadAsStringAsync());
+            JsonConvert.DeserializeObject<FibonacciRecursiveOutput>(await response2.Result.Content.ReadAsStringAsync());
         logger.LogInformation("Current result2: {Result}", result2.Result);
         output.Result = result1.Result + result2.Result;
+        output.NumberCall = result1.NumberCall + result2.NumberCall + 1;
         logger.LogInformation("Current output: {Result}", output.Result);
         return output;
     }
@@ -84,8 +86,7 @@ app.MapPost("/fibonacci-recursive", async (
         logger.LogError(ex, "Error in Fibonacci Recursive Internal");
     }
 
-
-    return new FibonacciOutput();
+    return new FibonacciRecursiveOutput();
 });
 
 
@@ -124,3 +125,9 @@ public record FibonacciInput {
 public record FibonacciOutput {
     public int Result { get; set; }
 }
+
+public record FibonacciRecursiveOutput {
+    public int Result { get; set; }
+    public int NumberCall { get; set; }
+}
+
