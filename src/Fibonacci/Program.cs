@@ -43,14 +43,14 @@ app.MapGet("/hello/{name}", ([FromServices] ILogger<Fibonacci> logger, string na
 app.MapGet("/health", () => "OK");
 
 
-app.MapPost("/fibonacci4", (
+app.MapPost("/fibonacci-recursive", (
     [FromServices] ILogger<Fibonacci> logger,
     [FromServices] Fibonacci fibonacci,
     FibonacciInput input) =>
 {
     logger.LogInformation("Fibonacci Internal Called");
     using HttpClient client = new();
-    var response = client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci4/fibonacci", input).Result;
+    var response = client.PostAsJsonAsync("http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci1/fibonacci-recursive", input).Result;
     var output = response.Content.ReadFromJsonAsync<FibonacciOutput>().Result;
     logger.LogInformation("Fibonacci Internal output: {Output}", output.Result);
     return output;

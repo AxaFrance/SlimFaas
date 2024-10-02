@@ -31,7 +31,7 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
             {
                 result += Encoding.UTF8.GetByteCount(queue.Key);
                 result += sizeof(Int32); // 4 bytes for queue count
-                queue.Value.ForEach(x => result += x.Value.Length + sizeof(Int32) + sizeof(Int64));
+                queue.Value.ForEach(x => result += x.Value.Length + sizeof(Int32) + sizeof(Int64) + sizeof(Int64));
             }
 
             // compute length of the serialized data, in bytes
@@ -70,6 +70,7 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                 await writer.WriteLittleEndianAsync(queue.Value.Count, token).ConfigureAwait(false);
                 foreach (var value in queue.Value){
                     await writer.WriteAsync(value.Value, LengthFormat.Compressed, token).ConfigureAwait(false);
+                    await writer.WriteLittleEndianAsync(value.InsertTimeStamp,  token).ConfigureAwait(false);
                     await writer.WriteLittleEndianAsync(value.RetryNumber,  token).ConfigureAwait(false);
                     await writer.WriteLittleEndianAsync(value.LastAccessTimeStamp, token).ConfigureAwait(false);
                 }
@@ -119,9 +120,11 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                 while (countQueue-- > 0)
                 {
                     using var value = await reader.ReadAsync(LengthFormat.Compressed, token: token).ConfigureAwait(false);
+                    var insertTimeStamp = await reader.ReadBigEndianAsync<Int64>(token);
                     var retryNumber = await reader.ReadLittleEndianAsync<Int32>(token);
                     var lastAccessTimeStamp = await reader.ReadBigEndianAsync<Int64>(token);
-                    queue.Add(new QueueElement(value.Memory, retryNumber, lastAccessTimeStamp));
+                    
+                    queue.Add(new QueueElement(value.Memory, insertTimeStamp, retryNumber, lastAccessTimeStamp));
                 }
 
                 queues.Add(key.ToString(), queue);

@@ -8,7 +8,7 @@ public record SlimDataState(
     Dictionary<string, ReadOnlyMemory<byte>> keyValues,
     Dictionary<string, List<QueueElement>> queues);
 
-public record QueueElement(ReadOnlyMemory<byte> Value, int RetryNumber=0, long LastAccessTimeStamp=0);
+public record QueueElement(ReadOnlyMemory<byte> Value, long InsertTimeStamp, int RetryNumber=0, long LastAccessTimeStamp=0);
 
 
 #pragma warning restore CA2252
@@ -44,9 +44,9 @@ public class SlimDataInterpreter : CommandInterpreter
     internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
     {
         if (queues.TryGetValue(addHashSetCommand.Key, out List<QueueElement>? value))
-            value.Add(new QueueElement(addHashSetCommand.Value));
+            value.Add(new QueueElement(addHashSetCommand.Value, DateTime.UtcNow.Ticks));
         else
-            queues.Add(addHashSetCommand.Key, new List<QueueElement>() {new(addHashSetCommand.Value)});
+            queues.Add(addHashSetCommand.Key, new List<QueueElement>() {new(addHashSetCommand.Value, DateTime.UtcNow.Ticks)});
 
         return default;
     }
