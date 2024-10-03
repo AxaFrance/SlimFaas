@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <PublishTrimmed>false</PublishTrimmed>
+    <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +19,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  
+
 
 </Project>

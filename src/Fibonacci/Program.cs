@@ -11,6 +11,7 @@ serviceCollection.AddHttpClient();
 
 serviceCollection.Configure<JsonOptions>(options =>
 {
+    options.JsonSerializerOptions.PropertyNamingPolicy = null;
     options.JsonSerializerOptions.TypeInfoResolver = JsonTypeInfoResolver.Combine(
         options.JsonSerializerOptions.TypeInfoResolver,
         FibonacciInputSerializerContext.Default,
