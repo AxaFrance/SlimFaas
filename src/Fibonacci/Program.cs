@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.AspNetCore.Mvc;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateSlimBuilder(args);
 IServiceCollection serviceCollection = builder.Services;
 serviceCollection.AddSingleton<Fibonacci, Fibonacci>();
 serviceCollection.AddCors();
