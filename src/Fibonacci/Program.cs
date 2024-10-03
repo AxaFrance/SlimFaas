@@ -137,7 +137,9 @@ public record FibonacciInput {
 
 
 [JsonSerializable(typeof(FibonacciInput))]
-[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSourceGenerationOptions(WriteIndented = false,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 public partial class FibonacciInputSerializerContext : JsonSerializerContext
 {
 }
@@ -148,7 +150,9 @@ public record FibonacciOutput {
 
 
 [JsonSerializable(typeof(FibonacciOutput))]
-[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSourceGenerationOptions(WriteIndented = false,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 public partial class FibonacciOutputSerializerContext : JsonSerializerContext
 {
 }
@@ -159,7 +163,9 @@ public record FibonacciRecursiveOutput {
 }
 
 [JsonSerializable(typeof(FibonacciRecursiveOutput))]
-[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSourceGenerationOptions(WriteIndented = false,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 public partial class FibonacciRecursiveOutputSerializerContext : JsonSerializerContext
 {
 }
