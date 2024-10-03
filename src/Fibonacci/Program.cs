@@ -80,6 +80,7 @@ app.MapPost("/fibonacci-recursive", async (
             client.PostAsJsonAsync(
                 "http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci1/fibonacci-recursive",
                 new FibonacciInput() { Input = input.Input - 2 }, FibonacciInputSerializerContext.Default.FibonacciInput);
+        await Task.WhenAll(response1, response2);
         var result1str = await response1.Result.Content.ReadAsStringAsync();
         var result1 = JsonSerializer.Deserialize(result1str,
             FibonacciRecursiveOutputSerializerContext.Default.FibonacciRecursiveOutput);
