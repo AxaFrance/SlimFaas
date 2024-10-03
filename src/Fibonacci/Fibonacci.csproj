@@ -5,8 +5,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <PublishTrimmed>false</PublishTrimmed>
+    <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
+  <ItemGroup>
+   <TrimmerRootAssembly Include="System.Text.Json" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="..\.dockerignore">
