@@ -28,7 +28,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci1
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:pr-77-733
           livenessProbe:
             httpGet:
               path: /health
@@ -41,11 +41,11 @@ spec:
               value: http://+:5000
           resources:
             limits:
-              memory: "96Mi"
+              memory: "256Mi"
               cpu: "50m"
             requests:
               ephemeral-storage: "200Mi"
-              memory: "96Mi"
+              memory: "256Mi"
               cpu: "10m"
           ports:
             - containerPort: 5000
@@ -75,7 +75,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci2
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:pr-77-714
           livenessProbe:
             httpGet:
               path: /health
@@ -124,7 +124,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci3
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:pr-77-714
           livenessProbe:
             httpGet:
               path: /health
@@ -173,7 +173,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci4
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:pr-77-714
           livenessProbe:
             httpGet:
               path: /health
