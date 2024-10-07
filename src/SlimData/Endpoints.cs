@@ -130,7 +130,7 @@ public class Endpoints
                 for (var i = 0; i < count; i++)
                 {
                     if (queue.Count <= i) break;
-                    values.Items.Add(queue[i].ToArray());
+                    values.Items.Add(queue[i].Value.ToArray());
                 }
                 
                 var logEntry =
