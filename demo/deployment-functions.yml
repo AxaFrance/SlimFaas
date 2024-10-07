@@ -14,15 +14,7 @@ spec:
         app: fibonacci1
       annotations:
         SlimFaas/Function: "true"
-        SlimFaas/ReplicasMin: "0"
-        SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
-        SlimFaas/NumberParallelRequest: "10"
-        SlimFaas/DependsOn: "fibonacci2"
-        SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
-        #SlimFaas/Schedule: |
-        #          {"TimeZoneID":"Europe/Paris","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time": "21:00","Value":20},{"Time":"07:00","Value": 10}]}}
     spec:
       serviceAccountName: default
       automountServiceAccountToken: false
@@ -65,11 +57,8 @@ spec:
         app: fibonacci2
       annotations:
         SlimFaas/Function: "true"
-        SlimFaas/ReplicasMin: "0"
-        SlimFaas/ReplicasAtStart: "1"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
-        SlimFaas/NumberParallelRequest : "10"
-        SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
+        SlimFaas/DependsOn: "fibonacci1,mysql"
     spec:
       serviceAccountName: default
       automountServiceAccountToken: false
@@ -112,12 +101,7 @@ spec:
         app: fibonacci3
       annotations:
         SlimFaas/Function: "true"
-        SlimFaas/ReplicasMin: "0"
-        SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
-        SlimFaas/NumberParallelRequest : "10"
-        SlimFaas/DependsOn: "mysql"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "60"
         SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
     spec:
       serviceAccountName: default
@@ -135,13 +119,15 @@ spec:
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
+            - name: Logging__LogLevel__Default
+              value: Warning
           resources:
             limits:
-              memory: "96Mi"
-              cpu: "50m"
+              memory: "512Mi"
+              cpu: "100m"
             requests:
               ephemeral-storage: "200Mi"
-              memory: "96Mi"
+              memory: "512Mi"
               cpu: "10m"
           ports:
             - containerPort: 5000
@@ -161,11 +147,6 @@ spec:
         app: fibonacci4
       annotations:
         SlimFaas/Function: "true"
-        SlimFaas/ReplicasMin: "2"
-        SlimFaas/ReplicasAtStart: "2"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
-        SlimFaas/NumberParallelRequest : "10"
         SlimFaas/DefaultVisibility : "Private"
         SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
     spec:
