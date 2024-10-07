@@ -113,6 +113,38 @@ app.MapPost("/send-private-fibonacci-event", (
     logger.LogInformation("Fibonacci Internal Event End");
 });
 
+app.MapPost("/fibonacci4", async (
+    [FromServices] ILogger<Fibonacci> logger,
+    [FromServices] Fibonacci fibonacci,
+    [FromServices] HttpClient client,
+    FibonacciInput input) =>
+{
+    try
+    {
+        logger.LogInformation("Fibonacci4 Internal Called: {Input}", input.Input);
+        var output = new FibonacciOutput();
+        var httpResponse1 =
+            client.PostAsJsonAsync(
+                "http://slimfaas.slimfaas-demo.svc.cluster.local:5000/function/fibonacci4/fibonacci",
+                new FibonacciInput() { Input = input.Input - 1 }, FibonacciInputSerializerContext.Default.FibonacciInput);
+        await Task.WhenAll(httpResponse1);
+
+        var result1JsonResponse = await httpResponse1.Result.Content.ReadAsStringAsync();
+        var result1 = JsonSerializer.Deserialize(result1JsonResponse,
+            FibonacciOutputSerializerContext.Default.FibonacciOutput);
+        logger.LogInformation("Current result1: {Result}", result1JsonResponse);
+
+        output.Result = result1.Result;
+        logger.LogInformation("Current output: {Result}", output.Result);
+        return Results.Ok(output);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error in Fibonacci Recursive Internal");
+    }
+    return Results.BadRequest(new FibonacciRecursiveOutput());
+});
+
 app.Run();
 
 internal class Fibonacci

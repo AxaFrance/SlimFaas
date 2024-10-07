@@ -9,7 +9,7 @@ Why use SlimFaas?
 - Synchronous HTTP calls
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
-- Synchronous Publish/Subscribe events via HTTP calls to every replicas via HTTP  without any use of specific drivers/libraries (**Couple you application with SlimFaas**)
+- Synchronous Publish/Subscribe internal events via HTTP calls to every replicas via HTTP  without any use of specific drivers/libraries (**Couple you application with SlimFaas**)
 - Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
 - Private and Public functions
   - Private functions can be accessed only by internal namespace http call from pods
@@ -29,7 +29,18 @@ To test SlimFaas on your local machine by using kubernetes with Docker Desktop, 
 git clone https://github.com/AxaFrance/slimfaas.git
 cd slimfaas/demo
 # Create slimfaas service account and pods
-cd
+kubectl apply -f deployment-slimfaas.yml
+# Expose SlimFaaS service as NodePort or Ingress
+kubectl apply -f slimfaas-nodeport.yml
+# or
+# kubectl apply -f slimfaas-ingress.yml
+# Install three instances of fibonacci functions
+# fibonacci1, fibonacci2 and fibonacci3
+kubectl apply -f deployment-functions.yml
+# Install MySql
+kubectl apply -f deployment-mysql.yml
+# to run Single Page webapp demo (optional) on http://localhost:8000
+docker run -p 8000:8000 --rm axaguildev/fibonacci-webapp:latest
 ```
 
 Now, you can access your pod via SlimFaas proxy:
