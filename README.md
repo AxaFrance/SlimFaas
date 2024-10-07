@@ -9,11 +9,11 @@ Why use SlimFaas?
 - Synchronous HTTP calls
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
-- Synchronous Publish event via HTTP calls (events) to every replicas which deployment subscribe to the event name
+- Synchronous Publish/Subscribe events via HTTP calls to every replicas via HTTP  without any use of specific drivers/libraries (**Couple you application with SlimFaas**)
 - Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
 - Private and Public functions
   - Private functions can be accessed only by internal namespace http call from pods
-- Mind Changer: REST API that show the status of your functions and allow to wake up your infrastructure
+- Mind Changer: REST API that show the status of your functions and allow to wake up your infrastructure (**Couple your application with Slimfaas**)
   - Very useful to inform end users that your infrastructure is starting
 - Plug and Play: just deploy a standard pod
   - No impact on your current kubernetes manifests: just add an annotation to the pod you want to auto-scale
@@ -23,53 +23,46 @@ Why use SlimFaas?
 
 ## Getting Started with Kubernetes
 
-To test slimfaas on your local machine by using kubernetes with Docker Desktop, please use these commands:
+To test SlimFaas on your local machine by using kubernetes with Docker Desktop, please use these commands:
 
 ```bash
 git clone https://github.com/AxaFrance/slimfaas.git
 cd slimfaas/demo
 # Create slimfaas service account and pods
-kubectl apply -f deployment-slimfaas.yml
-# Expose SlimFaaS service as NodePort or Ingress
-kubectl apply -f slimfaas-nodeport.yml
-# or
-# kubectl apply -f slimfaas-ingress.yml
-# Install three instances of fibonacci functions
-# fibonacci1, fibonacci2 and fibonacci3
-kubectl apply -f deployment-functions.yml
-# Install MySql
-kubectl apply -f deployment-mysql.yml
-# to run Single Page webapp demo (optional) on http://localhost:8000
-docker run -p 8000:8000 --rm axaguildev/fibonacci-webapp:latest
+cd
 ```
-
 
 Now, you can access your pod via SlimFaas proxy:
 
 Synchronous way:
-- http://localhost:30021/function/fibonacci1/hello/guillaume
-- http://localhost:30021/function/fibonacci2/hello/elodie
-- http://localhost:30021/function/fibonacci3/hello/julie
+- http://localhost:30021/function/fibonacci1/hello/guillaume => HTTP 200 (OK)
+- http://localhost:30021/function/fibonacci2/hello/elodie => HTTP 200 (OK)
+- http://localhost:30021/function/fibonacci3/hello/julie => HTTP 200 (OK)
+- http://localhost:30021/function/fibonacci4/hello/julie => HTTP 404 (Not Found)
 
 Asynchronous way:
-- http://localhost:30021/async-function/fibonacci1/hello/guillaume
-- http://localhost:30021/async-function/fibonacci2/hello/elodie
-- http://localhost:30021/async-function/fibonacci3/hello/julie
+- http://localhost:30021/async-function/fibonacci1/hello/guillaume => HTTP 200 (OK)
+- http://localhost:30021/async-function/fibonacci2/hello/elodie => HTTP 200 (OK)
+- http://localhost:30021/async-function/fibonacci3/hello/julie => HTTP 200 (OK)
+- http://localhost:30021/async-function/fibonacci3/hello/julie => HTTP 404 (Not Found)
 
 Just wake up function:
-- http://localhost:30021/wake-function/fibonacci1
-- http://localhost:30021/wake-function/fibonacci2
-- http://localhost:30021/wake-function/fibonacci3
+- http://localhost:30021/wake-function/fibonacci1 => HTTP 204 (OK - No Content)
+- http://localhost:30021/wake-function/fibonacci2 => HTTP 204 (OK - No Content)
+- http://localhost:30021/wake-function/fibonacci3 => HTTP 204 (OK - No Content)
+- http://localhost:30021/wake-function/fibonacci4 => HTTP 204 (OK - No Content)
 
 Get function status:
 - http://localhost:30021/status-function/fibonacci1 => {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci1"}
 - http://localhost:30021/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci2"}
 - http://localhost:30021/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci3"}
+- http://localhost:30021/status-function/fibonacci4 => {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Private","Name":"fibonacci4"}
 
 List all function status:
 - http://localhost:30021/status-functions => [{"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci1"},
                                               {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci2"},
-                                              {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci3"}]
+                                              {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci3"},
+                                              {"NumberReady":2,"numberRequested":2,PodType":"Deployment","Visibility":"Private","Name":"fibonacci4"}]
 
 Send event to every function replicas (which deployment subscribe to the event name) in synchronous way:
 
@@ -153,11 +146,11 @@ spec:
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
         SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
+        SlimFaas/DependsOn: "mysql,fibonacci2" # comma separated list of deployment or statefulset names
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
         SlimFaas/Schedule: |
-            {"TimeZoneID":"Europe/Paris","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":20},{"Time":"21:00","Value":10}]}}
-        SlimFaas/DependsOn: "mysql,fibonacci2" # comma separated list of deployment or statefulset names
+            {"TimeZoneID":"Europe/Paris","Default":{"WakeUp":["07:00"],"ScaleDownTimeout":[{"Time":"07:00","Value":3600},{"Time":"21:00","Value":60}]}}
         SlimFaas/SubscribeEvents: "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
         SlimFaas/DefaultVisibility: "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
         SlimFaas/UrlsPathStartWithVisibility: "Private:/mypath/subPath,Private:/mysecondpath" # Public or Private (private can be accessed only by internal namespace https call from pods)
@@ -322,7 +315,6 @@ spec:
 > Yours **service name** must be the same as the SlimFaas **Deployment/StatefulSet name**
 
 
-
 ### SlimFaas Annotations with defaults values
 - **SlimFaas/Function**: "true"
   - Activate SlimFaas on this pod, so your pod will be auto-scaled
@@ -395,7 +387,7 @@ Instead of creating many pods, SlimFaas use internally many workers in the same 
 - **ReplicasSynchronizationWorker**: Manage replicas synchronization between the pod and kubernetes
 - **ReplicasScaleWorker**: If master, then scale up and down kubernetes pods
 
-**SlimData** is a simple redis like database included inside SlimFaas executable. It is based on **Raft** algorithm offered by awesome https://github.com/dotnet/dotNext library.
+**SlimData** is a simple redis like database included inside SlimFaas executable. It is based on **Raft** (https://raft.github.io/) algorithm offered by awesome dotNext library (https://github.com/dotnet/dotNext).
 By default, **SlimData** use a second HTTP port 3262 to expose its API. Don't expose it and keep it internal.
 
 SlimFaas requires at least 3 nodes in production. 2 nodes are required to keep the database in a consistent state.
@@ -422,6 +414,9 @@ Why .NET?
 
 ## What Next?
 
-1. Scale up dynamically from SlimFaas
-2. Wake up from External Source (example: Kafka, etc.)
-3. Continue Optimization
+0. Retry pattern fully controllable with dead letter queue
+1. Scale up dynamically from SlimFaas in Async Mode
+2. Scale up dynamically from SlimFaas in Sync Mode (Copy KEDA syntax)
+3. Aggregate all swaggers from functions in one exposed by SlimFaas
+4. New pod to "Wake up" from External Source (example: Kafka, etc.) using https://cloudevents.io/ as standard https://github.com/cloudevents/sdk-csharp
+5. Continue Optimization
