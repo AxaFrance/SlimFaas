@@ -60,6 +60,7 @@ spec:
               cpu: 600m
               memory: 1024Mi
             requests:
+              ephemeral-storage: "200Mi"
               cpu: 300m
               memory: 512Mi
       volumes:

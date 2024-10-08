@@ -9,10 +9,10 @@ Why use SlimFaas?
 - Synchronous HTTP calls
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
-- Synchronous Publish/Subscribe internal events via HTTP calls to every replicas via HTTP  without any use of specific drivers/libraries (**Couple you application with SlimFaas**)
 - Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
 - Private and Public functions
   - Private functions can be accessed only by internal namespace http call from pods
+- Synchronous Publish/Subscribe internal events via HTTP calls to every replicas via HTTP  without any use of specific drivers/libraries (**Couple you application with SlimFaas**)
 - Mind Changer: REST API that show the status of your functions and allow to wake up your infrastructure (**Couple your application with Slimfaas**)
   - Very useful to inform end users that your infrastructure is starting
 - Plug and Play: just deploy a standard pod
@@ -52,9 +52,9 @@ Synchronous way:
 - http://localhost:30021/function/fibonacci4/hello/julie => HTTP 404 (Not Found)
 
 Asynchronous way:
-- http://localhost:30021/async-function/fibonacci1/hello/guillaume => HTTP 200 (OK)
-- http://localhost:30021/async-function/fibonacci2/hello/elodie => HTTP 200 (OK)
-- http://localhost:30021/async-function/fibonacci3/hello/julie => HTTP 200 (OK)
+- http://localhost:30021/async-function/fibonacci1/hello/guillaume => HTTP 202 (Accepted)
+- http://localhost:30021/async-function/fibonacci2/hello/elodie => HTTP 202 (Accepted)
+- http://localhost:30021/async-function/fibonacci3/hello/julie => HTTP 202 (Accepted)
 - http://localhost:30021/async-function/fibonacci3/hello/julie => HTTP 404 (Not Found)
 
 Just wake up function:
@@ -62,12 +62,6 @@ Just wake up function:
 - http://localhost:30021/wake-function/fibonacci2 => HTTP 204 (OK - No Content)
 - http://localhost:30021/wake-function/fibonacci3 => HTTP 204 (OK - No Content)
 - http://localhost:30021/wake-function/fibonacci4 => HTTP 204 (OK - No Content)
-
-Get function status:
-- http://localhost:30021/status-function/fibonacci1 => {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci1"}
-- http://localhost:30021/status-function/fibonacci2 => {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci2"}
-- http://localhost:30021/status-function/fibonacci3 => {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci3"}
-- http://localhost:30021/status-function/fibonacci4 => {"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Private","Name":"fibonacci4"}
 
 List all function status:
 - http://localhost:30021/status-functions => [{"NumberReady":1,"numberRequested":1,PodType":"Deployment","Visibility":"Public","Name":"fibonacci1"},
@@ -133,8 +127,8 @@ To publish the message to every replicas in "Ready" state of the function
 
 ## How to install
 
-1. Add SlimFaas annotations to your pods
-2. Add SlimFaas pod
+1. Add SlimFaas StatefulSet to your kubernetes cluster
+2. Add SlimFaas annotations to your pods
 3. Have fun!
 
 sample-deployment.yaml
@@ -143,6 +137,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fibonacci1
+  namespace: slimfaas-demo
 spec:
   selector:
     matchLabels:
@@ -156,7 +151,6 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "1"
-        SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "false"
         SlimFaas/DependsOn: "mysql,fibonacci2" # comma separated list of deployment or statefulset names
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "300"
         SlimFaas/NumberParallelRequest : "10"
@@ -170,6 +164,13 @@ spec:
       containers:
         - name: fibonacci1
           image: docker.io/axaguildev/fibonacci:latest
+          livenessProbe:
+              httpGet:
+                  path: /health
+                  port: 5000
+              initialDelaySeconds: 5
+              periodSeconds: 5
+              timeoutSeconds: 5
           resources:
             limits:
               memory: "96Mi"
@@ -178,12 +179,24 @@ spec:
               memory: "96Mi"
               cpu: "10m"
           ports:
-            - containerPort: 8080
+            - containerPort: 50004
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: fibonacci1
+    namespace: slimfaas-demo
+spec:
+    selector:
+        app: fibonacci1
+    ports:
+        - port: 5000
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: slimfaas
+  namespace: slimfaas-demo
 spec:
   replicas: 3
   podManagementPolicy: Parallel
@@ -214,7 +227,7 @@ spec:
             terminationGracePeriodSeconds: 30
           env:
             - name: BASE_FUNCTION_URL
-              value: "http://{function_name}.{namespace}.svc.cluster.local:8080"
+              value: "http://{function_name}.{namespace}.svc.cluster.local:5000"
             - name: BASE_FUNCTION_POD_URL # require for publish route
               value: "http://{pod_ip}:5000"
             - name: BASE_SLIMDATA_URL
@@ -310,6 +323,7 @@ apiVersion: v1
 kind: Service
 metadata:
     name: slimfaas
+    namespace: slimfaas-demo
 spec:
     selector:
         app: slimfaas
@@ -333,8 +347,6 @@ spec:
   - Scale down to this value after a period of inactivity
 - **SlimFaas/ReplicasAtStart**: "1"
   - Scale up to this value at start
-- **SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest**: "true"
-  - Scale up this pod as soon as one function retrieve a request
 - **SlimFaas/TimeoutSecondBeforeSetReplicasMin**: "300"
   - Scale down to SlimFaas/ReplicasMin after this period of inactivity in seconds
 - **SlimFaas/NumberParallelRequest** : "10"

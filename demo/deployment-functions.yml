@@ -20,14 +20,14 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci1
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:0.24.16
           livenessProbe:
             httpGet:
               path: /health
               port: 5000
-            initialDelaySeconds: 15
-            periodSeconds: 8
-            timeoutSeconds: 8
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -64,14 +64,14 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci2
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:0.24.16
           livenessProbe:
             httpGet:
               path: /health
               port: 5000
-            initialDelaySeconds: 15
-            periodSeconds: 8
-            timeoutSeconds: 8
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -108,14 +108,14 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci3
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:0.24.16
           livenessProbe:
             httpGet:
               path: /health
               port: 5000
-            initialDelaySeconds: 15
-            periodSeconds: 8
-            timeoutSeconds: 8
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -147,6 +147,9 @@ spec:
         app: fibonacci4
       annotations:
         SlimFaas/Function: "true"
+        SlimFaas/ReplicasMin: "0"
+        SlimFaas/ReplicasAtStart: "2"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "60"
         SlimFaas/DefaultVisibility : "Private"
         SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
     spec:
@@ -154,14 +157,14 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci4
-          image: axaguildev/fibonacci:latest
+          image: axaguildev/fibonacci:0.24.16
           livenessProbe:
             httpGet:
               path: /health
               port: 5000
-            initialDelaySeconds: 15
-            periodSeconds: 8
-            timeoutSeconds: 8
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
