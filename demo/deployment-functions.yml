@@ -15,6 +15,7 @@ spec:
       annotations:
         SlimFaas/Function: "true"
         SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
+        SlimFaas/NumberParallelRequest : "1"
     spec:
       serviceAccountName: default
       automountServiceAccountToken: false
@@ -119,8 +120,8 @@ spec:
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
-            - name: Logging__LogLevel__Default
-              value: Warning
+            #- name: Logging__LogLevel__Default
+            #  value: Warning
           resources:
             limits:
               memory: "512Mi"

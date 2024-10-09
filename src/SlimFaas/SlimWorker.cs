@@ -144,6 +144,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         {
             try
             {
+                historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
                 if (!processing.Task.IsCompleted)
                 {
                     continue;
@@ -156,7 +157,6 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                     processing.CustomRequest.Method, processing.CustomRequest.Path, processing.CustomRequest.Query,
                     httpResponseMessage.StatusCode);
                 httpResponseMessagesToDelete.Add(processing);
-                historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
             }
             catch (Exception e)
             {
