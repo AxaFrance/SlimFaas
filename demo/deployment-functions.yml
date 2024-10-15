@@ -14,14 +14,14 @@ spec:
         app: fibonacci1
       annotations:
         SlimFaas/Function: "true"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "5"
         SlimFaas/NumberParallelRequest : "1"
     spec:
       serviceAccountName: default
       automountServiceAccountToken: false
       containers:
         - name: fibonacci1
-          image: axaguildev/fibonacci:0.24.16
+          image: axaguildev/fibonacci:0.24.18
           livenessProbe:
             httpGet:
               path: /health
@@ -58,14 +58,14 @@ spec:
         app: fibonacci2
       annotations:
         SlimFaas/Function: "true"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "5"
         SlimFaas/DependsOn: "fibonacci1,mysql"
     spec:
       serviceAccountName: default
       automountServiceAccountToken: false
       containers:
         - name: fibonacci2
-          image: axaguildev/fibonacci:0.24.16
+          image: axaguildev/fibonacci:0.24.18
           livenessProbe:
             httpGet:
               path: /health
@@ -102,14 +102,14 @@ spec:
         app: fibonacci3
       annotations:
         SlimFaas/Function: "true"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "60"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "120"
         SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
     spec:
       serviceAccountName: default
       automountServiceAccountToken: false
       containers:
         - name: fibonacci3
-          image: axaguildev/fibonacci:0.24.16
+          image: axaguildev/fibonacci:0.24.18
           livenessProbe:
             httpGet:
               path: /health
@@ -150,7 +150,7 @@ spec:
         SlimFaas/Function: "true"
         SlimFaas/ReplicasMin: "0"
         SlimFaas/ReplicasAtStart: "2"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "60"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "120"
         SlimFaas/DefaultVisibility : "Private"
         SlimFaas/SubscribeEvents : "Public:fibo-public,Private:fibo-private"
     spec:
@@ -158,7 +158,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci4
-          image: axaguildev/fibonacci:0.24.16
+          image: axaguildev/fibonacci:0.24.18
           livenessProbe:
             httpGet:
               path: /health
