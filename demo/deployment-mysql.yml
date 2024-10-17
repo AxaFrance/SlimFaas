@@ -35,10 +35,7 @@ spec:
         app: mysql
       annotations:
         SlimFaas/Function: "true"
-        SlimFaas/ReplicasMin: "0"
-        SlimFaas/ReplicasAtStart: "1"
-        #SlimFaas/ReplicasStartAsSoonAsOneFunctionRetrieveARequest: "true"
-        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "10"
+        SlimFaas/TimeoutSecondBeforeSetReplicasMin: "5"
     spec:
       containers:
         - image: mysql:5.6
@@ -60,6 +57,7 @@ spec:
               cpu: 600m
               memory: 1024Mi
             requests:
+              ephemeral-storage: "200Mi"
               cpu: 300m
               memory: 512Mi
       volumes:
