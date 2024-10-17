@@ -177,7 +177,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         await MasterWaitForleaseToken();
 
         SlimDataPayload data = SimplePersistentState.Invoke();
-        long result = data.Queues.TryGetValue(key, out List<ReadOnlyMemory<byte>>? value) ? value.Count : 0L;
+        long result = data.Queues.TryGetValue(key, out List<QueueElement>? value) ? value.Count : 0L;
         return result;
     }
 
