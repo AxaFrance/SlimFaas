@@ -124,18 +124,16 @@ public class Endpoints
                 Console.WriteLine("Master node is waiting for lease token");
                 await Task.Delay(10);
             }
+            var nowTicks = DateTime.UtcNow.Ticks;
             var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
             if (queues.TryGetValue(key, out var queue))
             {
-                for (var i = 0; i < count; i++)
-                {
-                    if (queue.Count <= i) break;
-                    values.Items.Add(queue[i].Value.ToArray());
-                }
+                var queueElements = queue.GetQueueAvailableElement([2, 6, 10], nowTicks, count);
+                values.Items.AddRange(queueElements.Select(x => x.Value.ToArray()));
                 
                 var logEntry =
                     provider.Interpreter.CreateLogEntry(
-                        new ListRightPopCommand { Key = key, Count = count },
+                        new ListRightPopCommand { Key = key, Count = count, NowTicks = nowTicks },
                         cluster.Term);
                 await cluster.ReplicateAsync(logEntry, source.Token);
             }

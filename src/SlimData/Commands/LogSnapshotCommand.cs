@@ -31,7 +31,15 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
             {
                 result += Encoding.UTF8.GetByteCount(queue.Key);
                 result += sizeof(Int32); // 4 bytes for queue count
-                queue.Value.ForEach(x => result += x.Value.Length + sizeof(Int32) + sizeof(Int64) + sizeof(Int64));
+                queue.Value.ForEach(x =>
+                {
+                    result += x.Value.Length + Encoding.UTF8.GetByteCount(x.Id) + sizeof(Int64);
+                    result += sizeof(Int32); // 4 bytes for hashset count
+                    foreach (var retryQueueElement in x.RetryQueueElements)
+                    {
+                        result += sizeof(Int64) * 2 + sizeof(Int32);
+                    }
+                });
             }
 
             // compute length of the serialized data, in bytes
@@ -70,9 +78,15 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                 await writer.WriteLittleEndianAsync(queue.Value.Count, token).ConfigureAwait(false);
                 foreach (var value in queue.Value){
                     await writer.WriteAsync(value.Value, LengthFormat.Compressed, token).ConfigureAwait(false);
-                    await writer.WriteLittleEndianAsync(value.InsertTimeStamp,  token).ConfigureAwait(false);
-                    await writer.WriteLittleEndianAsync(value.RetryNumber,  token).ConfigureAwait(false);
-                    await writer.WriteLittleEndianAsync(value.LastAccessTimeStamp, token).ConfigureAwait(false);
+                    await writer.EncodeAsync(value.Id.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
+                    await writer.WriteBigEndianAsync(value.InsertTimeStamp,  token).ConfigureAwait(false);
+                    await writer.WriteLittleEndianAsync(value.RetryQueueElements.Count, token).ConfigureAwait(false);
+                    foreach (var retryQueueElement in value.RetryQueueElements)
+                    {
+                        await writer.WriteBigEndianAsync(retryQueueElement.StartTimeStamp, token).ConfigureAwait(false);
+                        await writer.WriteBigEndianAsync(retryQueueElement.EndTimeStamp, token).ConfigureAwait(false);
+                        await writer.WriteLittleEndianAsync(retryQueueElement.HttpCode, token).ConfigureAwait(false);
+                    };
                 }
             }
 
@@ -120,11 +134,20 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                 while (countQueue-- > 0)
                 {
                     using var value = await reader.ReadAsync(LengthFormat.Compressed, token: token).ConfigureAwait(false);
+                    var id = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
+                        .ConfigureAwait(false);
                     var insertTimeStamp = await reader.ReadBigEndianAsync<Int64>(token);
-                    var retryNumber = await reader.ReadLittleEndianAsync<Int32>(token);
-                    var lastAccessTimeStamp = await reader.ReadBigEndianAsync<Int64>(token);
+                    var countRetryQueueElements = await reader.ReadLittleEndianAsync<Int32>(token);
+                    var retryQueueElements = new List<RetryQueueElement>(countRetryQueueElements);
+                    while (countRetryQueueElements-- > 0)
+                    {
+                        var startTimestamp = await reader.ReadBigEndianAsync<Int64>(token);
+                        var endTimestamp = await reader.ReadBigEndianAsync<Int64>(token);
+                        var httpCode = await reader.ReadLittleEndianAsync<Int32>(token);
+                        retryQueueElements.Add(new RetryQueueElement(startTimestamp, endTimestamp, httpCode));
+                    }
                     
-                    queue.Add(new QueueElement(value.Memory, insertTimeStamp, retryNumber, lastAccessTimeStamp));
+                    queue.Add(new QueueElement(value.Memory, id.ToString(), insertTimeStamp, retryQueueElements));
                 }
 
                 queues.Add(key.ToString(), queue);

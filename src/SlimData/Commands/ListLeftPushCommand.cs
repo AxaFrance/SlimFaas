@@ -10,9 +10,10 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
     public const int Id = 13;
 
     public string Key { get; set; }
+    
     public ReadOnlyMemory<byte> Value { get; set; }
 
-    long? IDataTransferObject.Length => sizeof(int) + Value.Length;
+    long? IDataTransferObject.Length => Encoding.UTF8.GetByteCount(Key)  + Value.Length;
 
     public async ValueTask WriteToAsync<TWriter>(TWriter writer, CancellationToken token)
         where TWriter : notnull, IAsyncBinaryWriter

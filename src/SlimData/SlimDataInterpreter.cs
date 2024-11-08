@@ -3,12 +3,121 @@ using SlimData.Commands;
 
 namespace SlimData;
 
+
+
 public record SlimDataState(
     Dictionary<string, Dictionary<string, string>> hashsets,
     Dictionary<string, ReadOnlyMemory<byte>> keyValues,
     Dictionary<string, List<QueueElement>> queues);
 
-public record QueueElement(ReadOnlyMemory<byte> Value, long InsertTimeStamp, int RetryNumber=0, long LastAccessTimeStamp=0);
+public record QueueElement(
+    ReadOnlyMemory<byte> Value,
+    string Id,
+    long InsertTimeStamp, 
+    IList<RetryQueueElement> RetryQueueElements);
+
+public class RetryQueueElement(long StartTimeStamp=0, long EndTimeStamp=0, int HttpCode=0)
+{
+    public long StartTimeStamp { get; set; } = StartTimeStamp;
+    public long EndTimeStamp { get;set; } = EndTimeStamp;
+    public int HttpCode { get;set; } = HttpCode;
+}
+
+public static class QueueElementExtensions
+{
+    
+    public static IList<QueueElement> GetQueueTimeoutElement(this IList<QueueElement?> element, long nowTicks, int timeout=30)
+    {
+        var timeoutElements = new List<QueueElement>();
+        foreach (var queueElement in element)
+        {
+            if(queueElement.RetryQueueElements.Count > 0)
+            {
+                var retryQueueElement = queueElement.RetryQueueElements[^1];
+                if (retryQueueElement.EndTimeStamp == 0 &&
+                    retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeout).Ticks <= nowTicks)
+                {
+                    timeoutElements.Add(queueElement);
+                }
+            }
+           
+        }
+        return timeoutElements;
+    }
+    
+    public static IList<QueueElement> GetQueueRunningElement(this IList<QueueElement?> element, long nowTicks, int timeout=30)
+    {
+        var runningElement = new List<QueueElement>();
+        foreach (var queueElement in element)
+        {
+            if(queueElement.RetryQueueElements.Count > 0)
+            {
+                var retryQueueElement = queueElement.RetryQueueElements[^1];
+                if (retryQueueElement.EndTimeStamp == 0 &&
+                    retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeout).Ticks > nowTicks)
+                {
+                    runningElement.Add(queueElement);
+                }
+            }
+           
+        }
+        return runningElement;
+    }
+    
+    public static IList<QueueElement> GetQueueAvailableElement(this IList<QueueElement?> element, List<int> retries, long nowTicks, int maximum)
+    {
+        var currentCount = 0;
+        var availableElements = new List<QueueElement>();
+        foreach (var queueElement in element)
+        {
+            if (currentCount == maximum)
+            {
+                return availableElements;
+            }
+            var count = queueElement.RetryQueueElements.Count;
+            if (count == 0)
+            {
+                availableElements.Add(queueElement);
+                currentCount++;
+            }
+            else
+            {
+                var retryQueueElement = queueElement.RetryQueueElements[^1];
+                if (retryQueueElement.HttpCode >= 400 
+                    && retries.Count <= count 
+                    && retryQueueElement.EndTimeStamp != 0 
+                    && nowTicks > retryQueueElement.EndTimeStamp + TimeSpan.FromSeconds(retries[count - 1]).Ticks 
+                    )
+                {
+                    availableElements.Add(queueElement);
+                    currentCount++;
+                }
+            }
+           
+        }
+        return availableElements;
+    }
+    
+    public static IList<QueueElement> GetQueueFinishedElement(this IList<QueueElement?> element, List<int> retries)
+    {
+        var runningElement = new List<QueueElement>();
+        foreach (var queueElement in element)
+        {
+            var count = queueElement.RetryQueueElements.Count;
+            if(count > 0)
+            {
+                var retryQueueElement = queueElement.RetryQueueElements[^1];
+                if (retryQueueElement.HttpCode is >= 200 and < 400 || retries.Count <= count)
+                {
+                    runningElement.Add(queueElement);
+                }
+            }
+           
+        }
+        return runningElement;
+    }
+
+}
 
 
 #pragma warning restore CA2252
@@ -22,15 +131,36 @@ public class SlimDataInterpreter : CommandInterpreter
     {
         return DoListRightPopAsync(addHashSetCommand, SlimDataState.queues);
     }
+    
+    private static readonly List<int> Retries = [2, 6, 10];
+    private static readonly int RetryTimeout = 30;
+    private static readonly int NumberParralel = 1;
 
     internal static ValueTask DoListRightPopAsync(ListRightPopCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
     {
         if (queues.TryGetValue(addHashSetCommand.Key, out var queue))
-            for (var i = 0; i < addHashSetCommand.Count; i++)
-                if (queue.Count > 0)
-                    queue.RemoveAt(0);
-                else
-                    break;
+        {
+            var nowTicks =addHashSetCommand.NowTicks;
+            var queueTimeoutElements = queue.GetQueueTimeoutElement(nowTicks, RetryTimeout);
+            foreach (var queueTimeoutElement in queueTimeoutElements)
+            {
+                var retryQueueElement = queueTimeoutElement.RetryQueueElements[^1];
+                retryQueueElement.EndTimeStamp = nowTicks;
+                retryQueueElement.HttpCode = 520;
+            }
+            
+            var queueFinishedElements = queue.GetQueueFinishedElement(Retries);
+            foreach (var queueFinishedElement in queueFinishedElements)
+            {
+                queue.Remove(queueFinishedElement);
+            }
+            
+            var queueAvailableElements = queue.GetQueueAvailableElement(Retries, nowTicks, addHashSetCommand.Count);
+            foreach (var queueAvailableElement in queueAvailableElements)
+            {
+                queueAvailableElement.RetryQueueElements.Add(new RetryQueueElement(nowTicks));
+            }
+        }
 
         return default;
     }
@@ -44,9 +174,9 @@ public class SlimDataInterpreter : CommandInterpreter
     internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
     {
         if (queues.TryGetValue(addHashSetCommand.Key, out List<QueueElement>? value))
-            value.Add(new QueueElement(addHashSetCommand.Value, DateTime.UtcNow.Ticks));
+            value.Add(new QueueElement(addHashSetCommand.Value, Guid.NewGuid().ToString(), DateTime.UtcNow.Ticks,new List<RetryQueueElement>()));
         else
-            queues.Add(addHashSetCommand.Key, new List<QueueElement>() {new(addHashSetCommand.Value, DateTime.UtcNow.Ticks)});
+            queues.Add(addHashSetCommand.Key, new List<QueueElement>() {new(addHashSetCommand.Value,Guid.NewGuid().ToString(), DateTime.UtcNow.Ticks,new List<RetryQueueElement>())});
 
         return default;
     }
