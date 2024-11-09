@@ -254,8 +254,8 @@ public class RaftClusterTests
         long listLength = await databaseServiceSlave.ListLengthAsync("listKey1");
         Assert.Equal(1, listLength);
 
-        IList<byte[]> listRightPop = await databaseServiceSlave.ListRightPopAsync("listKey1");
-        Assert.Equal("value1", MemoryPackSerializer.Deserialize<string>(listRightPop[0]));
+        IDictionary<string, byte[]> listRightPop = await databaseServiceSlave.ListRightPopAsync("listKey1");
+        Assert.Equal("value1", MemoryPackSerializer.Deserialize<string>(listRightPop.First().Value));
 
         await host1.StopAsync();
         await host2.StopAsync();

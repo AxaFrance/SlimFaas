@@ -6,9 +6,9 @@ namespace SlimData;
 
 
 public record SlimDataState(
-    Dictionary<string, Dictionary<string, string>> hashsets,
-    Dictionary<string, ReadOnlyMemory<byte>> keyValues,
-    Dictionary<string, List<QueueElement>> queues);
+    Dictionary<string, Dictionary<string, string>> Hashsets,
+    Dictionary<string, ReadOnlyMemory<byte>> KeyValues,
+    Dictionary<string, List<QueueElement>> Queues);
 
 public record QueueElement(
     ReadOnlyMemory<byte> Value,
@@ -16,109 +16,12 @@ public record QueueElement(
     long InsertTimeStamp, 
     IList<RetryQueueElement> RetryQueueElements);
 
-public class RetryQueueElement(long StartTimeStamp=0, long EndTimeStamp=0, int HttpCode=0)
+public class RetryQueueElement(long startTimeStamp=0, long endTimeStamp=0, int httpCode=0)
 {
-    public long StartTimeStamp { get; set; } = StartTimeStamp;
-    public long EndTimeStamp { get;set; } = EndTimeStamp;
-    public int HttpCode { get;set; } = HttpCode;
+    public long StartTimeStamp { get; set; } = startTimeStamp;
+    public long EndTimeStamp { get;set; } = endTimeStamp;
+    public int HttpCode { get;set; } = httpCode;
 }
-
-public static class QueueElementExtensions
-{
-    
-    public static IList<QueueElement> GetQueueTimeoutElement(this IList<QueueElement?> element, long nowTicks, int timeout=30)
-    {
-        var timeoutElements = new List<QueueElement>();
-        foreach (var queueElement in element)
-        {
-            if(queueElement.RetryQueueElements.Count > 0)
-            {
-                var retryQueueElement = queueElement.RetryQueueElements[^1];
-                if (retryQueueElement.EndTimeStamp == 0 &&
-                    retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeout).Ticks <= nowTicks)
-                {
-                    timeoutElements.Add(queueElement);
-                }
-            }
-           
-        }
-        return timeoutElements;
-    }
-    
-    public static IList<QueueElement> GetQueueRunningElement(this IList<QueueElement?> element, long nowTicks, int timeout=30)
-    {
-        var runningElement = new List<QueueElement>();
-        foreach (var queueElement in element)
-        {
-            if(queueElement.RetryQueueElements.Count > 0)
-            {
-                var retryQueueElement = queueElement.RetryQueueElements[^1];
-                if (retryQueueElement.EndTimeStamp == 0 &&
-                    retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeout).Ticks > nowTicks)
-                {
-                    runningElement.Add(queueElement);
-                }
-            }
-           
-        }
-        return runningElement;
-    }
-    
-    public static IList<QueueElement> GetQueueAvailableElement(this IList<QueueElement?> element, List<int> retries, long nowTicks, int maximum)
-    {
-        var currentCount = 0;
-        var availableElements = new List<QueueElement>();
-        foreach (var queueElement in element)
-        {
-            if (currentCount == maximum)
-            {
-                return availableElements;
-            }
-            var count = queueElement.RetryQueueElements.Count;
-            if (count == 0)
-            {
-                availableElements.Add(queueElement);
-                currentCount++;
-            }
-            else
-            {
-                var retryQueueElement = queueElement.RetryQueueElements[^1];
-                if (retryQueueElement.HttpCode >= 400 
-                    && retries.Count <= count 
-                    && retryQueueElement.EndTimeStamp != 0 
-                    && nowTicks > retryQueueElement.EndTimeStamp + TimeSpan.FromSeconds(retries[count - 1]).Ticks 
-                    )
-                {
-                    availableElements.Add(queueElement);
-                    currentCount++;
-                }
-            }
-           
-        }
-        return availableElements;
-    }
-    
-    public static IList<QueueElement> GetQueueFinishedElement(this IList<QueueElement?> element, List<int> retries)
-    {
-        var runningElement = new List<QueueElement>();
-        foreach (var queueElement in element)
-        {
-            var count = queueElement.RetryQueueElements.Count;
-            if(count > 0)
-            {
-                var retryQueueElement = queueElement.RetryQueueElements[^1];
-                if (retryQueueElement.HttpCode is >= 200 and < 400 || retries.Count <= count)
-                {
-                    runningElement.Add(queueElement);
-                }
-            }
-           
-        }
-        return runningElement;
-    }
-
-}
-
 
 #pragma warning restore CA2252
 public class SlimDataInterpreter : CommandInterpreter
@@ -129,7 +32,7 @@ public class SlimDataInterpreter : CommandInterpreter
     [CommandHandler]
     public ValueTask ListRightPopAsync(ListRightPopCommand addHashSetCommand, CancellationToken token)
     {
-        return DoListRightPopAsync(addHashSetCommand, SlimDataState.queues);
+        return DoListRightPopAsync(addHashSetCommand, SlimDataState.Queues);
     }
     
     private static readonly List<int> Retries = [2, 6, 10];
@@ -168,7 +71,7 @@ public class SlimDataInterpreter : CommandInterpreter
     [CommandHandler]
     public ValueTask ListLeftPushAsync(ListLeftPushCommand addHashSetCommand, CancellationToken token)
     {
-        return DoListLeftPushAsync(addHashSetCommand, SlimDataState.queues);
+        return DoListLeftPushAsync(addHashSetCommand, SlimDataState.Queues);
     }
     
     internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
@@ -180,11 +83,32 @@ public class SlimDataInterpreter : CommandInterpreter
 
         return default;
     }
+    
+    [CommandHandler]
+    public ValueTask ListSetQueueItemStatusAsync(ListSetQueueItemStatusCommand addHashSetCommand, CancellationToken token)
+    {
+        return DoListSetQueueItemStatusAsync(addHashSetCommand, SlimDataState.Queues);
+    }
+    
+    internal static ValueTask DoListSetQueueItemStatusAsync(ListSetQueueItemStatusCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
+    {
+        if (!queues.TryGetValue(addHashSetCommand.Key, out List<QueueElement>? value)) return default;
+        var queueElement = value.Find(x => x.Id == addHashSetCommand.Identifier);
+        if (queueElement != null)
+        {
+            var retryQueueElement = queueElement.RetryQueueElements[^1];
+            retryQueueElement.EndTimeStamp = DateTime.UtcNow.Ticks;
+            retryQueueElement.HttpCode = addHashSetCommand.HttpCode;
+        }
+        return default;
+    }
+    
+    
 
     [CommandHandler]
     public ValueTask AddHashSetAsync(AddHashSetCommand addHashSetCommand, CancellationToken token)
     {
-        return DoAddHashSetAsync(addHashSetCommand, SlimDataState.hashsets);
+        return DoAddHashSetAsync(addHashSetCommand, SlimDataState.Hashsets);
     }
     
     internal static ValueTask DoAddHashSetAsync(AddHashSetCommand addHashSetCommand, Dictionary<string, Dictionary<string, string>> hashsets)
@@ -196,7 +120,7 @@ public class SlimDataInterpreter : CommandInterpreter
     [CommandHandler]
     public ValueTask AddKeyValueAsync(AddKeyValueCommand valueCommand, CancellationToken token)
     {
-        return DoAddKeyValueAsync(valueCommand, SlimDataState.keyValues);
+        return DoAddKeyValueAsync(valueCommand, SlimDataState.KeyValues);
     }
     
     internal static ValueTask DoAddKeyValueAsync(AddKeyValueCommand valueCommand, Dictionary<string, ReadOnlyMemory<byte>> keyValues)
@@ -208,9 +132,9 @@ public class SlimDataInterpreter : CommandInterpreter
     [CommandHandler(IsSnapshotHandler = true)]
     public ValueTask HandleSnapshotAsync(LogSnapshotCommand command, CancellationToken token)
     {
-        SlimDataState = SlimDataState with { keyValues = command.keysValues };
-        SlimDataState = SlimDataState with { queues = command.queues };
-        SlimDataState = SlimDataState with { hashsets = command.hashsets };
+        SlimDataState = SlimDataState with { KeyValues = command.keysValues };
+        SlimDataState = SlimDataState with { Queues = command.queues };
+        SlimDataState = SlimDataState with { Hashsets = command.hashsets };
         return default;
     }
     
@@ -238,11 +162,11 @@ public class SlimDataInterpreter : CommandInterpreter
     
     public static CommandInterpreter InitInterpreter(SlimDataState state)   
     {
-        ValueTask ListRightPopHandler(ListRightPopCommand command, CancellationToken token) => DoListRightPopAsync(command, state.queues);
-        ValueTask ListLeftPushHandler(ListLeftPushCommand command, CancellationToken token) => DoListLeftPushAsync(command, state.queues);
-        ValueTask AddHashSetHandler(AddHashSetCommand command, CancellationToken token) => DoAddHashSetAsync(command, state.hashsets);
-        ValueTask AddKeyValueHandler(AddKeyValueCommand command, CancellationToken token) => DoAddKeyValueAsync(command, state.keyValues);
-        ValueTask SnapshotHandler(LogSnapshotCommand command, CancellationToken token) => DoHandleSnapshotAsync(command, state.keyValues, state.hashsets, state.queues);
+        ValueTask ListRightPopHandler(ListRightPopCommand command, CancellationToken token) => DoListRightPopAsync(command, state.Queues);
+        ValueTask ListLeftPushHandler(ListLeftPushCommand command, CancellationToken token) => DoListLeftPushAsync(command, state.Queues);
+        ValueTask AddHashSetHandler(AddHashSetCommand command, CancellationToken token) => DoAddHashSetAsync(command, state.Hashsets);
+        ValueTask AddKeyValueHandler(AddKeyValueCommand command, CancellationToken token) => DoAddKeyValueAsync(command, state.KeyValues);
+        ValueTask SnapshotHandler(LogSnapshotCommand command, CancellationToken token) => DoHandleSnapshotAsync(command, state.KeyValues, state.Hashsets, state.Queues);
 
         var interpreter = new Builder()
             .Add(ListRightPopCommand.Id, (Func<ListRightPopCommand, CancellationToken, ValueTask>)ListRightPopHandler)

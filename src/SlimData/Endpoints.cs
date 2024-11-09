@@ -1,6 +1,7 @@
 ﻿using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using MemoryPack;
+using Microsoft.Extensions.Primitives;
 using SlimData.Commands;
 
 namespace SlimData;
@@ -106,7 +107,7 @@ public class Endpoints
         CancellationTokenSource source)
     {
         var values = new ListString();
-        values.Items = new List<byte[]>();
+        values.Items = new Dictionary<string, byte[]>();
 
         if(SemaphoreSlims.TryGetValue(key, out var semaphoreSlim))
         {
@@ -129,7 +130,10 @@ public class Endpoints
             if (queues.TryGetValue(key, out var queue))
             {
                 var queueElements = queue.GetQueueAvailableElement([2, 6, 10], nowTicks, count);
-                values.Items.AddRange(queueElements.Select(x => x.Value.ToArray()));
+                foreach (var queueElement in queueElements)
+                {
+                    values.Items[queueElement.Id] = queueElement.Value.ToArray();
+                }
                 
                 var logEntry =
                     provider.Interpreter.CreateLogEntry(
@@ -173,6 +177,42 @@ public class Endpoints
             provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
                 cluster.Term);
         await cluster.ReplicateAsync(logEntry, source.Token);
+    }
+    
+    public record QueueItemStatus(string Id, int HttpCode);
+    
+    public static Task ListSetQueueItemStatusCommand(HttpContext context)
+    {
+        return DoAsync(context, async (cluster, provider, source) =>
+        {
+            context.Request.Query.TryGetValue("key", out var key);
+            if (string.IsNullOrEmpty(key))
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                await context.Response.WriteAsync("not data found", context.RequestAborted);
+                return;
+            }
+            
+            var inputStream = context.Request.Body;
+            await using var memoryStream = new MemoryStream();
+            await inputStream.CopyToAsync(memoryStream, source.Token);
+            var value = memoryStream.ToArray();
+            var list = MemoryPackSerializer.Deserialize<List<QueueItemStatus>>(value);
+            await ListSetQueueItemStatus(provider, key, list, cluster, source);
+        });
+    }
+
+    private static async Task ListSetQueueItemStatus(SlimPersistentState provider, StringValues key, List<QueueItemStatus> list, IRaftCluster cluster, CancellationTokenSource source)
+    {
+        foreach (var queueItemStatus in list)
+        {
+            var logEntry =
+                provider.Interpreter.CreateLogEntry(new ListSetQueueItemStatusCommand { Identifier = queueItemStatus.Id, 
+                        Key = key,
+                        HttpCode = queueItemStatus.HttpCode },
+                    cluster.Term);
+            await cluster.ReplicateAsync(logEntry, source.Token);
+        }
     }
 
     private static (string key, string value) GetKeyValue(IFormCollection form)

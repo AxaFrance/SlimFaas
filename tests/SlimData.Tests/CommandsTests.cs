@@ -19,9 +19,9 @@ public class CommandsTests
         using var wal = new SlimPersistentState(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
         var entry1 = wal.CreateLogEntry(new ListLeftPushCommand { Key  = "youhou" , Value  = bytes });
         await wal.AppendAsync(entry1);
-        Assert.Empty(wal.SlimDataState.queues);
+        Assert.Empty(wal.SlimDataState.Queues);
         await wal.CommitAsync(CancellationToken.None);
-        Assert.Equal(bytes, wal.SlimDataState.queues["youhou"].First().Value.ToArray());
+        Assert.Equal(bytes, wal.SlimDataState.Queues["youhou"].First().Value.ToArray());
 
         var bin = MemoryPackSerializer.Serialize(3);
         var final = MemoryPackSerializer.Deserialize<int>(bin);

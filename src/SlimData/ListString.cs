@@ -6,5 +6,5 @@ namespace SlimData;
 [MemoryPackable]
 public partial class ListString 
 {
-    public List<byte[]> Items { get; set; }
+    public IDictionary<string, byte[]> Items { get; set; }
 }

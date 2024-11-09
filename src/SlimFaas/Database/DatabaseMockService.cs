@@ -74,15 +74,15 @@ public class DatabaseMockService : IDatabaseService
         return Task.CompletedTask;
     }
 
-    public Task<IList<byte[]>> ListRightPopAsync(string key, int count = 1)
+    public Task<IDictionary<string, byte[]>> ListRightPopAsync(string key, int count = 1)
     {
         if (!queue.ContainsKey(key))
         {
-            return Task.FromResult<IList<byte[]>>(new List<byte[]>());
+            return Task.FromResult<IDictionary<string, byte[]>>(new Dictionary<string, byte[]>());
         }
 
         List<byte[]> list = queue[key];
-
+        IDictionary<string, byte[]> dictionaryToReturn = new Dictionary<string, byte[]>();
         List<byte[]> listToReturn = list.TakeLast((int)count).ToList();
         if (listToReturn.Count > 0)
         {

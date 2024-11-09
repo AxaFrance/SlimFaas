@@ -132,12 +132,12 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         }
     }
 
-    public async Task<IList<byte[]>> ListRightPopAsync(string key, int count = 1)
+    public async Task<IDictionary<string, byte[]>> ListRightPopAsync(string key, int count = 1)
     {
-        return await Retry.Do(() =>DoListRightPopAsync(key, count), _retryInterval, logger, MaxAttemptCount);
+        return await Retry.Do(() => DoListRightPopAsync(key, count), _retryInterval, logger, MaxAttemptCount);
     }
 
-    private async Task<IList<byte[]>> DoListRightPopAsync(string key, int count = 1)
+    private async Task<IDictionary<string, byte[]>> DoListRightPopAsync(string key, int count = 1)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
@@ -162,13 +162,40 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
             var bin = await response.Content.ReadAsByteArrayAsync();
             ListString? result = MemoryPackSerializer.Deserialize<ListString>(bin);
-            return result?.Items ?? new List<byte[]>();
+            return result?.Items ?? new Dictionary<string, byte[]>();
+        }
+    }
+
+    public async Task ListSetQueueItemStatus(string key, IList<Endpoints.QueueItemStatus> queueItemStatus)
+    {
+        await Retry.Do(() => DoListSetQueueItemStatus(key, queueItemStatus), _retryInterval, logger, MaxAttemptCount);
+    }
+
+    private async Task DoListSetQueueItemStatus(string key, IList<Endpoints.QueueItemStatus> queueItemStatus)
+    {
+        var field = MemoryPackSerializer.Serialize(queueItemStatus);
+        EndPoint endpoint = await GetAndWaitForLeader();
+        if (!cluster.LeadershipToken.IsCancellationRequested)
+        {
+            var simplePersistentState = serviceProvider.GetRequiredService<SlimPersistentState>();
+            await Endpoints.ListSetQueueItemStatusCommand(simplePersistentState, key, field, cluster, new CancellationTokenSource());
+        }
+        else
+        {
+            using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListSetQueueItemStatus?key={key}"));
+            request.Content = new ByteArrayContent(field);
+            using var httpClient = httpClientFactory.CreateClient(HttpClientName);
+            using HttpResponseMessage response = await httpClient.SendAsync(request);
+            if ((int)response.StatusCode >= 500)
+            {
+                throw new DataException("Error in calling SlimData HTTP Service");
+            }
         }
     }
 
     public async Task<long> ListLengthAsync(string key)
     {
-        return await Retry.Do(() =>DoListLengthAsync(key), _retryInterval, logger, MaxAttemptCount);
+        return await Retry.Do(() => DoListLengthAsync(key), _retryInterval, logger, MaxAttemptCount);
     }
 
     private async Task<long> DoListLengthAsync(string key)
@@ -177,8 +204,13 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         await MasterWaitForleaseToken();
 
         SlimDataPayload data = SimplePersistentState.Invoke();
-        long result = data.Queues.TryGetValue(key, out List<QueueElement>? value) ? value.Count : 0L;
-        return result;
+
+        if (data.Queues.TryGetValue(key, out List<QueueElement>? value))
+        {
+            return value.GetQueueAvailableElement([2, 6, 10], DateTime.UtcNow.Ticks, int.MaxValue).Count;
+        }
+
+        return 0L;
     }
 
     private async Task MasterWaitForleaseToken()
@@ -210,7 +242,6 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 #pragma warning restore CA2252
 public static class Retry
 {
-
 
     public static T Do<T>(
         Func<T> action,

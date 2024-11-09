@@ -4,7 +4,7 @@ using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
-internal record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest);
+internal record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest, string id);
 
 public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasService,
         HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider,
@@ -78,11 +78,11 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         string functionDeployment)
     {
         int? numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
-        IList<byte[]> jsons = await slimFaasQueue.DequeueAsync(functionDeployment,
+        IDictionary<string, byte[]> jsons = await slimFaasQueue.DequeueAsync(functionDeployment,
             numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue : 1);
         foreach (var requestJson in jsons)
         {
-            CustomRequest customRequest = MemoryPackSerializer.Deserialize<CustomRequest>(requestJson);
+            CustomRequest customRequest = MemoryPackSerializer.Deserialize<CustomRequest>(requestJson.Value);
 
             logger.LogDebug("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
                 customRequest.Method, customRequest.Path, customRequest.Query);
@@ -91,7 +91,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
             using IServiceScope scope = serviceProvider.CreateScope();
             Task<HttpResponseMessage> taskResponse = scope.ServiceProvider.GetRequiredService<ISendClient>()
                 .SendHttpRequestAsync(customRequest);
-            processingTasks[functionDeployment].Add(new RequestToWait(taskResponse, customRequest));
+            processingTasks[functionDeployment].Add(new RequestToWait(taskResponse, customRequest, requestJson.Key));
         }
     }
 
