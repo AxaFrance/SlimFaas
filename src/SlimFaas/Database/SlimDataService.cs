@@ -132,12 +132,12 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         }
     }
 
-    public async Task<IDictionary<string, byte[]>> ListRightPopAsync(string key, int count = 1)
+    public async Task<IList<QueueData>> ListRightPopAsync(string key, int count = 1)
     {
         return await Retry.Do(() => DoListRightPopAsync(key, count), _retryInterval, logger, MaxAttemptCount);
     }
 
-    private async Task<IDictionary<string, byte[]>> DoListRightPopAsync(string key, int count = 1)
+    private async Task<IList<QueueData>> DoListRightPopAsync(string key, int count = 1)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
@@ -162,7 +162,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
             var bin = await response.Content.ReadAsByteArrayAsync();
             ListString? result = MemoryPackSerializer.Deserialize<ListString>(bin);
-            return result?.Items ?? new Dictionary<string, byte[]>();
+            return result?.Items ?? new List<QueueData>();
         }
     }
 
@@ -173,16 +173,17 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     private async Task DoListSetQueueItemStatus(string key, IList<Endpoints.QueueItemStatus> queueItemStatus)
     {
-        var field = MemoryPackSerializer.Serialize(queueItemStatus);
+
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
         {
             var simplePersistentState = serviceProvider.GetRequiredService<SlimPersistentState>();
-            await Endpoints.ListSetQueueItemStatusCommand(simplePersistentState, key, field, cluster, new CancellationTokenSource());
+            await Endpoints.ListSetQueueItemStatusCommand(simplePersistentState, key, queueItemStatus, cluster, new CancellationTokenSource());
         }
         else
         {
             using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListSetQueueItemStatus?key={key}"));
+            var field = MemoryPackSerializer.Serialize(queueItemStatus);
             request.Content = new ByteArrayContent(field);
             using var httpClient = httpClientFactory.CreateClient(HttpClientName);
             using HttpResponseMessage response = await httpClient.SendAsync(request);

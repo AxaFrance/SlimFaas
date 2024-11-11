@@ -1,7 +1,6 @@
 ﻿using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using MemoryPack;
-using Microsoft.Extensions.Primitives;
 using SlimData.Commands;
 
 namespace SlimData;
@@ -107,7 +106,7 @@ public class Endpoints
         CancellationTokenSource source)
     {
         var values = new ListString();
-        values.Items = new Dictionary<string, byte[]>();
+        values.Items = new List<QueueData>();
 
         if(SemaphoreSlims.TryGetValue(key, out var semaphoreSlim))
         {
@@ -132,7 +131,7 @@ public class Endpoints
                 var queueElements = queue.GetQueueAvailableElement([2, 6, 10], nowTicks, count);
                 foreach (var queueElement in queueElements)
                 {
-                    values.Items[queueElement.Id] = queueElement.Value.ToArray();
+                    values.Items.Add(new QueueData(queueElement.Id ,queueElement.Value.ToArray()));
                 }
                 
                 var logEntry =
@@ -181,7 +180,7 @@ public class Endpoints
     
     public record QueueItemStatus(string Id, int HttpCode);
     
-    public static Task ListSetQueueItemStatusCommand(HttpContext context)
+    public static Task ListSetQueueItemStatus(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
@@ -198,16 +197,17 @@ public class Endpoints
             await inputStream.CopyToAsync(memoryStream, source.Token);
             var value = memoryStream.ToArray();
             var list = MemoryPackSerializer.Deserialize<List<QueueItemStatus>>(value);
-            await ListSetQueueItemStatus(provider, key, list, cluster, source);
+            await ListSetQueueItemStatusCommand(provider, key, list, cluster, source);
         });
     }
 
-    private static async Task ListSetQueueItemStatus(SlimPersistentState provider, StringValues key, List<QueueItemStatus> list, IRaftCluster cluster, CancellationTokenSource source)
+    public static async Task ListSetQueueItemStatusCommand(SlimPersistentState provider, string key, IList<QueueItemStatus> list, IRaftCluster cluster, CancellationTokenSource source)
     {
         foreach (var queueItemStatus in list)
         {
             var logEntry =
-                provider.Interpreter.CreateLogEntry(new ListSetQueueItemStatusCommand { Identifier = queueItemStatus.Id, 
+                provider.Interpreter.CreateLogEntry(new ListSetQueueItemStatusCommand { 
+                        Identifier = queueItemStatus.Id, 
                         Key = key,
                         HttpCode = queueItemStatus.HttpCode },
                     cluster.Term);

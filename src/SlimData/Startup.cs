@@ -23,6 +23,7 @@ public class Startup(IConfiguration configuration)
         const string ListLeftPushResource = "/SlimData/ListLeftPush";
         const string AddKeyValueResource = "/SlimData/AddKeyValue";
         const string ListLengthResource = "/SlimData/ListLength";
+        const string ListSetQueueItemStatus = "/SlimData/ListSetQueueItemStatus";
         const string HealthResource = "/health";
 
         app.UseConsensusProtocolHandler()
@@ -32,6 +33,7 @@ public class Startup(IConfiguration configuration)
             .RedirectToLeader(ListRightPopResource)
             .RedirectToLeader(AddKeyValueResource)
             .RedirectToLeader(AddHashSetResource)
+            .RedirectToLeader(ListSetQueueItemStatus)
             .UseRouting()
             .UseEndpoints(static endpoints =>
             {
@@ -41,6 +43,7 @@ public class Startup(IConfiguration configuration)
                 endpoints.MapPost(ListRightPopResource,  Endpoints.ListRightPop);
                 endpoints.MapPost(AddHashSetResource,  Endpoints.AddHashSet);
                 endpoints.MapPost(AddKeyValueResource,  Endpoints.AddKeyValue);
+                endpoints.MapPost(ListSetQueueItemStatus,  Endpoints.ListSetQueueItemStatus);
             });
     }
 
