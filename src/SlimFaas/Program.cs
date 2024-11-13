@@ -198,8 +198,8 @@ serviceCollectionSlimFaas.AddHttpClient<ISendClient, SendClient>()
         }
 
         return httpClientHandler;
-    })
-    .AddPolicyHandler(GetRetryPolicy());
+    });
+    //.AddPolicyHandler(GetRetryPolicy());
 
 if (!string.IsNullOrEmpty(podDataDirectoryPersistantStorage))
 {

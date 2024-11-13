@@ -41,7 +41,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
             {
                 string functionDeployment = function.Deployment;
                 setTickLastCallCounterDictionary.TryAdd(functionDeployment, 0);
-                int numberProcessingTasks = ManageProcessingTasks(processingTasks, functionDeployment);
+                int numberProcessingTasks = await ManageProcessingTasksAsync(slimFaasQueue, processingTasks, functionDeployment);
                 int? numberLimitProcessingTasks = ComputeNumberLimitProcessingTasks(slimFaas, function);
                 setTickLastCallCounterDictionary[functionDeployment]++;
                 int functionReplicas = function.Replicas;
@@ -132,14 +132,14 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         return numberLimitProcessingTasks;
     }
 
-    private int ManageProcessingTasks(ISlimFaasQueue slimFaasQueue, Dictionary<string, IList<RequestToWait>> processingTasks,
+    private async Task<int> ManageProcessingTasksAsync(ISlimFaasQueue slimFaasQueue, Dictionary<string, IList<RequestToWait>> processingTasks,
         string functionDeployment)
     {
         if (processingTasks.ContainsKey(functionDeployment) == false)
         {
             processingTasks.Add(functionDeployment, new List<RequestToWait>());
         }
-
+        var queueItemStatusList = new List<Endpoints.QueueItemStatus>();
         List<RequestToWait> httpResponseMessagesToDelete = new();
         foreach (RequestToWait processing in processingTasks[functionDeployment])
         {
@@ -152,28 +152,30 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                 }
 
                 HttpResponseMessage httpResponseMessage = processing.Task.Result;
+                var statusCode = (int)httpResponseMessage.StatusCode;
+
                 httpResponseMessage.Dispose();
                 logger.LogDebug(
                     "{CustomRequestMethod}: /async-function/{CustomRequestPath}{CustomRequestQuery} {StatusCode}",
                     processing.CustomRequest.Method, processing.CustomRequest.Path, processing.CustomRequest.Query,
                     httpResponseMessage.StatusCode);
                 httpResponseMessagesToDelete.Add(processing);
+                queueItemStatusList.Add(new Endpoints.QueueItemStatus(processing.id, statusCode));
             }
             catch (Exception e)
             {
+                queueItemStatusList.Add(new Endpoints.QueueItemStatus(processing.id, 500));
                 httpResponseMessagesToDelete.Add(processing);
                 logger.LogWarning("Request Error: {Message} {StackTrace}", e.Message, e.StackTrace);
                 historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
             }
         }
 
-        var list = new List<Endpoints.QueueItemStatus>();
         foreach (RequestToWait httpResponseMessage in httpResponseMessagesToDelete)
         {
-            list.Add(new Endpoints.QueueItemStatus());
             processingTasks[functionDeployment].Remove(httpResponseMessage);
         }
-        slimFaasQueue.ListSetQueueItemStatus(functionDeployment,
+        await slimFaasQueue.ListSetQueueItemStatusAsync(functionDeployment, queueItemStatusList);
 
         int numberProcessingTasks = processingTasks[functionDeployment].Count;
         return numberProcessingTasks;

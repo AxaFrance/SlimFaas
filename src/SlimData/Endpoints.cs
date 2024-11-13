@@ -102,10 +102,10 @@ public class Endpoints
     }
     
     private static readonly IDictionary<string,SemaphoreSlim> SemaphoreSlims = new Dictionary<string, SemaphoreSlim>();
-    public static async Task<ListString> ListRightPopCommand(SlimPersistentState provider, string key, int count, IRaftCluster cluster,
+    public static async Task<ListItems> ListRightPopCommand(SlimPersistentState provider, string key, int count, IRaftCluster cluster,
         CancellationTokenSource source)
     {
-        var values = new ListString();
+        var values = new ListItems();
         values.Items = new List<QueueData>();
 
         if(SemaphoreSlims.TryGetValue(key, out var semaphoreSlim))

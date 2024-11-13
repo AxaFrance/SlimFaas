@@ -3,10 +3,11 @@ using MemoryPack;
 
 namespace SlimData;
 
-public record QueueData(string Id, byte[] Data);
+[MemoryPackable]
+public partial record QueueData(string Id, byte[] Data);
 
 [MemoryPackable]
-public partial class ListString 
+public partial class ListItems 
 {
     public List<QueueData> Items { get; set; }
 }

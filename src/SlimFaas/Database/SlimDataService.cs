@@ -161,7 +161,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
             }
 
             var bin = await response.Content.ReadAsByteArrayAsync();
-            ListString? result = MemoryPackSerializer.Deserialize<ListString>(bin);
+            ListItems? result = MemoryPackSerializer.Deserialize<ListItems>(bin);
             return result?.Items ?? new List<QueueData>();
         }
     }
