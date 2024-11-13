@@ -1,7 +1,17 @@
-﻿namespace SlimData;
+﻿using System.Net;
+
+namespace SlimData;
 
 public static class QueueElementExtensions
 {
+    public static HttpStatusCode[] httpStatusCodesWorthRetrying =
+    {
+        HttpStatusCode.RequestTimeout, // 408
+        HttpStatusCode.InternalServerError, // 500
+        HttpStatusCode.BadGateway, // 502
+        HttpStatusCode.ServiceUnavailable, // 503
+        HttpStatusCode.GatewayTimeout // 504
+    };
     
     public static List<QueueElement> GetQueueTimeoutElement(this List<QueueElement> element, long nowTicks, int timeout=30)
     {

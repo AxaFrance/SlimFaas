@@ -178,6 +178,7 @@ public class Endpoints
         await cluster.ReplicateAsync(logEntry, source.Token);
     }
     
+    [MemoryPackable]
     public record QueueItemStatus(string Id, int HttpCode);
     
     public static Task ListSetQueueItemStatus(HttpContext context)
