@@ -5,6 +5,10 @@ using SlimData.Commands;
 
 namespace SlimData;
 
+    
+[MemoryPackable]
+public partial record QueueItemStatus(string Id, int HttpCode);
+
 public class Endpoints
 {
     public delegate Task RespondDelegate(IRaftCluster cluster, SlimPersistentState provider,
@@ -177,9 +181,6 @@ public class Endpoints
                 cluster.Term);
         await cluster.ReplicateAsync(logEntry, source.Token);
     }
-    
-    [MemoryPackable]
-    public partial record QueueItemStatus(string Id, int HttpCode);
     
     public static Task ListSetQueueItemStatus(HttpContext context)
     {

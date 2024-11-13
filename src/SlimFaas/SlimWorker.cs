@@ -139,7 +139,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         {
             processingTasks.Add(functionDeployment, new List<RequestToWait>());
         }
-        var queueItemStatusList = new List<Endpoints.QueueItemStatus>();
+        var queueItemStatusList = new List<QueueItemStatus>();
         List<RequestToWait> httpResponseMessagesToDelete = new();
         foreach (RequestToWait processing in processingTasks[functionDeployment])
         {
@@ -160,11 +160,11 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                     processing.CustomRequest.Method, processing.CustomRequest.Path, processing.CustomRequest.Query,
                     httpResponseMessage.StatusCode);
                 httpResponseMessagesToDelete.Add(processing);
-                queueItemStatusList.Add(new Endpoints.QueueItemStatus(processing.id, statusCode));
+                queueItemStatusList.Add(new QueueItemStatus(processing.id, statusCode));
             }
             catch (Exception e)
             {
-                queueItemStatusList.Add(new Endpoints.QueueItemStatus(processing.id, 500));
+                queueItemStatusList.Add(new QueueItemStatus(processing.id, 500));
                 httpResponseMessagesToDelete.Add(processing);
                 logger.LogWarning("Request Error: {Message} {StackTrace}", e.Message, e.StackTrace);
                 historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);

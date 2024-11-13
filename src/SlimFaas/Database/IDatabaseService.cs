@@ -11,5 +11,5 @@ public interface IDatabaseService
     Task ListLeftPushAsync(string key, byte[] field);
     Task<IList<QueueData>> ListRightPopAsync(string key, int count = 1);
     Task<long> ListLengthAsync(string key);
-    Task ListSetQueueItemStatus(string key, List<Endpoints.QueueItemStatus> queueItemStatus);
+    Task ListSetQueueItemStatus(string key, List<QueueItemStatus> queueItemStatus);
 }
