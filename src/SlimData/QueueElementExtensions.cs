@@ -1,16 +1,14 @@
-﻿using System.Net;
-
-namespace SlimData;
+﻿namespace SlimData;
 
 public static class QueueElementExtensions
 {
-    public static HttpStatusCode[] httpStatusCodesWorthRetrying =
+    public static int[] httpStatusCodesWorthRetrying =
     {
-        HttpStatusCode.RequestTimeout, // 408
-        HttpStatusCode.InternalServerError, // 500
-        HttpStatusCode.BadGateway, // 502
-        HttpStatusCode.ServiceUnavailable, // 503
-        HttpStatusCode.GatewayTimeout // 504
+        408 , // HttpStatusCode.RequestTimeout, // 408
+        500, // HttpStatusCode.InternalServerError, // 500
+        502, // HttpStatusCode.BadGateway, // 502
+        503, //HttpStatusCode.ServiceUnavailable, // 503
+        504, // HttpStatusCode.GatewayTimeout // 504
     };
     
     public static List<QueueElement> GetQueueTimeoutElement(this List<QueueElement> element, long nowTicks, int timeout=30)
@@ -70,7 +68,7 @@ public static class QueueElementExtensions
             else
             {
                 var retryQueueElement = queueElement.RetryQueueElements[^1];
-                if (retryQueueElement.HttpCode >= 400 
+                if (httpStatusCodesWorthRetrying.Contains( retryQueueElement.HttpCode)
                     && retries.Count <= count 
                     && retryQueueElement.EndTimeStamp != 0 
                     && nowTicks > retryQueueElement.EndTimeStamp + TimeSpan.FromSeconds(retries[count - 1]).Ticks 
@@ -87,21 +85,21 @@ public static class QueueElementExtensions
     
     public static IList<QueueElement> GetQueueFinishedElement(this IList<QueueElement?> element, List<int> retries)
     {
-        var runningElement = new List<QueueElement>();
+        var queueFinishedElement = new List<QueueElement>();
         foreach (var queueElement in element)
         {
             var count = queueElement.RetryQueueElements.Count;
             if(count > 0)
             {
                 var retryQueueElement = queueElement.RetryQueueElements[^1];
-                if (retryQueueElement.HttpCode is >= 200 and < 400 || retries.Count <= count)
+                if (retryQueueElement.HttpCode is >= 0 and < 400 || retries.Count <= count)
                 {
-                    runningElement.Add(queueElement);
+                    queueFinishedElement.Add(queueElement);
                 }
             }
            
         }
-        return runningElement;
+        return queueFinishedElement;
     }
 
 }

@@ -179,7 +179,7 @@ public class Endpoints
     }
     
     [MemoryPackable]
-    public record QueueItemStatus(string Id, int HttpCode);
+    public partial record QueueItemStatus(string Id, int HttpCode);
     
     public static Task ListSetQueueItemStatus(HttpContext context)
     {
