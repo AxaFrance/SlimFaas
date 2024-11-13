@@ -6,6 +6,6 @@ public interface ISlimFaasQueue
 {
     Task EnqueueAsync(string key, byte[] message);
     Task<IList<QueueData>> DequeueAsync(string key, long count = 1);
-    Task ListSetQueueItemStatusAsync(string key, IList<Endpoints.QueueItemStatus> queueItemStatus);
+    Task ListSetQueueItemStatusAsync(string key, List<Endpoints.QueueItemStatus> queueItemStatus);
     public Task<long> CountAsync(string key);
 }

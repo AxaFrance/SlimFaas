@@ -77,7 +77,7 @@ internal class MemorySlimFaasQueue : ISlimFaasQueue
 
     public Task<long> CountAsync(string key) => throw new NotImplementedException();
 
-    public Task ListSetQueueItemStatusAsync(string key, IList<Endpoints.QueueItemStatus> queueItemStatus) => throw new NotImplementedException();
+    public Task ListSetQueueItemStatusAsync(string key, List<Endpoints.QueueItemStatus> queueItemStatus) => throw new NotImplementedException();
 
     public async Task EnqueueAsync(string key, byte[] message) => await Task.Delay(100);
 }
