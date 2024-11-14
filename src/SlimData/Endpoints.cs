@@ -7,7 +7,7 @@ namespace SlimData;
 
     
 [MemoryPackable]
-public partial record QueueItemStatus(string Id, int HttpCode);
+public partial record QueueItemStatus(string Id="", int HttpCode=0);
 
 public class Endpoints
 {
