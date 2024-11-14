@@ -79,8 +79,12 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         string functionDeployment)
     {
         int? numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
-        IList<QueueData> jsons = await slimFaasQueue.DequeueAsync(functionDeployment,
+        IList<QueueData>? jsons = await slimFaasQueue.DequeueAsync(functionDeployment,
             numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue : 1);
+        if (jsons == null)
+        {
+            return;
+        }
         foreach (var requestJson in jsons)
         {
             CustomRequest customRequest = MemoryPackSerializer.Deserialize<CustomRequest>(requestJson.Data);

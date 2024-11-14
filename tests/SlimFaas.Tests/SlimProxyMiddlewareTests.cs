@@ -73,7 +73,7 @@ internal class MemoryReplicas2ReplicasService : IReplicasService
 
 internal class MemorySlimFaasQueue : ISlimFaasQueue
 {
-    public Task<IList<QueueData>> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
+    public Task<IList<QueueData>?> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
 
     public Task<long> CountAsync(string key) => throw new NotImplementedException();
 

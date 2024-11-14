@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DotNext.Collections.Generic;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
@@ -68,7 +70,9 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
     FunctionVisibility Visibility = FunctionVisibility.Public,
     IList<string>? PathsStartWithVisibility = null,
     IList<string>? ExcludeDeploymentsFromVisibilityPrivate = null,
-    string ResourceVersion = ""
+    string ResourceVersion = "",
+    IList<int>? AsynchrounousRetry = null,
+    IList<int>? SynchrounousRetry = null
     );
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
@@ -91,6 +95,10 @@ public class KubernetesService : IKubernetesService
 
     private const string TimeoutSecondBeforeSetReplicasMin = "SlimFaas/TimeoutSecondBeforeSetReplicasMin";
     private const string NumberParallelRequest = "SlimFaas/NumberParallelRequest";
+    private const string SynchrounousRetry = "SlimFaas/SynchrounousRetry";
+    private const string AsynchrounousRetry = "SlimFaas/AsynchrounousRetry";
+
+
     private const string SlimfaasDeploymentName = "slimfaas";
     private readonly ILogger<KubernetesService> _logger;
     private readonly k8s.Kubernetes _client;
@@ -201,6 +209,23 @@ public class KubernetesService : IKubernetesService
         }
     }
 
+    private static IList<int> ReadRetryAnnotation( IDictionary<string, string>? annotations)
+    {
+        if (annotations != null && annotations.TryGetValue(AsynchrounousRetry, out string? valueAsynchrounousRetry))
+        {
+            var result = new List<int>();
+            var array = valueAsynchrounousRetry.Split(';');
+            foreach (string s in array)
+            {
+                result.Add( int.Parse(s, NumberStyles.Integer));
+            }
+
+            return result;
+        }
+
+        return new List<int>(){2, 4, 8};
+    }
+
     private static void AddDeployments(string kubeNamespace, V1DeploymentList deploymentList, IEnumerable<PodInformation> podList,
         IList<DeploymentInformation> deploymentInformationList, ILogger<KubernetesService> logger)
     {
@@ -251,7 +276,9 @@ public class KubernetesService : IKubernetesService
                         ? valueUrlsStartWithVisibility.Split(',').ToList()
                         : new List<string>(),
                     annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
-                    deploymentListItem.Metadata.ResourceVersion
+                    deploymentListItem.Metadata.ResourceVersion,
+                    AsynchrounousRetry: ReadRetryAnnotation(annotations),
+                    SynchrounousRetry: ReadRetryAnnotation(annotations)
                     );
                 deploymentInformationList.Add(deploymentInformation);
             }
@@ -329,7 +356,9 @@ public class KubernetesService : IKubernetesService
                         ? valueUrlsStartWithVisibility.Split(',').ToList()
                         : new List<string>(),
                     annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
-                    deploymentListItem.Metadata.ResourceVersion);
+                    deploymentListItem.Metadata.ResourceVersion,
+                    AsynchrounousRetry: ReadRetryAnnotation(annotations),
+                    SynchrounousRetry: ReadRetryAnnotation(annotations));
 
                 deploymentInformationList.Add(deploymentInformation);
             }

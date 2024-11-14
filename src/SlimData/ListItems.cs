@@ -6,7 +6,7 @@ namespace SlimData;
 public partial record QueueData(string Id, byte[] Data);
 
 [MemoryPackable]
-public partial class ListItems 
+public partial record ListItems 
 {
-    public List<QueueData> Items { get; set; }
+    public List<QueueData>? Items { get; set; }
 }

@@ -132,12 +132,12 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         }
     }
 
-    public async Task<IList<QueueData>> ListRightPopAsync(string key, int count = 1)
+    public async Task<IList<QueueData>?> ListRightPopAsync(string key, int count = 1)
     {
         return await Retry.Do(() => DoListRightPopAsync(key, count), _retryInterval, logger, MaxAttemptCount);
     }
 
-    private async Task<IList<QueueData>> DoListRightPopAsync(string key, int count = 1)
+    private async Task<IList<QueueData>?> DoListRightPopAsync(string key, int count = 1)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)

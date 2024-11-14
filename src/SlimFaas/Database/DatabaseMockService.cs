@@ -75,11 +75,11 @@ public class DatabaseMockService : IDatabaseService
         return Task.CompletedTask;
     }
 
-    public Task<IList<QueueData>> ListRightPopAsync(string key, int count = 1)
+    public Task<IList<QueueData>?> ListRightPopAsync(string key, int count = 1)
     {
         if (!queue.ContainsKey(key))
         {
-            return Task.FromResult<IList<QueueData>>(new List<QueueData>());
+            return Task.FromResult<IList<QueueData>?>(new List<QueueData>());
         }
 
         var list = queue[key];
@@ -87,10 +87,10 @@ public class DatabaseMockService : IDatabaseService
         if (listToReturn.Count > 0)
         {
             list.RemoveRange(listToReturn.Count - 1, listToReturn.Count);
-            return Task.FromResult<IList<QueueData>>(listToReturn);
+            return Task.FromResult<IList<QueueData>?>(listToReturn);
         }
 
-        return Task.FromResult<IList<QueueData>>(new List<QueueData>());
+        return Task.FromResult<IList<QueueData>?>(new List<QueueData>());
     }
 
     public Task<long> ListLengthAsync(string key)

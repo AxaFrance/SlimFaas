@@ -2,14 +2,14 @@
 
 public static class QueueElementExtensions
 {
-    public static int[] httpStatusCodesWorthRetrying =
-    {
-        408 , // HttpStatusCode.RequestTimeout, // 408
-        500, // HttpStatusCode.InternalServerError, // 500
-        502, // HttpStatusCode.BadGateway, // 502
-        503, //HttpStatusCode.ServiceUnavailable, // 503
-        504, // HttpStatusCode.GatewayTimeout // 504
-    };
+    public static int[] HttpStatusCodesWorthRetrying =
+    [
+        408 , // HttpStatusCode.RequestTimeout,
+        500, // HttpStatusCode.InternalServerError, 
+        502, // HttpStatusCode.BadGateway, 
+        503, // HttpStatusCode.ServiceUnavailable,
+        504  // HttpStatusCode.GatewayTimeout 
+    ];
     
     public static List<QueueElement> GetQueueTimeoutElement(this List<QueueElement> element, long nowTicks, int timeout=30)
     {
@@ -68,7 +68,7 @@ public static class QueueElementExtensions
             else
             {
                 var retryQueueElement = queueElement.RetryQueueElements[^1];
-                if (httpStatusCodesWorthRetrying.Contains( retryQueueElement.HttpCode)
+                if (HttpStatusCodesWorthRetrying.Contains(retryQueueElement.HttpCode)
                     && retries.Count <= count 
                     && retryQueueElement.EndTimeStamp != 0 
                     && nowTicks > retryQueueElement.EndTimeStamp + TimeSpan.FromSeconds(retries[count - 1]).Ticks 
