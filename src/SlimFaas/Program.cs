@@ -2,8 +2,6 @@ using System.Net;
 using System.Text.Json;
 using DotNext.Net.Cluster.Consensus.Raft.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Polly;
-using Polly.Extensions.Http;
 using Prometheus;
 using SlimData;
 using SlimFaas;
@@ -315,25 +313,6 @@ app.Run();
 
 serviceProviderStarter.Dispose();
 
-static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
-{
-    return HttpPolicyExtensions
-        .HandleTransientHttpError()
-        .OrResult(msg =>
-        {
-            HttpStatusCode[] httpStatusCodesWorthRetrying =
-            {
-                HttpStatusCode.RequestTimeout, // 408
-                HttpStatusCode.InternalServerError, // 500
-                HttpStatusCode.BadGateway, // 502
-                HttpStatusCode.ServiceUnavailable, // 503
-                HttpStatusCode.GatewayTimeout // 504
-            };
-            return httpStatusCodesWorthRetrying.Contains(msg.StatusCode);
-        })
-        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
-            retryAttempt)));
-}
 
 
 public partial class Program
