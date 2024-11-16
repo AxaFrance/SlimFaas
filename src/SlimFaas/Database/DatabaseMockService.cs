@@ -105,7 +105,7 @@ public class DatabaseMockService : IDatabaseService
         return Task.FromResult<long>(list.Count);
     }
 
-    public async Task ListSetQueueItemStatus(string key, List<QueueItemStatus> queueItemStatus)
+    public async Task ListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus)
     {
         await Task.Delay(100);
     }

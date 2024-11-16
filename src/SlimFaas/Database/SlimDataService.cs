@@ -166,12 +166,12 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         }
     }
 
-    public async Task ListSetQueueItemStatus(string key, List<QueueItemStatus> queueItemStatus)
+    public async Task ListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus)
     {
         await Retry.Do(() => DoListSetQueueItemStatus(key, queueItemStatus), _retryInterval, logger, MaxAttemptCount);
     }
 
-    private async Task DoListSetQueueItemStatus(string key, List<QueueItemStatus> queueItemStatus)
+    private async Task DoListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus)
     {
 
         EndPoint endpoint = await GetAndWaitForLeader();

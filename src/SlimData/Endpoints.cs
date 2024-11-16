@@ -6,8 +6,15 @@ using SlimData.Commands;
 namespace SlimData;
 
     
+
 [MemoryPackable]
 public partial record QueueItemStatus(string Id="", int HttpCode=0);
+
+[MemoryPackable]
+public partial record ListQueueItemStatus
+{
+    public List<QueueItemStatus>? Items { get; set; }
+}
 
 public class Endpoints
 {
@@ -198,20 +205,27 @@ public class Endpoints
             await using var memoryStream = new MemoryStream();
             await inputStream.CopyToAsync(memoryStream, source.Token);
             var value = memoryStream.ToArray();
-            var list = MemoryPackSerializer.Deserialize<List<QueueItemStatus>>(value);
+            var list = MemoryPackSerializer.Deserialize<ListQueueItemStatus>(value);
             await ListSetQueueItemStatusCommand(provider, key, list, cluster, source);
         });
     }
 
-    public static async Task ListSetQueueItemStatusCommand(SlimPersistentState provider, string key, IList<QueueItemStatus> list, IRaftCluster cluster, CancellationTokenSource source)
+    public static async Task ListSetQueueItemStatusCommand(SlimPersistentState provider, string key, ListQueueItemStatus list, IRaftCluster cluster, CancellationTokenSource source)
     {
-        foreach (var queueItemStatus in list)
+        if (list.Items == null)
+        {
+            return;
+        }
+
+        foreach (var queueItemStatus in list.Items)
         {
             var logEntry =
-                provider.Interpreter.CreateLogEntry(new ListSetQueueItemStatusCommand { 
-                        Identifier = queueItemStatus.Id, 
+                provider.Interpreter.CreateLogEntry(new ListSetQueueItemStatusCommand
+                    {
+                        Identifier = queueItemStatus.Id,
                         Key = key,
-                        HttpCode = queueItemStatus.HttpCode },
+                        HttpCode = queueItemStatus.HttpCode
+                    },
                     cluster.Term);
             await cluster.ReplicateAsync(logEntry, source.Token);
         }

@@ -143,7 +143,9 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         {
             processingTasks.Add(functionDeployment, new List<RequestToWait>());
         }
+        var listQueueItemStatus = new ListQueueItemStatus();
         var queueItemStatusList = new List<QueueItemStatus>();
+        listQueueItemStatus.Items = queueItemStatusList;
         List<RequestToWait> httpResponseMessagesToDelete = new();
         foreach (RequestToWait processing in processingTasks[functionDeployment])
         {
@@ -179,7 +181,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         {
             processingTasks[functionDeployment].Remove(httpResponseMessage);
         }
-        await slimFaasQueue.ListSetQueueItemStatusAsync(functionDeployment, queueItemStatusList);
+        await slimFaasQueue.ListSetQueueItemStatusAsync(functionDeployment, listQueueItemStatus);
 
         int numberProcessingTasks = processingTasks[functionDeployment].Count;
         return numberProcessingTasks;
