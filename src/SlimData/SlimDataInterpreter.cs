@@ -166,6 +166,7 @@ public class SlimDataInterpreter : CommandInterpreter
         ValueTask ListLeftPushHandler(ListLeftPushCommand command, CancellationToken token) => DoListLeftPushAsync(command, state.Queues);
         ValueTask AddHashSetHandler(AddHashSetCommand command, CancellationToken token) => DoAddHashSetAsync(command, state.Hashsets);
         ValueTask AddKeyValueHandler(AddKeyValueCommand command, CancellationToken token) => DoAddKeyValueAsync(command, state.KeyValues);
+        ValueTask ListSetQueueItemStatusAsync(ListSetQueueItemStatusCommand command, CancellationToken token) => DoListSetQueueItemStatusAsync(command, new Dictionary<string, List<QueueElement>>()  );
         ValueTask SnapshotHandler(LogSnapshotCommand command, CancellationToken token) => DoHandleSnapshotAsync(command, state.KeyValues, state.Hashsets, state.Queues);
 
         var interpreter = new Builder()
@@ -173,6 +174,7 @@ public class SlimDataInterpreter : CommandInterpreter
             .Add(ListLeftPushCommand.Id, (Func<ListLeftPushCommand, CancellationToken, ValueTask>)ListLeftPushHandler)
             .Add(AddHashSetCommand.Id, (Func<AddHashSetCommand, CancellationToken, ValueTask>)AddHashSetHandler)
             .Add(AddKeyValueCommand.Id, (Func<AddKeyValueCommand, CancellationToken, ValueTask>)AddKeyValueHandler)
+            .Add(ListSetQueueItemStatusCommand.Id, (Func<ListSetQueueItemStatusCommand, CancellationToken, ValueTask>)ListSetQueueItemStatusAsync)
             .Add(LogSnapshotCommand.Id, (Func<LogSnapshotCommand, CancellationToken, ValueTask>)SnapshotHandler, true)
             .Build();
 
