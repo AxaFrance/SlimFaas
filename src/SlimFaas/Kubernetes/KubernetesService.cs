@@ -383,6 +383,9 @@ public class KubernetesService : IKubernetesService
             bool ready = containerStatus?.Ready ?? false;
             bool started = containerStatus?.Started ?? false;
             bool running = containerStatus?.State.Running != null;
+            // I need the state when readiness probe is ok
+            bool? podReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "Ready")?.Status == "True";
+
             string? podName = item.Metadata.Name;
             string deploymentName = item.Metadata.OwnerReferences[0].Name;
             PodInformation podInformation = new(podName, started, running, podIp, deploymentName);
