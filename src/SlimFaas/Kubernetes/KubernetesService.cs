@@ -382,9 +382,10 @@ public class KubernetesService : IKubernetesService
             V1ContainerStatus? containerStatus = item.Status.ContainerStatuses.FirstOrDefault();
             bool ready = containerStatus?.Ready ?? false;
             bool started = containerStatus?.Started ?? false;
+            bool running = containerStatus?.State.Running != null;
             string? podName = item.Metadata.Name;
             string deploymentName = item.Metadata.OwnerReferences[0].Name;
-            PodInformation podInformation = new(podName, started, ready, podIp, deploymentName);
+            PodInformation podInformation = new(podName, started, running, podIp, deploymentName);
             yield return podInformation;
         }
     }
