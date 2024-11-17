@@ -388,9 +388,35 @@ public class KubernetesService : IKubernetesService
             // I want the state when the pod is ready to receive http request
             bool podReadyHttp = item.Status.Conditions.FirstOrDefault(c => c.Type == "PodScheduled")?.Status == "True";
 
+            // display pod name
+            Console.WriteLine("------------------");
+            Console.WriteLine(item.Metadata.Name);
+            // I want display all conditions
+            foreach (V1PodCondition v1PodCondition in item.Status.Conditions)
+            {
+                Console.WriteLine(v1PodCondition.Type);
+                Console.WriteLine(v1PodCondition.Status);
+                Console.WriteLine(v1PodCondition.LastProbeTime);
+                Console.WriteLine(v1PodCondition.LastTransitionTime);
+                Console.WriteLine(v1PodCondition.Reason);
+                Console.WriteLine(v1PodCondition.Message);
+            }
+            Console.WriteLine("------");
+            // I want to get readiness probe status
+            var status = item.Status.ContainerStatuses;
+            foreach (V1ContainerStatus v1ContainerStatus in status)
+            {
+                Console.WriteLine(v1ContainerStatus.Name);
+                Console.WriteLine(v1ContainerStatus.Ready);
+                Console.WriteLine(v1ContainerStatus.State.Running);
+                Console.WriteLine(v1ContainerStatus.State.Terminated);
+                Console.WriteLine(v1ContainerStatus.State.Waiting);
+            }
+            Console.WriteLine("------------------");
+
             string? podName = item.Metadata.Name;
             string deploymentName = item.Metadata.OwnerReferences[0].Name;
-            PodInformation podInformation = new(podName, started, podReadyHttp, podIp, deploymentName);
+            PodInformation podInformation = new(podName, started, podReady, podIp, deploymentName);
             yield return podInformation;
         }
     }
