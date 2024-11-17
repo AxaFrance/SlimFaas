@@ -379,6 +379,8 @@ public class KubernetesService : IKubernetesService
                 continue;
             }
 
+            // I want to get the state when the pod is ready to receive http request
+
             V1ContainerStatus? containerStatus = item.Status.ContainerStatuses.FirstOrDefault();
             bool ready = containerStatus?.Ready ?? false;
             bool started = containerStatus?.Started ?? false;
@@ -387,6 +389,9 @@ public class KubernetesService : IKubernetesService
             bool? podReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "Ready")?.Status == "True";
             // I want the state when the pod is ready to receive http request
             bool podReadyHttp = item.Status.Conditions.FirstOrDefault(c => c.Type == "PodScheduled")?.Status == "True";
+
+            // I want the state when the container is ready and 1 second after the container is ready
+
             bool containerReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "ContainersReady")?.Status == "True";
 
             // display pod name
@@ -425,6 +430,35 @@ public class KubernetesService : IKubernetesService
             PodInformation podInformation = new(podName, started, containerReady, podIp, deploymentName);
             yield return podInformation;
         }
+    }
+
+    private static bool PodReady(V1Pod pod)
+    {
+        DateTime readyTime = DateTime.MinValue;
+
+        foreach (var condition in pod.Status.Conditions)
+        {
+            if (condition.Type == "Ready" && condition.Status == "True")
+            {
+                readyTime = condition.LastTransitionTime ?? DateTime.UtcNow; // Convertir le timestamp en UTC
+                break;
+            }
+        }
+
+        if (readyTime != DateTime.MinValue)
+        {
+            TimeSpan timeSinceReady = DateTime.UtcNow - readyTime; // Utiliser DateTime.UtcNow pour obtenir le temps actuel en UTC
+
+            if (timeSinceReady.TotalSeconds > 1)
+            {
+                // Attendre que le temps écoulé depuis l'état "ready" soit supérieur à 1 seconde avant d'exécuter une action
+                // Par exemple, effectuer une requête HTTP vers le pod
+                return true;
+            }
+
+        }
+
+        return false;
     }
 
 }
