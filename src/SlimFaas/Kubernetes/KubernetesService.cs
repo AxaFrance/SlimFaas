@@ -387,6 +387,7 @@ public class KubernetesService : IKubernetesService
             bool? podReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "Ready")?.Status == "True";
             // I want the state when the pod is ready to receive http request
             bool podReadyHttp = item.Status.Conditions.FirstOrDefault(c => c.Type == "PodScheduled")?.Status == "True";
+            bool containerReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "ContainersReady")?.Status == "True";
 
             // display pod name
             if (item.Metadata.Name.Contains("fibonacci1"))
@@ -421,7 +422,7 @@ public class KubernetesService : IKubernetesService
 
             string? podName = item.Metadata.Name;
             string deploymentName = item.Metadata.OwnerReferences[0].Name;
-            PodInformation podInformation = new(podName, started, podReady, podIp, deploymentName);
+            PodInformation podInformation = new(podName, started, containerReady, podIp, deploymentName);
             yield return podInformation;
         }
     }
