@@ -51,9 +51,15 @@ public static class QueueElementExtensions
     
     public static List<QueueElement> GetQueueAvailableElement(this List<QueueElement> element, List<int> retries, long nowTicks, int maximum)
     {
-        var currentCount = 0;
+        var runningElement = GetQueueRunningElement(element, nowTicks);
         var availableElements = new List<QueueElement>();
-        foreach (var queueElement in element)
+        var currentCount = runningElement.Count;
+        if (currentCount >= maximum)
+        {
+            return availableElements;
+        }
+        var currentElements = element.Except(runningElement);
+        foreach (var queueElement in currentElements)
         {
             if (currentCount == maximum)
             {
