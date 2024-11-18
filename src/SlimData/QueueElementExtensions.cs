@@ -30,7 +30,7 @@ public static class QueueElementExtensions
         return timeoutElements;
     }
     
-    public static List<QueueElement> GetQueueRunningElement(this List<QueueElement> element, long nowTicks, int timeout=30)
+    public static List<QueueElement> GetQueueRunningElement(this List<QueueElement> element, long nowTicks, int timeoutSeconds=30)
     {
         var runningElement = new List<QueueElement>();
         foreach (var queueElement in element)
@@ -38,8 +38,8 @@ public static class QueueElementExtensions
             if(queueElement.RetryQueueElements.Count > 0)
             {
                 var retryQueueElement = queueElement.RetryQueueElements[^1];
-                if (retryQueueElement.EndTimeStamp == 0 &&
-                    retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeout).Ticks > nowTicks)
+                if (retryQueueElement.EndTimeStamp == 0 ||
+                    retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeoutSeconds).Ticks > nowTicks)
                 {
                     runningElement.Add(queueElement);
                 }
@@ -75,9 +75,9 @@ public static class QueueElementExtensions
             {
                 var retryQueueElement = queueElement.RetryQueueElements[^1];
                 if (HttpStatusCodesWorthRetrying.Contains(retryQueueElement.HttpCode)
-                    && retries.Count <= count 
-                    && retryQueueElement.EndTimeStamp != 0 
-                    && nowTicks > retryQueueElement.EndTimeStamp + TimeSpan.FromSeconds(retries[count - 1]).Ticks 
+                    && retries.Count < count 
+                    && (retryQueueElement.EndTimeStamp != 0 
+                    || nowTicks > retryQueueElement.EndTimeStamp + TimeSpan.FromSeconds(retries[count - 1]).Ticks )
                    )
                 {
                     availableElements.Add(queueElement);
@@ -98,7 +98,7 @@ public static class QueueElementExtensions
             if(count > 0)
             {
                 var retryQueueElement = queueElement.RetryQueueElements[^1];
-                if (retryQueueElement.HttpCode is >= 0 and < 400 || retries.Count <= count)
+                if (retries.Count >= count && retryQueueElement.EndTimeStamp > 0)
                 {
                     queueFinishedElement.Add(queueElement);
                 }
