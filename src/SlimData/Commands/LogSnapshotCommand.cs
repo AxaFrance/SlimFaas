@@ -138,13 +138,13 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                         .ConfigureAwait(false);
                     var insertTimeStamp = await reader.ReadBigEndianAsync<Int64>(token);
                     var countRetryQueueElements = await reader.ReadLittleEndianAsync<Int32>(token);
-                    var retryQueueElements = new List<RetryQueueElement>(countRetryQueueElements);
+                    var retryQueueElements = new List<QueueHttpTryElement>(countRetryQueueElements);
                     while (countRetryQueueElements-- > 0)
                     {
                         var startTimestamp = await reader.ReadBigEndianAsync<Int64>(token);
                         var endTimestamp = await reader.ReadBigEndianAsync<Int64>(token);
                         var httpCode = await reader.ReadLittleEndianAsync<Int32>(token);
-                        retryQueueElements.Add(new RetryQueueElement(startTimestamp, endTimestamp, httpCode));
+                        retryQueueElements.Add(new QueueHttpTryElement(startTimestamp, endTimestamp, httpCode));
                     }
                     
                     queue.Add(new QueueElement(value.Memory, id.ToString(), insertTimeStamp, retryQueueElements));

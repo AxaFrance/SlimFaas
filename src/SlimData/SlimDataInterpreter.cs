@@ -14,9 +14,9 @@ public record QueueElement(
     ReadOnlyMemory<byte> Value,
     string Id,
     long InsertTimeStamp, 
-    IList<RetryQueueElement> RetryQueueElements);
+    IList<QueueHttpTryElement> RetryQueueElements);
 
-public class RetryQueueElement(long startTimeStamp=0, long endTimeStamp=0, int httpCode=0)
+public class QueueHttpTryElement(long startTimeStamp=0, long endTimeStamp=0, int httpCode=0)
 {
     public long StartTimeStamp { get; set; } = startTimeStamp;
     public long EndTimeStamp { get;set; } = endTimeStamp;
@@ -60,7 +60,7 @@ public class SlimDataInterpreter : CommandInterpreter
             var queueAvailableElements = queue.GetQueueAvailableElement(Retries, nowTicks, addHashSetCommand.Count);
             foreach (var queueAvailableElement in queueAvailableElements)
             {
-                queueAvailableElement.RetryQueueElements.Add(new RetryQueueElement(nowTicks));
+                queueAvailableElement.RetryQueueElements.Add(new QueueHttpTryElement(nowTicks));
             }
         }
 
@@ -76,9 +76,9 @@ public class SlimDataInterpreter : CommandInterpreter
     internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
     {
         if (queues.TryGetValue(addHashSetCommand.Key, out List<QueueElement>? value))
-            value.Add(new QueueElement(addHashSetCommand.Value, Guid.NewGuid().ToString(), DateTime.UtcNow.Ticks,new List<RetryQueueElement>()));
+            value.Add(new QueueElement(addHashSetCommand.Value, Guid.NewGuid().ToString(), DateTime.UtcNow.Ticks,new List<QueueHttpTryElement>()));
         else
-            queues.Add(addHashSetCommand.Key, new List<QueueElement>() {new(addHashSetCommand.Value,Guid.NewGuid().ToString(), DateTime.UtcNow.Ticks,new List<RetryQueueElement>())});
+            queues.Add(addHashSetCommand.Key, new List<QueueElement>() {new(addHashSetCommand.Value,Guid.NewGuid().ToString(), DateTime.UtcNow.Ticks,new List<QueueHttpTryElement>())});
 
         return default;
     }
@@ -92,7 +92,7 @@ public class SlimDataInterpreter : CommandInterpreter
     internal static ValueTask DoListSetQueueItemStatusAsync(ListSetQueueItemStatusCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
     {
         if (!queues.TryGetValue(addHashSetCommand.Key, out List<QueueElement>? value)) return default;
-        var queueElement = value.Find(x => x.Id == addHashSetCommand.Identifier);
+        var queueElement = value.FirstOrDefault(x => x.Id == addHashSetCommand.Identifier);
         if (queueElement != null)
         {
             var retryQueueElement = queueElement.RetryQueueElements[^1];
