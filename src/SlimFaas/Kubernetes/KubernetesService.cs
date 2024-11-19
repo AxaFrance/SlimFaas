@@ -395,7 +395,7 @@ public class KubernetesService : IKubernetesService
             bool containerReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "ContainersReady")?.Status == "True";
 
             // display pod name
-            if (item.Metadata.Name.Contains("fibonacci1"))
+            /*if (item.Metadata.Name.Contains("fibonacci1"))
             {
                 Console.WriteLine("------------------");
                 Console.WriteLine(item.Metadata.Name);
@@ -423,7 +423,7 @@ public class KubernetesService : IKubernetesService
                 }
 
                 Console.WriteLine("------------------");
-            }
+            }*/
 
             string? podName = item.Metadata.Name;
             string deploymentName = item.Metadata.OwnerReferences[0].Name;

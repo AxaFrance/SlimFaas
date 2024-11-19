@@ -38,7 +38,7 @@ public static class QueueElementExtensions
             if(queueElement.RetryQueueElements.Count > 0)
             {
                 var retryQueueElement = queueElement.RetryQueueElements[^1];
-                if (retryQueueElement.EndTimeStamp == 0 ||
+                if (retryQueueElement.EndTimeStamp == 0 &&
                     retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeoutSeconds).Ticks > nowTicks)
                 {
                     runningElement.Add(queueElement);
@@ -75,9 +75,9 @@ public static class QueueElementExtensions
             {
                 var retryQueueElement = queueElement.RetryQueueElements[^1];
                 if (HttpStatusCodesWorthRetrying.Contains(retryQueueElement.HttpCode)
-                    && retries.Count < count 
-                    && (retryQueueElement.EndTimeStamp != 0 
-                    || nowTicks > retryQueueElement.EndTimeStamp + TimeSpan.FromSeconds(retries[count - 1]).Ticks )
+                    && retries.Count < count
+                    && retryQueueElement.EndTimeStamp != 0
+                    && nowTicks > retryQueueElement.EndTimeStamp + TimeSpan.FromSeconds(retries[count - 1]).Ticks
                    )
                 {
                     availableElements.Add(queueElement);
@@ -89,7 +89,7 @@ public static class QueueElementExtensions
         return availableElements;
     }
     
-    public static IList<QueueElement> GetQueueFinishedElement(this IList<QueueElement?> element, List<int> retries)
+    public static IList<QueueElement> GetQueueFinishedElement(this IList<QueueElement?> element, long nowTicks, List<int> retries, int timeoutSeconds=30)
     {
         var queueFinishedElement = new List<QueueElement>();
         foreach (var queueElement in element)
@@ -98,7 +98,7 @@ public static class QueueElementExtensions
             if(count > 0)
             {
                 var retryQueueElement = queueElement.RetryQueueElements[^1];
-                if (retries.Count >= count && retryQueueElement.EndTimeStamp > 0)
+                if (retries.Count >= count && (retryQueueElement.EndTimeStamp > 0 || retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeoutSeconds).Ticks <= nowTicks))
                 {
                     queueFinishedElement.Add(queueElement);
                 }
