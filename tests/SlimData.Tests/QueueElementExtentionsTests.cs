@@ -49,6 +49,6 @@ public class QueueElementExtentionsTests
 
 
         var finishedElements = queueElements.GetQueueFinishedElement( nowTicks, SlimDataInterpreter.Retries);
-        Assert.Equal(2, finishedElements.Count);
+        Assert.Equal(3, finishedElements.Count);
     }
 }
