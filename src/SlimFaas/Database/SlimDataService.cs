@@ -207,7 +207,18 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
         if (data.Queues.TryGetValue(key, out List<QueueElement>? value))
         {
-            var number = value.GetQueueAvailableElement([2, 6, 10], DateTime.UtcNow.Ticks, int.MaxValue).Count;
+            var elements = value.GetQueueAvailableElement([2, 6, 10], DateTime.UtcNow.Ticks, int.MaxValue);
+
+            foreach (QueueElement queueElement in elements)
+            {
+                Console.WriteLine($"DoListLengthAsync: Element Id: {queueElement.Id}");
+                foreach (QueueHttpTryElement queueElementRetryQueueElement in queueElement.RetryQueueElements)
+                {
+                    Console.WriteLine($"DoListLengthAsync  StartTimeStamp: {queueElementRetryQueueElement.StartTimeStamp} EndTimeStamp: {queueElementRetryQueueElement.EndTimeStamp} HttpCode: {queueElementRetryQueueElement.HttpCode}  ");
+                }
+            }
+
+            var number = elements.Count;
             Console.WriteLine($"DoListLengthAsync: Number of available elements: {number} for key: {key}");
             return number;
         }
