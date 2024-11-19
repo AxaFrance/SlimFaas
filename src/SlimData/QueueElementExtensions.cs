@@ -13,14 +13,12 @@ public static class QueueElementExtensions
     
     public static bool IsTimeout(this QueueElement element, long nowTicks, int timeout=30)
     {
-        if(element.RetryQueueElements.Count > 0)
+        if (element.RetryQueueElements.Count <= 0) return false;
+        var retryQueueElement = element.RetryQueueElements[^1];
+        if (retryQueueElement.EndTimeStamp == 0 &&
+            retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeout).Ticks <= nowTicks)
         {
-            var retryQueueElement = element.RetryQueueElements[^1];
-            if (retryQueueElement.EndTimeStamp == 0 &&
-                retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeout).Ticks <= nowTicks)
-            {
-                return true;
-            }
+            return true;
         }
         return false;   
     }
@@ -28,19 +26,25 @@ public static class QueueElementExtensions
     public static bool IsWaitingForRetry(this QueueElement element, long nowTicks, List<int> retries, int timeoutSeconds=30)
     {
         var count = element.RetryQueueElements.Count;
-        if(count == 0) return false;
+        if(count == 0 || count > retries.Count ) return false;
         
-        if (element.IsFinished(nowTicks, retries, timeoutSeconds)) return false;
+        if(element.IsFinished(nowTicks, retries, timeoutSeconds)) return false;
 
         if(element.IsRunning(nowTicks, timeoutSeconds)) return false;
         
         var retryQueueElement = element.RetryQueueElements[^1];
         var retryTimeout = retries[count - 1];
+        if(element.IsTimeout(nowTicks, timeoutSeconds) && retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(retryTimeout).Ticks <= nowTicks)
+        {
+            return true;
+        }
+
         if (retryQueueElement.EndTimeStamp != 0 &&
             (retryQueueElement.EndTimeStamp + TimeSpan.FromSeconds(retryTimeout).Ticks > nowTicks))
         {
             return true;
         }
+        
         return false;
     }
     
@@ -123,14 +127,13 @@ public static class QueueElementExtensions
         var runningElements = elements.GetQueueRunningElement(nowTicks);
         var runningWaitingForRetryElements = elements.GetQueueWaitingForRetryElement(nowTicks, retries);
         var finishedElements = elements.GetQueueFinishedElement(nowTicks, retries, timeoutSeconds);
-        var timeoutElements = elements.GetQueueTimeoutElement(nowTicks, timeoutSeconds);
         var availableElements = new List<QueueElement>();
         var currentCount = runningElements.Count + runningWaitingForRetryElements.Count;
         if (currentCount >= maximum)
         {
             return availableElements;
         }
-        var currentElements = elements.Except(runningElements).Except(runningWaitingForRetryElements).Except(finishedElements).Except(timeoutElements);
+        var currentElements = elements.Except(runningElements).Except(runningWaitingForRetryElements).Except(finishedElements);
         foreach (var queueElement in currentElements)
         {
             if (currentCount == maximum)

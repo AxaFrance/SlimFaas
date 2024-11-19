@@ -48,7 +48,7 @@ public class SlimDataInterpreter : CommandInterpreter
             {
                 var retryQueueElement = queueTimeoutElement.RetryQueueElements[^1];
                 retryQueueElement.EndTimeStamp = nowTicks;
-                retryQueueElement.HttpCode = 520;
+                retryQueueElement.HttpCode = 504;
             }
             
             var queueFinishedElements = queue.GetQueueFinishedElement( nowTicks, Retries, RetryTimeout);

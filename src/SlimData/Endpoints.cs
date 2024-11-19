@@ -139,7 +139,7 @@ public class Endpoints
             var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
             if (queues.TryGetValue(key, out var queue))
             {
-                var queueElements = queue.GetQueueAvailableElement([2, 6, 10], nowTicks, count);
+                var queueElements = queue.GetQueueAvailableElement([2, 4, 10], nowTicks, count);
                 foreach (var queueElement in queueElements)
                 {
                     values.Items.Add(new QueueData(queueElement.Id ,queueElement.Value.ToArray()));
