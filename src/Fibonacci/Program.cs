@@ -28,6 +28,11 @@ app.UseCors(builder => builder
 
 app.MapGet("/health", () => "OK");
 
+app.MapGet("/error", () =>
+{
+    throw new Exception("Error");
+});
+
 app.MapGet("/hello/{name}", ([FromServices] ILogger<Fibonacci> logger, string name) =>
 {
     logger.LogInformation("Hello Called with name: {Name}", name);
@@ -46,7 +51,7 @@ app.MapPost("/fibonacci", (
     [FromServices] Fibonacci fibonacci,
     FibonacciInput input) =>
 {
-    logger.LogInformation("Fibonacci Called");
+    logger.LogInformation("Fibonacci Called with input: {Input}", input.Input);
     var output = new FibonacciOutput();
     output.Result = fibonacci.Run(input.Input);
     logger.LogInformation("Fibonacci output: {Output}", output.Result);

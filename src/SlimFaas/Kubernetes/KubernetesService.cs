@@ -379,52 +379,9 @@ public class KubernetesService : IKubernetesService
                 continue;
             }
 
-            // I want to get the state when the pod is ready to receive http request
-
             V1ContainerStatus? containerStatus = item.Status.ContainerStatuses.FirstOrDefault();
-            bool ready = containerStatus?.Ready ?? false;
             bool started = containerStatus?.Started ?? false;
-            bool running = containerStatus?.State.Running != null;
-            // I need the state when readiness probe is ok
-            bool? podReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "Ready")?.Status == "True";
-            // I want the state when the pod is ready to receive http request
-            bool podReadyHttp = item.Status.Conditions.FirstOrDefault(c => c.Type == "PodScheduled")?.Status == "True";
-
-            // I want the state when the container is ready and 1 second after the container is ready
-
             bool containerReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "ContainersReady")?.Status == "True";
-
-            // display pod name
-            /*if (item.Metadata.Name.Contains("fibonacci1"))
-            {
-                Console.WriteLine("------------------");
-                Console.WriteLine(item.Metadata.Name);
-                // I want display all conditions
-                foreach (V1PodCondition v1PodCondition in item.Status.Conditions)
-                {
-                    Console.WriteLine("Type: " +v1PodCondition.Type);
-                    Console.WriteLine("Status: " +v1PodCondition.Status);
-                    Console.WriteLine("LastProbeTime: " +v1PodCondition.LastProbeTime);
-                    Console.WriteLine("LastTransitionTime: " +v1PodCondition.LastTransitionTime);
-                    Console.WriteLine("Reason: " +v1PodCondition.Reason);
-                    Console.WriteLine("Message: " +v1PodCondition.Message);
-                }
-
-                Console.WriteLine("------");
-                // I want to get readiness probe status
-                var status = item.Status.ContainerStatuses;
-                foreach (V1ContainerStatus v1ContainerStatus in status)
-                {
-                    Console.WriteLine(v1ContainerStatus.Name);
-                    Console.WriteLine("Ready : " + v1ContainerStatus.Ready);
-                    //Console.WriteLine(v1ContainerStatus.State.Running);
-                    //Console.WriteLine(v1ContainerStatus.State.Terminated);
-                    //Console.WriteLine(v1ContainerStatus.State.Waiting);
-                }
-
-                Console.WriteLine("------------------");
-            }*/
-
             string? podName = item.Metadata.Name;
             string deploymentName = item.Metadata.OwnerReferences[0].Name;
             PodInformation podInformation = new(podName, started, containerReady, podIp, deploymentName);
@@ -432,33 +389,5 @@ public class KubernetesService : IKubernetesService
         }
     }
 
-    private static bool PodReady(V1Pod pod)
-    {
-        DateTime readyTime = DateTime.MinValue;
-
-        foreach (var condition in pod.Status.Conditions)
-        {
-            if (condition.Type == "Ready" && condition.Status == "True")
-            {
-                readyTime = condition.LastTransitionTime ?? DateTime.UtcNow; // Convertir le timestamp en UTC
-                break;
-            }
-        }
-
-        if (readyTime != DateTime.MinValue)
-        {
-            TimeSpan timeSinceReady = DateTime.UtcNow - readyTime; // Utiliser DateTime.UtcNow pour obtenir le temps actuel en UTC
-
-            if (timeSinceReady.TotalSeconds > 1)
-            {
-                // Attendre que le temps écoulé depuis l'état "ready" soit supérieur à 1 seconde avant d'exécuter une action
-                // Par exemple, effectuer une requête HTTP vers le pod
-                return true;
-            }
-
-        }
-
-        return false;
-    }
 
 }

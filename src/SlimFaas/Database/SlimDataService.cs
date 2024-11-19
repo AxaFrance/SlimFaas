@@ -173,7 +173,6 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     private async Task DoListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus)
     {
-
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
         {
@@ -208,7 +207,9 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
         if (data.Queues.TryGetValue(key, out List<QueueElement>? value))
         {
-            return value.GetQueueAvailableElement([2, 6, 10], DateTime.UtcNow.Ticks, int.MaxValue).Count;
+            var number = value.GetQueueAvailableElement([2, 6, 10], DateTime.UtcNow.Ticks, int.MaxValue).Count;
+            Console.WriteLine($"DoListLengthAsync: Number of available elements: {number} for key: {key}");
+            return number;
         }
 
         return 0L;
