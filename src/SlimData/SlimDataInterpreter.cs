@@ -98,7 +98,13 @@ public class SlimDataInterpreter : CommandInterpreter
             var retryQueueElement = queueElement.RetryQueueElements[^1];
             retryQueueElement.EndTimeStamp = DateTime.UtcNow.Ticks;
             retryQueueElement.HttpCode = addHashSetCommand.HttpCode;
+            
+            if(queueElement.IsFinished(DateTime.UtcNow.Ticks, Retries, RetryTimeout))
+            {
+                value.Remove(queueElement);
+            }
         }
+        
         return default;
     }
     
@@ -165,7 +171,7 @@ public class SlimDataInterpreter : CommandInterpreter
         ValueTask ListLeftPushHandler(ListLeftPushCommand command, CancellationToken token) => DoListLeftPushAsync(command, state.Queues);
         ValueTask AddHashSetHandler(AddHashSetCommand command, CancellationToken token) => DoAddHashSetAsync(command, state.Hashsets);
         ValueTask AddKeyValueHandler(AddKeyValueCommand command, CancellationToken token) => DoAddKeyValueAsync(command, state.KeyValues);
-        ValueTask ListSetQueueItemStatusAsync(ListSetQueueItemStatusCommand command, CancellationToken token) => DoListSetQueueItemStatusAsync(command, new Dictionary<string, List<QueueElement>>()  );
+        ValueTask ListSetQueueItemStatusAsync(ListSetQueueItemStatusCommand command, CancellationToken token) => DoListSetQueueItemStatusAsync(command, state.Queues);
         ValueTask SnapshotHandler(LogSnapshotCommand command, CancellationToken token) => DoHandleSnapshotAsync(command, state.KeyValues, state.Hashsets, state.Queues);
 
         var interpreter = new Builder()
