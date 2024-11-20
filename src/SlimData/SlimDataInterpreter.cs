@@ -52,6 +52,7 @@ public class SlimDataInterpreter : CommandInterpreter
             var queueTimeoutElements = queue.GetQueueTimeoutElement(nowTicks, RetryTimeout);
             foreach (var queueTimeoutElement in queueTimeoutElements)
             {
+                Console.WriteLine("ListRightPopAsync timeout " + queueTimeoutElement.Id + " " + addHashSetCommand.Key);
                 var retryQueueElement = queueTimeoutElement.RetryQueueElements[^1];
                 retryQueueElement.EndTimeStamp = nowTicks;
                 retryQueueElement.HttpCode = 504;
@@ -69,7 +70,7 @@ public class SlimDataInterpreter : CommandInterpreter
                 queueAvailableElement.RetryQueueElements.Add(new QueueHttpTryElement(nowTicks));
             }
 
-            Console.WriteLine("ListRightPopAsync count " + queues[addHashSetCommand.Key].Count);
+            Console.WriteLine("ListRightPopAsync count " + queues[addHashSetCommand.Key].Count + " " + addHashSetCommand.Key);
         }
 
         return default;
@@ -122,8 +123,6 @@ public class SlimDataInterpreter : CommandInterpreter
         Console.WriteLine("DoListSetQueueItemStatusAsync count " + queues[addHashSetCommand.Key].Count);
         return default;
     }
-    
-    
 
     [CommandHandler]
     public ValueTask AddHashSetAsync(AddHashSetCommand addHashSetCommand, CancellationToken token)
@@ -152,9 +151,7 @@ public class SlimDataInterpreter : CommandInterpreter
     [CommandHandler(IsSnapshotHandler = true)]
     public ValueTask HandleSnapshotAsync(LogSnapshotCommand command, CancellationToken token)
     {
-        SlimDataState = SlimDataState with { KeyValues = command.keysValues };
-        SlimDataState = SlimDataState with { Queues = command.queues };
-        SlimDataState = SlimDataState with { Hashsets = command.hashsets };
+        DoHandleSnapshotAsync(command, SlimDataState.KeyValues, SlimDataState.Hashsets, SlimDataState.Queues);
         return default;
     }
     

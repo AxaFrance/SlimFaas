@@ -103,11 +103,11 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
     private async Task<long> UpdateTickLastCallIfRequestStillInProgress(int? functionReplicas,
         Dictionary<string, int> setTickLastCallCounterDictionnary, string functionDeployment, int numberProcessingTasks)
     {
-        //int counterLimit = functionReplicas == 0 ? 10 : 300;
+        int counterLimit = functionReplicas == 0 ? 10 : 100;
         long queueLength = await slimFaasQueue.CountAsync(functionDeployment);
-        //if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
+        if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
         {
-            //setTickLastCallCounterDictionnary[functionDeployment] = 0;
+            setTickLastCallCounterDictionnary[functionDeployment] = 0;
 
             if (queueLength > 0 || numberProcessingTasks > 0)
             {
