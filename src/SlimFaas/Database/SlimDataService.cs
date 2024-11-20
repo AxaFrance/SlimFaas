@@ -173,6 +173,14 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     private async Task DoListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus)
     {
+        if(queueItemStatus.Items != null)
+        {
+            foreach (var listQueueItemStatus in queueItemStatus.Items)
+            {
+                Console.WriteLine($"DoListSetQueueItemStatus: Id: {listQueueItemStatus.Id}");
+            }
+        }
+
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
         {

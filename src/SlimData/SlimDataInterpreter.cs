@@ -103,6 +103,10 @@ public class SlimDataInterpreter : CommandInterpreter
         Console.WriteLine("ListSetQueueItemStatusAsync");
         if (!queues.TryGetValue(addHashSetCommand.Key, out List<QueueElement>? value)) return default;
         Console.WriteLine("ListSetQueueItemStatusAsync 2");
+        foreach (var element in value)
+        {
+            Console.WriteLine("ListSetQueueItemStatusAsync 2 " + element.Id + "==" + addHashSetCommand.Identifier);
+        }
         var queueElement = value.FirstOrDefault(x => x.Id == addHashSetCommand.Identifier);
         if (queueElement == null)
         {
