@@ -10,11 +10,17 @@ public record SlimDataState(
     Dictionary<string, ReadOnlyMemory<byte>> KeyValues,
     Dictionary<string, List<QueueElement>> Queues);
 
-public record QueueElement(
-    ReadOnlyMemory<byte> Value,
-    string Id,
-    long InsertTimeStamp, 
-    IList<QueueHttpTryElement> RetryQueueElements);
+public class QueueElement(
+    ReadOnlyMemory<byte> value,
+    string id,
+    long insertTimeStamp, 
+    IList<QueueHttpTryElement> retryQueueElements)
+{
+    public ReadOnlyMemory<byte> Value { get; } = value;
+    public string Id { get; } = id;
+    public long InsertTimeStamp { get; } = insertTimeStamp;
+    public IList<QueueHttpTryElement> RetryQueueElements { get; } = retryQueueElements;
+}
 
 public class QueueHttpTryElement(long startTimeStamp=0, long endTimeStamp=0, int httpCode=0)
 {
@@ -62,6 +68,8 @@ public class SlimDataInterpreter : CommandInterpreter
             {
                 queueAvailableElement.RetryQueueElements.Add(new QueueHttpTryElement(nowTicks));
             }
+
+            Console.WriteLine("ListRightPopAsync count " + queues[addHashSetCommand.Key].Count);
         }
 
         return default;
@@ -95,19 +103,22 @@ public class SlimDataInterpreter : CommandInterpreter
         if (!queues.TryGetValue(addHashSetCommand.Key, out List<QueueElement>? value)) return default;
         Console.WriteLine("ListSetQueueItemStatusAsync 2");
         var queueElement = value.FirstOrDefault(x => x.Id == addHashSetCommand.Identifier);
-        if (queueElement != null)
+        if (queueElement == null)
         {
-            Console.WriteLine("ListSetQueueItemStatusAsync 3");
-            var retryQueueElement = queueElement.RetryQueueElements[^1];
-            retryQueueElement.EndTimeStamp = DateTime.UtcNow.Ticks;
-            retryQueueElement.HttpCode = addHashSetCommand.HttpCode;
-            
-            if(queueElement.IsFinished(DateTime.UtcNow.Ticks, Retries, RetryTimeout))
-            {
-                Console.WriteLine("ListSetQueueItemStatusAsync 4 finished");
-                value.Remove(queueElement);
-            }
+            return default;
         }
+
+        Console.WriteLine("ListSetQueueItemStatusAsync 3");
+        var retryQueueElement = queueElement.RetryQueueElements[^1];
+        retryQueueElement.EndTimeStamp = DateTime.UtcNow.Ticks;
+        retryQueueElement.HttpCode = addHashSetCommand.HttpCode;
+
+        if (queueElement.IsFinished(DateTime.UtcNow.Ticks, Retries, RetryTimeout))
+        {
+            Console.WriteLine("ListSetQueueItemStatusAsync 4 finished");
+            value.Remove(queueElement);
+        }
+
         Console.WriteLine("DoListSetQueueItemStatusAsync count " + queues[addHashSetCommand.Key].Count);
         return default;
     }
