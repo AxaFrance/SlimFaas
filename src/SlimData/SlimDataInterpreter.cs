@@ -82,13 +82,14 @@ public class SlimDataInterpreter : CommandInterpreter
         return DoListLeftPushAsync(addHashSetCommand, SlimDataState.Queues);
     }
     
-    internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
+    internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand listLeftPushCommand, Dictionary<string, List<QueueElement>> queues)
     {
-        if (queues.TryGetValue(addHashSetCommand.Key, out List<QueueElement>? value))
-            value.Add(new QueueElement(addHashSetCommand.Value, Guid.NewGuid().ToString(), DateTime.UtcNow.Ticks,new List<QueueHttpTryElement>()));
+        if (queues.TryGetValue(listLeftPushCommand.Key, out List<QueueElement>? value))
+            value.Add(new QueueElement(listLeftPushCommand.Value, listLeftPushCommand.Identifier, DateTime.UtcNow.Ticks,new List<QueueHttpTryElement>()));
         else
-            queues.Add(addHashSetCommand.Key, new List<QueueElement>() {new(addHashSetCommand.Value,Guid.NewGuid().ToString(), DateTime.UtcNow.Ticks,new List<QueueHttpTryElement>())});
-        Console.WriteLine("ListLeftPushAsync count " + queues[addHashSetCommand.Key].Count);
+            queues.Add(listLeftPushCommand.Key, new List<QueueElement>() {new(listLeftPushCommand.Value,listLeftPushCommand.Identifier, DateTime.UtcNow.Ticks,new List<QueueHttpTryElement>())});
+        Console.WriteLine("ListLeftPushAsync count " + queues[listLeftPushCommand.Key].Count);
+        Console.WriteLine("ListLeftPushAsync Last element ID " + queues[listLeftPushCommand.Key][^1].Id);
         return default;
     }
     

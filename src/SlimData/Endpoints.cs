@@ -142,6 +142,7 @@ public class Endpoints
                 var queueElements = queue.GetQueueAvailableElement([2, 4, 10], nowTicks, count);
                 foreach (var queueElement in queueElements)
                 {
+                    Console.WriteLine("Endpoint ListRightPopCommand " + queueElement.Id);
                     values.Items.Add(new QueueData(queueElement.Id ,queueElement.Value.ToArray()));
                 }
                 
@@ -184,7 +185,7 @@ public class Endpoints
         IRaftCluster cluster, CancellationTokenSource source)
     {
         var logEntry =
-            provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
+            provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Identifier = Guid.NewGuid().ToString(), Value = value },
                 cluster.Term);
         await cluster.ReplicateAsync(logEntry, source.Token);
     }

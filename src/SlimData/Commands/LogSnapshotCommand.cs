@@ -146,7 +146,8 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                         var httpCode = await reader.ReadLittleEndianAsync<Int32>(token);
                         retryQueueElements.Add(new QueueHttpTryElement(startTimestamp, endTimestamp, httpCode));
                     }
-                    
+
+                    Console.WriteLine("SnapshotCommand QueueElement Id " +  id);
                     queue.Add(new QueueElement(value.Memory, id.ToString(), insertTimeStamp, retryQueueElements));
                 }
 
