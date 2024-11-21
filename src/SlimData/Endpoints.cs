@@ -219,6 +219,7 @@ public class Endpoints
 
         foreach (var queueItemStatus in list.Items)
         {
+            Console.WriteLine("Endpoint ListSetQueueItemStatusCommand " + queueItemStatus.Id + " " + queueItemStatus.HttpCode);
             var logEntry =
                 provider.Interpreter.CreateLogEntry(new ListSetQueueItemStatusCommand
                     {

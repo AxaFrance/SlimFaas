@@ -162,6 +162,14 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
             var bin = await response.Content.ReadAsByteArrayAsync();
             ListItems? result = MemoryPackSerializer.Deserialize<ListItems>(bin);
+            if(result != null && result.Items != null)
+            {
+                foreach (var listItem in result.Items)
+                {
+                    Console.WriteLine($"DoListRightPopAsync: Id: {listItem.Id}");
+                }
+            }
+
             return result?.Items ?? new List<QueueData>();
         }
     }

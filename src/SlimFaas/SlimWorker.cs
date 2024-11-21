@@ -5,7 +5,7 @@ using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
-internal record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest, string id);
+internal record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest, string Id);
 
 public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasService,
         HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider,
@@ -87,6 +87,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         }
         foreach (var requestJson in jsons)
         {
+            Console.WriteLine("RequestJson: " + requestJson);
             CustomRequest customRequest = MemoryPackSerializer.Deserialize<CustomRequest>(requestJson.Data);
 
             logger.LogDebug("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
@@ -136,7 +137,8 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         return numberLimitProcessingTasks;
     }
 
-    private async Task<int> ManageProcessingTasksAsync(ISlimFaasQueue slimFaasQueue, Dictionary<string, IList<RequestToWait>> processingTasks,
+    private async Task<int> ManageProcessingTasksAsync(ISlimFaasQueue slimFaasQueue,
+        Dictionary<string, IList<RequestToWait>> processingTasks,
         string functionDeployment)
     {
         if (processingTasks.ContainsKey(functionDeployment) == false)
@@ -166,11 +168,13 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                     processing.CustomRequest.Method, processing.CustomRequest.Path, processing.CustomRequest.Query,
                     httpResponseMessage.StatusCode);
                 httpResponseMessagesToDelete.Add(processing);
-                queueItemStatusList.Add(new QueueItemStatus(processing.id, statusCode));
+                Console.WriteLine("RequestToWait: " + processing.Id);
+                queueItemStatusList.Add(new QueueItemStatus(processing.Id, statusCode));
             }
             catch (Exception e)
             {
-                queueItemStatusList.Add(new QueueItemStatus(processing.id, 500));
+                Console.WriteLine("RequestToWait ERROR: " + processing.Id);
+                queueItemStatusList.Add(new QueueItemStatus(processing.Id, 500));
                 httpResponseMessagesToDelete.Add(processing);
                 logger.LogWarning("Request Error: {Message} {StackTrace}", e.Message, e.StackTrace);
                 historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
