@@ -52,13 +52,12 @@ public class SlimDataInterpreter : CommandInterpreter
             var queueTimeoutElements = queue.GetQueueTimeoutElement(nowTicks, RetryTimeout);
             foreach (var queueTimeoutElement in queueTimeoutElements)
             {
-                Console.WriteLine("ListRightPopAsync timeout " + queueTimeoutElement.Id + " " + addHashSetCommand.Key);
                 var retryQueueElement = queueTimeoutElement.RetryQueueElements[^1];
                 retryQueueElement.EndTimeStamp = nowTicks;
                 retryQueueElement.HttpCode = 504;
             }
             
-            var queueFinishedElements = queue.GetQueueFinishedElement( nowTicks, Retries, RetryTimeout);
+            var queueFinishedElements = queue.GetQueueFinishedElement(nowTicks, Retries, RetryTimeout);
             foreach (var queueFinishedElement in queueFinishedElements)
             {
                 queue.Remove(queueFinishedElement);
@@ -69,8 +68,6 @@ public class SlimDataInterpreter : CommandInterpreter
             {
                 queueAvailableElement.RetryQueueElements.Add(new QueueHttpTryElement(nowTicks));
             }
-
-            Console.WriteLine("ListRightPopAsync count " + queues[addHashSetCommand.Key].Count + " " + addHashSetCommand.Key);
         }
 
         return default;
@@ -88,8 +85,6 @@ public class SlimDataInterpreter : CommandInterpreter
             value.Add(new QueueElement(listLeftPushCommand.Value, listLeftPushCommand.Identifier, DateTime.UtcNow.Ticks,new List<QueueHttpTryElement>()));
         else
             queues.Add(listLeftPushCommand.Key, new List<QueueElement>() {new(listLeftPushCommand.Value,listLeftPushCommand.Identifier, DateTime.UtcNow.Ticks,new List<QueueHttpTryElement>())});
-        Console.WriteLine("ListLeftPushAsync count " + queues[listLeftPushCommand.Key].Count);
-        Console.WriteLine("ListLeftPushAsync Last element ID " + queues[listLeftPushCommand.Key][^1].Id);
         return default;
     }
     
@@ -99,33 +94,27 @@ public class SlimDataInterpreter : CommandInterpreter
         return DoListSetQueueItemStatusAsync(addHashSetCommand, SlimDataState.Queues);
     }
     
-    internal static ValueTask DoListSetQueueItemStatusAsync(ListSetQueueItemStatusCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
+    internal static ValueTask DoListSetQueueItemStatusAsync(ListSetQueueItemStatusCommand liaddHashSetCommand, Dictionary<string, List<QueueElement>> queues)
     {
-        Console.WriteLine("ListSetQueueItemStatusAsync");
-        if (!queues.TryGetValue(addHashSetCommand.Key, out List<QueueElement>? value)) return default;
-        Console.WriteLine("ListSetQueueItemStatusAsync 2");
-        foreach (var element in value)
-        {
-            Console.WriteLine("ListSetQueueItemStatusAsync 2 " + element.Id + "==" + addHashSetCommand.Identifier);
-        }
-        var queueElement = value.FirstOrDefault(x => x.Id == addHashSetCommand.Identifier);
+        if (!queues.TryGetValue(liaddHashSetCommand.Key, out List<QueueElement>? value)) return default;
+
+        var queueElement = value.FirstOrDefault(x => x.Id == liaddHashSetCommand.Identifier);
         if (queueElement == null)
         {
             return default;
         }
-
-        Console.WriteLine("ListSetQueueItemStatusAsync 3");
+        Console.WriteLine("ListSetQueueItemStatusAsync " + liaddHashSetCommand.Identifier + " " + liaddHashSetCommand.HttpCode);
         var retryQueueElement = queueElement.RetryQueueElements[^1];
         retryQueueElement.EndTimeStamp = DateTime.UtcNow.Ticks;
-        retryQueueElement.HttpCode = addHashSetCommand.HttpCode;
+        retryQueueElement.HttpCode = liaddHashSetCommand.HttpCode;
 
         if (queueElement.IsFinished(DateTime.UtcNow.Ticks, Retries, RetryTimeout))
         {
-            Console.WriteLine("ListSetQueueItemStatusAsync 4 finished");
+            Console.WriteLine("ListSetQueueItemStatusAsync finished" + queueElement.Id);
             value.Remove(queueElement);
         }
 
-        Console.WriteLine("DoListSetQueueItemStatusAsync count " + queues[addHashSetCommand.Key].Count);
+        Console.WriteLine("ListSetQueueItemStatusAsyncs count " + queues[liaddHashSetCommand.Key].Count);
         return default;
     }
 

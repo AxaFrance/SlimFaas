@@ -181,14 +181,6 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     private async Task DoListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus)
     {
-        if(queueItemStatus.Items != null)
-        {
-            foreach (var listQueueItemStatus in queueItemStatus.Items)
-            {
-                Console.WriteLine($"DoListSetQueueItemStatus: Id: {listQueueItemStatus.Id}");
-            }
-        }
-
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
         {
@@ -224,18 +216,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         if (data.Queues.TryGetValue(key, out List<QueueElement>? value))
         {
             var elements = value.GetQueueAvailableElement([2, 6, 10], DateTime.UtcNow.Ticks, int.MaxValue);
-
-            foreach (QueueElement queueElement in elements)
-            {
-                Console.WriteLine($"DoListLengthAsync: Element Id: {queueElement.Id}");
-                foreach (QueueHttpTryElement queueElementRetryQueueElement in queueElement.RetryQueueElements)
-                {
-                    Console.WriteLine($"DoListLengthAsync  StartTimeStamp: {queueElementRetryQueueElement.StartTimeStamp} EndTimeStamp: {queueElementRetryQueueElement.EndTimeStamp} HttpCode: {queueElementRetryQueueElement.HttpCode}  ");
-                }
-            }
-
             var number = elements.Count;
-            Console.WriteLine($"DoListLengthAsync: Number of available elements: {number} for key: {key}");
             return number;
         }
 

@@ -87,7 +87,6 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         }
         foreach (var requestJson in jsons)
         {
-            Console.WriteLine("RequestJson: " + requestJson);
             CustomRequest customRequest = MemoryPackSerializer.Deserialize<CustomRequest>(requestJson.Data);
 
             logger.LogDebug("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
@@ -104,7 +103,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
     private async Task<long> UpdateTickLastCallIfRequestStillInProgress(int? functionReplicas,
         Dictionary<string, int> setTickLastCallCounterDictionnary, string functionDeployment, int numberProcessingTasks)
     {
-        int counterLimit = functionReplicas == 0 ? 10 : 100;
+        int counterLimit = functionReplicas == 0 ? 10 : 40;
         long queueLength = await slimFaasQueue.CountAsync(functionDeployment);
         if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
         {
@@ -161,19 +160,16 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
 
                 HttpResponseMessage httpResponseMessage = processing.Task.Result;
                 var statusCode = (int)httpResponseMessage.StatusCode;
-
-                httpResponseMessage.Dispose();
                 logger.LogDebug(
                     "{CustomRequestMethod}: /async-function/{CustomRequestPath}{CustomRequestQuery} {StatusCode}",
                     processing.CustomRequest.Method, processing.CustomRequest.Path, processing.CustomRequest.Query,
                     httpResponseMessage.StatusCode);
                 httpResponseMessagesToDelete.Add(processing);
-                Console.WriteLine("RequestToWait: " + processing.Id);
                 queueItemStatusList.Add(new QueueItemStatus(processing.Id, statusCode));
+                httpResponseMessage.Dispose();
             }
             catch (Exception e)
             {
-                Console.WriteLine("RequestToWait ERROR: " + processing.Id);
                 queueItemStatusList.Add(new QueueItemStatus(processing.Id, 500));
                 httpResponseMessagesToDelete.Add(processing);
                 logger.LogWarning("Request Error: {Message} {StackTrace}", e.Message, e.StackTrace);
