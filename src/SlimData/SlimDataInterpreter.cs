@@ -82,9 +82,9 @@ public class SlimDataInterpreter : CommandInterpreter
     internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand listLeftPushCommand, Dictionary<string, List<QueueElement>> queues)
     {
         if (queues.TryGetValue(listLeftPushCommand.Key, out List<QueueElement>? value))
-            value.Add(new QueueElement(listLeftPushCommand.Value, listLeftPushCommand.Identifier, DateTime.UtcNow.Ticks,new List<QueueHttpTryElement>()));
+            value.Add(new QueueElement(listLeftPushCommand.Value, listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks,new List<QueueHttpTryElement>()));
         else
-            queues.Add(listLeftPushCommand.Key, new List<QueueElement>() {new(listLeftPushCommand.Value,listLeftPushCommand.Identifier, DateTime.UtcNow.Ticks,new List<QueueHttpTryElement>())});
+            queues.Add(listLeftPushCommand.Key, new List<QueueElement>() {new(listLeftPushCommand.Value,listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks,new List<QueueHttpTryElement>())});
         return default;
     }
     
@@ -105,10 +105,10 @@ public class SlimDataInterpreter : CommandInterpreter
         }
         Console.WriteLine("ListSetQueueItemStatusAsync " + liaddHashSetCommand.Identifier + " " + liaddHashSetCommand.HttpCode);
         var retryQueueElement = queueElement.RetryQueueElements[^1];
-        retryQueueElement.EndTimeStamp = DateTime.UtcNow.Ticks;
+        retryQueueElement.EndTimeStamp = liaddHashSetCommand.NowTicks;
         retryQueueElement.HttpCode = liaddHashSetCommand.HttpCode;
 
-        if (queueElement.IsFinished(DateTime.UtcNow.Ticks, Retries, RetryTimeout))
+        if (queueElement.IsFinished(liaddHashSetCommand.NowTicks, Retries, RetryTimeout))
         {
             Console.WriteLine("ListSetQueueItemStatusAsync finished" + queueElement.Id);
             value.Remove(queueElement);

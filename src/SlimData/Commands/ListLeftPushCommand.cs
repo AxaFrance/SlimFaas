@@ -12,6 +12,7 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
     public string Key { get; set; }
     
     public string Identifier { get; set; }
+    public long NowTicks { get; set; }
     
     public ReadOnlyMemory<byte> Value { get; set; }
 
@@ -25,6 +26,7 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
             LengthFormat.LittleEndian, token).ConfigureAwait(false);
         await writer.EncodeAsync(command.Identifier.AsMemory(), new EncodingContext(Encoding.UTF8, false),
             LengthFormat.LittleEndian, token).ConfigureAwait(false);
+        await writer.WriteLittleEndianAsync(NowTicks, token).ConfigureAwait(false);
         await writer.WriteAsync(command.Value, LengthFormat.Compressed, token).ConfigureAwait(false);
     }
 
@@ -35,11 +37,13 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
     {
         var key = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token).ConfigureAwait(false);
         var identifier = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token).ConfigureAwait(false);
+        var nowTicks = await reader.ReadLittleEndianAsync<Int64>(token).ConfigureAwait(false);
         using var value = await reader.ReadAsync(LengthFormat.Compressed, token: token).ConfigureAwait(false);
         return new ListLeftPushCommand
         {
             Key = key.ToString(),
             Identifier = identifier.ToString(),
+            NowTicks = nowTicks,
             Value = value.Memory.ToArray()
         };
     }
