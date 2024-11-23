@@ -147,8 +147,21 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                         retryQueueElements.Add(new QueueHttpTryElement(startTimestamp, endTimestamp, httpCode));
                     }
 
-                    Console.WriteLine("SnapshotCommand QueueElement Id " +  id);
+                    Console.WriteLine("SnapshotCommand QueueElement Id " +  id + "key " + key);
                     queue.Add(new QueueElement(value.Memory, id.ToString(), insertTimeStamp, retryQueueElements));
+                    // Print all data from queue
+                    foreach (var queueElement in queue)
+                    {
+                        Console.WriteLine("SnapshotCommand QueueElement Id " +  queueElement.Id);
+                        Console.WriteLine("SnapshotCommand QueueElement Value " +  queueElement.Value);
+                        Console.WriteLine("SnapshotCommand QueueElement InsertTimeStamp " +  queueElement.InsertTimeStamp);
+                        foreach (var retryQueueElement in queueElement.RetryQueueElements)
+                        {
+                            Console.WriteLine("SnapshotCommand QueueElement RetryQueueElement StartTimeStamp " +  retryQueueElement.StartTimeStamp);
+                            Console.WriteLine("SnapshotCommand QueueElement RetryQueueElement EndTimeStamp " +  retryQueueElement.EndTimeStamp);
+                            Console.WriteLine("SnapshotCommand QueueElement RetryQueueElement HttpCode " +  retryQueueElement.HttpCode);
+                        }
+                    }
                 }
 
                 queues.Add(key.ToString(), queue);

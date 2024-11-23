@@ -156,7 +156,28 @@ public class SlimDataInterpreter : CommandInterpreter
         {
             keyValues[keyValue.Key] = keyValue.Value;
         }
-            
+        // Print all data from queues
+        // Print all data from queue
+        foreach (var queueElement in command.queues)
+        {
+            foreach (var queue in queues)
+            {
+                Console.WriteLine("SnapshotCommand Queue Key " +  queue.Key);
+                foreach (var element in queue.Value)
+                {
+                    Console.WriteLine("SnapshotCommand QueueElement Id " +  element.Id);
+                    Console.WriteLine("SnapshotCommand QueueElement Value " +  element.Value);
+                    Console.WriteLine("SnapshotCommand QueueElement InsertTimeStamp " +  element.InsertTimeStamp);
+                    foreach (var retryQueueElement in element.RetryQueueElements)
+                    {
+                        Console.WriteLine("SnapshotCommand QueueElement RetryQueueElement StartTimeStamp " +  retryQueueElement.StartTimeStamp);
+                        Console.WriteLine("SnapshotCommand QueueElement RetryQueueElement EndTimeStamp " +  retryQueueElement.EndTimeStamp);
+                        Console.WriteLine("SnapshotCommand QueueElement RetryQueueElement HttpCode " +  retryQueueElement.HttpCode);
+                    }
+                }
+            }
+        }
+        
         queues.Clear();
         foreach (var queue in command.queues)
         {
