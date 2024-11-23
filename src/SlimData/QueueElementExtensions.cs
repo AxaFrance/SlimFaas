@@ -138,6 +138,7 @@ public static class QueueElementExtensions
             return availableElements;
         }
         var currentElements = elements.Except(runningElements).Except(runningWaitingForRetryElements).Except(finishedElements);
+        Console.WriteLine("GetQueueAvailableElement ------currentElements.Count " + currentElements.ToArray().Count());
         foreach (var queueElement in currentElements)
         {
             if (currentCount == maximum)
