@@ -129,15 +129,10 @@ public static class QueueElementExtensions
         var finishedElements = elements.GetQueueFinishedElement(nowTicks, retries, timeoutSeconds);
         var availableElements = new List<QueueElement>();
         var currentCount = runningElements.Count + runningWaitingForRetryElements.Count;
-        Console.WriteLine("GetQueueAvailableElement runningWaitingForRetryElements.Count " + runningWaitingForRetryElements.Count);
-        Console.WriteLine("GetQueueAvailableElement runningElements.Count " + runningElements.Count);
-        Console.WriteLine("GetQueueAvailableElement finishedElements.Count " + finishedElements.Count); 
         var currentElements = elements.Except(runningElements).Except(runningWaitingForRetryElements).Except(finishedElements);
-        Console.WriteLine("GetQueueAvailableElement currentElements.Count " + currentElements.ToArray().Count());
         
         if (currentCount >= maximum)
         {
-            Console.WriteLine("GetQueueAvailableElement ---availableElements.Count " + availableElements.Count);
             return availableElements;
         }
        
@@ -145,13 +140,11 @@ public static class QueueElementExtensions
         {
             if (currentCount == maximum)
             {
-                Console.WriteLine("GetQueueAvailableElement ---availableElements.Count " + availableElements.Count);
                 return availableElements;
             }
             availableElements.Add(queueElement);
             currentCount++;
         }
-        Console.WriteLine("GetQueueAvailableElement ---availableElements.Count " + availableElements.Count);
         return availableElements;
     }
     

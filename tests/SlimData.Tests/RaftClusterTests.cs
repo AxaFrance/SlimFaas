@@ -257,6 +257,25 @@ public class RaftClusterTests
         IList<QueueData>? listRightPop = await databaseServiceSlave.ListRightPopAsync("listKey1");
         Assert.Equal("value1", MemoryPackSerializer.Deserialize<string>(listRightPop.First().Data));
 
+        ListQueueItemStatus queueItemStatus = new()
+        {
+            Items = new List<QueueItemStatus> {  },
+        };
+        foreach (QueueData queueData in listRightPop)
+        {
+            queueItemStatus.Items.Add(new QueueItemStatus
+            {
+                Id = queueData.Id,
+                HttpCode = 200,
+            });
+        }
+        await databaseServiceSlave.ListSetQueueItemStatus("listKey1", queueItemStatus);
+
+        await GetLocalClusterView(host1).ForceReplicationAsync();
+        var listLength2 = await databaseServiceSlave.ListLengthAsync("listKey1");
+
+        Assert.Equal(0, listLength2);
+
         await host1.StopAsync();
         await host2.StopAsync();
         await host3.StopAsync();
