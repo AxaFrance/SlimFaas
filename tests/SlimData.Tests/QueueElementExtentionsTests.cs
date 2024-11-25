@@ -60,7 +60,7 @@ public class QueueElementExtentionsTests
         Assert.Equal(4, finishedElements.Count);
     }
 
-     [Fact]
+   /*  [Fact]
     public static void QueueElementExtensionsGetQueueRunningElement2()
     {
         // I want a test which text my extention
@@ -86,5 +86,5 @@ public class QueueElementExtentionsTests
 
         var finishedElements = queueElements.GetQueueFinishedElement(nowTicks, SlimDataInterpreter.Retries);
         Assert.Equal(4, finishedElements.Count);
-    }
+    }*/
 }

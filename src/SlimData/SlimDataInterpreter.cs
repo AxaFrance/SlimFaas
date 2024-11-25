@@ -100,7 +100,8 @@ public class SlimDataInterpreter : CommandInterpreter
         else
             queues.Add(listLeftPushCommand.Key, new List<QueueElement>() {new(listLeftPushCommand.Value,listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks,new List<QueueHttpTryElement>())});
         // print all queue elements
-        foreach (var queueElemen in value)
+        var elements = queues[listLeftPushCommand.Key];
+        foreach (var queueElemen in elements)
         {
             Console.WriteLine("DoListLeftPushAsync QueueElement Id " +  queueElemen.Id);
             Console.WriteLine("DoListLeftPushAsync QueueElement Value " +  queueElemen.Value);
