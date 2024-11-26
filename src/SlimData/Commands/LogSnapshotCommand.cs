@@ -34,6 +34,10 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                 queue.Value.ForEach(x =>
                 {
                     result += x.Value.Length + Encoding.UTF8.GetByteCount(x.Id) + sizeof(Int64);
+                    result += sizeof(Int32); // 4 bytes for timeout
+                    result += sizeof(Int32); // 4 bytes for retries count
+                    result += x.Retries.Count * sizeof(Int32);
+                    
                     result += sizeof(Int32); // 4 bytes for hashset count
                     foreach (var retryQueueElement in x.RetryQueueElements)
                     {
@@ -80,6 +84,14 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                     await writer.WriteAsync(value.Value, LengthFormat.Compressed, token).ConfigureAwait(false);
                     await writer.EncodeAsync(value.Id.AsMemory(), new EncodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token).ConfigureAwait(false);
                     await writer.WriteBigEndianAsync(value.InsertTimeStamp,  token).ConfigureAwait(false);
+                    await writer.WriteLittleEndianAsync(value.Timeout, token).ConfigureAwait(false);
+                    await writer.WriteLittleEndianAsync(value.Retries.Count, token).ConfigureAwait(false);
+                    foreach (var valueRetry in value.Retries)
+                    {
+                        await writer.WriteLittleEndianAsync(valueRetry, token).ConfigureAwait(false);
+                    }
+                    
+                    
                     await writer.WriteLittleEndianAsync(value.RetryQueueElements.Count, token).ConfigureAwait(false);
                     foreach (var retryQueueElement in value.RetryQueueElements)
                     {
@@ -137,6 +149,15 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                     var id = await reader.DecodeAsync(new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token)
                         .ConfigureAwait(false);
                     var insertTimeStamp = await reader.ReadBigEndianAsync<Int64>(token);
+                    var timeout = await reader.ReadLittleEndianAsync<Int32>(token);
+                    var countRetries = await reader.ReadLittleEndianAsync<Int32>(token);
+                    var retries = new List<int>(countRetries);
+                    while (countRetries-- > 0)
+                    {
+                        retries.Add(await reader.ReadLittleEndianAsync<Int32>(token));
+                    }
+                    
+                    
                     var countRetryQueueElements = await reader.ReadLittleEndianAsync<Int32>(token);
                     var retryQueueElements = new List<QueueHttpTryElement>(countRetryQueueElements);
                     while (countRetryQueueElements-- > 0)
@@ -147,7 +168,7 @@ public readonly struct LogSnapshotCommand(Dictionary<string, ReadOnlyMemory<byte
                         retryQueueElements.Add(new QueueHttpTryElement(startTimestamp, endTimestamp, httpCode));
                     }
                     
-                    queue.Add(new QueueElement(value.Memory, id.ToString(), insertTimeStamp, retryQueueElements));
+                    queue.Add(new QueueElement(value.Memory, id.ToString(), insertTimeStamp, timeout, retries, retryQueueElements));
                 }
 
                 queues.Add(key.ToString(), queue);

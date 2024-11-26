@@ -27,7 +27,7 @@ public struct ListSetQueueItemStatusCommand  : ISerializable<ListSetQueueItemSta
         await writer.WriteLittleEndianAsync(NowTicks, token).ConfigureAwait(false);
     }
 
-    long? IDataTransferObject.Length => Encoding.UTF8.GetByteCount(Identifier)  + sizeof(int);
+    long? IDataTransferObject.Length => Encoding.UTF8.GetByteCount(Identifier)  + sizeof(int) + Encoding.UTF8.GetByteCount(Key) + sizeof(long);
 
     public static async ValueTask<ListSetQueueItemStatusCommand> ReadFromAsync<TReader>(TReader reader, CancellationToken token) where TReader : notnull, IAsyncBinaryReader
     {

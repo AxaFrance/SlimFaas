@@ -13,12 +13,18 @@ public record SlimDataState(
 public class QueueElement(
     ReadOnlyMemory<byte> value,
     string id,
-    long insertTimeStamp, 
+    long insertTimeStamp,
+    int timeout,
+    List<int> retries,
     IList<QueueHttpTryElement> retryQueueElements)
 {
     public ReadOnlyMemory<byte> Value { get; } = value;
     public string Id { get; } = id;
     public long InsertTimeStamp { get; } = insertTimeStamp;
+    
+    public List<int> Retries { get; } = retries;
+
+    public int Timeout { get; } = timeout;
     public IList<QueueHttpTryElement> RetryQueueElements { get; } = retryQueueElements;
 }
 
@@ -96,9 +102,9 @@ public class SlimDataInterpreter : CommandInterpreter
     internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand listLeftPushCommand, Dictionary<string, List<QueueElement>> queues)
     {
         if (queues.TryGetValue(listLeftPushCommand.Key, out List<QueueElement>? value))
-            value.Add(new QueueElement(listLeftPushCommand.Value, listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks,new List<QueueHttpTryElement>()));
+            value.Add(new QueueElement(listLeftPushCommand.Value, listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks, listLeftPushCommand.Timeout, listLeftPushCommand.Retries,new List<QueueHttpTryElement>()));
         else
-            queues.Add(listLeftPushCommand.Key, new List<QueueElement>() {new(listLeftPushCommand.Value,listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks,new List<QueueHttpTryElement>())});
+            queues.Add(listLeftPushCommand.Key, new List<QueueElement>() {new(listLeftPushCommand.Value,listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks, listLeftPushCommand.Timeout, listLeftPushCommand.Retries,new List<QueueHttpTryElement>())});
         // print all queue elements
         var elements = queues[listLeftPushCommand.Key];
         foreach (var queueElemen in elements)
