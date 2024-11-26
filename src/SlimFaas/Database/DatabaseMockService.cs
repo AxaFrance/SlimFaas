@@ -93,7 +93,7 @@ public class DatabaseMockService : IDatabaseService
         return Task.FromResult<IList<QueueData>?>(new List<QueueData>());
     }
 
-    public Task<long> ListLengthAsync(string key)
+    public Task<long> ListLengthAsync(string key, int maximum = int.MaxValue)
     {
         if (!queue.ContainsKey(key))
         {

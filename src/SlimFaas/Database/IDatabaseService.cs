@@ -10,6 +10,6 @@ public interface IDatabaseService
     Task<IDictionary<string, string>> HashGetAllAsync(string key);
     Task ListLeftPushAsync(string key, byte[] field);
     Task<IList<QueueData>?> ListRightPopAsync(string key, int count = 1);
-    Task<long> ListLengthAsync(string key);
+    Task<long> ListLengthAsync(string key, int maximum = int.MaxValue);
     Task ListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus);
 }

@@ -8,8 +8,10 @@ namespace SlimFaas;
 internal record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest, string Id);
 
 public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasService,
-        HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider,
+        HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger,
+        IServiceProvider serviceProvider,
         ISlimDataStatus slimDataStatus,
+        IMasterService masterService,
         int delay = EnvironmentVariables.SlimWorkerDelayMillisecondsDefault)
     : BackgroundService
 {
@@ -42,12 +44,17 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                 string functionDeployment = function.Deployment;
                 setTickLastCallCounterDictionary.TryAdd(functionDeployment, 0);
                 int numberProcessingTasks = await ManageProcessingTasksAsync(slimFaasQueue, processingTasks, functionDeployment);
-                int? numberLimitProcessingTasks = ComputeNumberLimitProcessingTasks(slimFaas, function);
+                int numberLimitProcessingTasks = ComputeNumberLimitProcessingTasks(slimFaas, function);
                 setTickLastCallCounterDictionary[functionDeployment]++;
                 int functionReplicas = function.Replicas;
-                long queueLength = await UpdateTickLastCallIfRequestStillInProgress(functionReplicas,
+                long queueLength = await UpdateTickLastCallIfRequestStillInProgress(
+                    masterService,
+                    functionReplicas,
                     setTickLastCallCounterDictionary,
-                    functionDeployment, numberProcessingTasks);
+                    functionDeployment,
+                    numberProcessingTasks,
+                    numberLimitProcessingTasks);
+
                 if (functionReplicas == 0 || queueLength <= 0)
                 {
                     continue;
@@ -75,12 +82,11 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
     }
 
     private async Task SendHttpRequestToFunction(Dictionary<string, IList<RequestToWait>> processingTasks,
-        int? numberLimitProcessingTasks, int numberProcessingTasks,
+        int numberLimitProcessingTasks, int numberProcessingTasks,
         string functionDeployment)
     {
-        int? numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
-        IList<QueueData>? jsons = await slimFaasQueue.DequeueAsync(functionDeployment,
-            numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue : 1);
+        int numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
+        var jsons = await slimFaasQueue.DequeueAsync(functionDeployment, numberTasksToDequeue);
         if (jsons == null)
         {
             return;
@@ -100,28 +106,39 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         }
     }
 
-    private async Task<long> UpdateTickLastCallIfRequestStillInProgress(int? functionReplicas,
-        Dictionary<string, int> setTickLastCallCounterDictionnary, string functionDeployment, int numberProcessingTasks)
+    private async Task<long> UpdateTickLastCallIfRequestStillInProgress(IMasterService masterService, int? functionReplicas,
+        Dictionary<string, int> setTickLastCallCounterDictionnary,
+        string functionDeployment,
+        int numberProcessingTasks,
+        int numberLimitProcessingTasks)
     {
-        int counterLimit = functionReplicas == 0 ? 10 : 40;
-        long queueLength = await slimFaasQueue.CountAsync(functionDeployment);
-        if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
+        if (masterService.IsMaster)
         {
-            setTickLastCallCounterDictionnary[functionDeployment] = 0;
-
-            if (queueLength > 0 || numberProcessingTasks > 0)
+            int counterLimit = functionReplicas == 0 ? 10 : 40;
+            long queueLength = await slimFaasQueue.CountAsync(functionDeployment);
+            if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
             {
-                historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
+                setTickLastCallCounterDictionnary[functionDeployment] = 0;
+
+                if (queueLength > 0 || numberProcessingTasks > 0)
+                {
+                    historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
+                }
+            }
+
+            if (queueLength == 0)
+            {
+                return 0;
             }
         }
 
-        return queueLength;
+        return await slimFaasQueue.CountAsync(functionDeployment, numberLimitProcessingTasks);
     }
 
-    private static int? ComputeNumberLimitProcessingTasks(SlimFaasDeploymentInformation slimFaas,
+    private static int ComputeNumberLimitProcessingTasks(SlimFaasDeploymentInformation slimFaas,
         DeploymentInformation function)
     {
-        int? numberLimitProcessingTasks;
+        int numberLimitProcessingTasks;
         int numberReplicas = slimFaas.Replicas;
 
         if (function.NumberParallelRequest < numberReplicas || numberReplicas == 0)

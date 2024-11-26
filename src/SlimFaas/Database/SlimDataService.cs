@@ -201,12 +201,12 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         }
     }
 
-    public async Task<long> ListLengthAsync(string key)
+    public async Task<long> ListLengthAsync(string key, int maximum)
     {
-        return await Retry.Do(() => DoListLengthAsync(key), _retryInterval, logger, MaxAttemptCount);
+        return await Retry.Do(() => DoListLengthAsync(key, maximum), _retryInterval, logger, MaxAttemptCount);
     }
 
-    private async Task<long> DoListLengthAsync(string key)
+    private async Task<long> DoListLengthAsync(string key, int maximum)
     {
         await GetAndWaitForLeader();
         await MasterWaitForleaseToken();
@@ -215,7 +215,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
         if (data.Queues.TryGetValue(key, out List<QueueElement>? value))
         {
-            var elements = value.GetQueueAvailableElement([2, 6, 10], DateTime.UtcNow.Ticks, int.MaxValue);
+            var elements = value.GetQueueAvailableElement([2, 6, 10], DateTime.UtcNow.Ticks, maximum);
             var number = elements.Count;
             return number;
         }
