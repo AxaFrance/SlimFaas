@@ -14,7 +14,7 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
     public string Identifier { get; set; }
     public long NowTicks { get; set; }
     
-    public int Timeout { get; set; }
+    public int RetryTimeout { get; set; }
     
     public List<int> Retries { get; set; }
     
@@ -31,7 +31,7 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
         await writer.EncodeAsync(command.Identifier.AsMemory(), new EncodingContext(Encoding.UTF8, false),
             LengthFormat.LittleEndian, token).ConfigureAwait(false);
         await writer.WriteLittleEndianAsync(NowTicks, token).ConfigureAwait(false);
-        await writer.WriteLittleEndianAsync(Timeout, token).ConfigureAwait(false);
+        await writer.WriteLittleEndianAsync(RetryTimeout, token).ConfigureAwait(false);
         await writer.WriteAsync(command.Value, LengthFormat.Compressed, token).ConfigureAwait(false);
         await writer.WriteLittleEndianAsync(Retries.Count, token).ConfigureAwait(false);
         foreach (var retry in Retries)
@@ -62,7 +62,7 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
             Key = key.ToString(),
             Identifier = identifier.ToString(),
             NowTicks = nowTicks,
-            Timeout = timeout,
+            RetryTimeout = timeout,
             Retries = retries,
             Value = value.Memory.ToArray()
         };

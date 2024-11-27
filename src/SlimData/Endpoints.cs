@@ -185,7 +185,13 @@ public class Endpoints
         IRaftCluster cluster, CancellationTokenSource source)
     {
         var logEntry =
-            provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Identifier = Guid.NewGuid().ToString(), Value = value, NowTicks = DateTime.UtcNow.Ticks },
+            provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, 
+                    Identifier = Guid.NewGuid().ToString(), 
+                    Value = value, 
+                    NowTicks = DateTime.UtcNow.Ticks,
+                    Retries = SlimDataInterpreter.Retries,
+                    RetryTimeout = SlimDataInterpreter.RetryTimeout,
+                },
                 cluster.Term);
         await cluster.ReplicateAsync(logEntry, source.Token);
     }
