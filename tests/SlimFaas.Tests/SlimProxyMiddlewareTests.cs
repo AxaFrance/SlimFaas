@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Moq;
 using SlimFaas.Kubernetes;
 using MemoryPack;
+using SlimData;
 using SlimFaas.Database;
 
 namespace SlimFaas.Tests;
@@ -72,9 +73,11 @@ internal class MemoryReplicas2ReplicasService : IReplicasService
 
 internal class MemorySlimFaasQueue : ISlimFaasQueue
 {
-    public Task<IList<byte[]>> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
+    public Task<IList<QueueData>?> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
 
-    public Task<long> CountAsync(string key) => throw new NotImplementedException();
+    public Task<long> CountAsync(string key, int maximum) => throw new NotImplementedException();
+
+    public Task ListSetQueueItemStatusAsync(string key, ListQueueItemStatus queueItemStatus) => throw new NotImplementedException();
 
     public async Task EnqueueAsync(string key, byte[] message) => await Task.Delay(100);
 }
