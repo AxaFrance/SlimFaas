@@ -95,6 +95,12 @@ Now, you can access your pod via SlimFaas proxy:
 
 Enjoy slimfaas!!!!
 
+## Getting Started with @axa-fr/slimfaas-planet-saver
+
+[`@axa-fr/slimfaas-planet-saver readme.md`](./src/SlimFaasPlanetSaver#README.md) : A vanilla JavaScript library to start and monitor replicas from javascript frontend.
+
+![SlimFaasPlanetSaver.gif](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/SlimfaasPlanetSaver.gif)
+
 ## How it works
 
 SlimFaas act as an HTTP proxy with 2 modes:
