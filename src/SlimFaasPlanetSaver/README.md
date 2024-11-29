@@ -23,7 +23,7 @@ npm install @axa-fr/slimfaas-planet-saver
 Example usage with react :
 ```javascript
 import React, { useState, useEffect } from 'react';
-import SlimFaasPlanetSaver from "@axa-fr/slimfass-planet-saver";
+import SlimFaasPlanetSaver from "@axa-fr/slimfaas-planet-saver";
 
 const PlanetSaver = ({ children, baseUrl, fetch }) => {
     const [isFirstStart, setIsFirstStart] = useState(true); // State for first start

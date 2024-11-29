@@ -1,7 +1,7 @@
 {
   "name": "@axa-fr/slimfaas-planet-saver",
   "private": false,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "module": "./src/SlimFaasPlanetSaver.js",
     "description": "Pure vanilla javascript which call SlimFaas API to convert infrastructures resilience to an UX resilience and help to save the planet",

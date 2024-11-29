@@ -1,5 +1,4 @@
-﻿
-const normalizeBaseUrl = (url) => {
+﻿const normalizeBaseUrl = (url) => {
     let tempUrl = url;
     if (tempUrl.endsWith('/')) tempUrl = tempUrl.slice(0, -1);
     return tempUrl;
@@ -18,13 +17,23 @@ export default class SlimFaasPlanetSaver {
         this.overlayElement = null;
         this.styleElement = null;
         this.isReady = false;
+
+        // Initialize lastMouseMoveTime and bind the handler
+        this.lastMouseMoveTime = Date.now();
+        this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
+
         document.addEventListener('visibilitychange', this.handleVisibilityChange);
+        document.addEventListener('mousemove', this.handleMouseMove);
 
         this.createOverlay();
         this.injectStyles();
 
         this.events = document.createElement('div');
+    }
+
+    handleMouseMove() {
+        this.lastMouseMoveTime = Date.now();
     }
 
     handleVisibilityChange() {
@@ -53,13 +62,6 @@ export default class SlimFaasPlanetSaver {
     }
 
     async fetchStatus() {
-        if (!this.isDocumentVisible) {
-            this.intervalId = setTimeout(() => {
-                this.fetchStatus();
-            }, this.interval);
-            return;
-        }
-
         try {
             const response = await this.fetch(`${this.baseUrl}/status-functions`);
             if (!response.ok) {
@@ -71,14 +73,21 @@ export default class SlimFaasPlanetSaver {
             this.setReadyState(allReady);
 
             this.updateCallback(data);
-            await this.wakeUpPods(data);
+
+            const now = Date.now();
+            const mouseMovedRecently = now - this.lastMouseMoveTime <= 60000; // 1 minute in milliseconds
+
+            // Modified condition to check mouse movement
+            if (!this.isDocumentVisible || mouseMovedRecently) {
+                await this.wakeUpPods(data);
+            }
         } catch (error) {
             const errorMessage = error.message;
             this.errorCallback(errorMessage);
 
             this.triggerEvent('error', { message: errorMessage });
 
-            console.error('Error getting slimfaas data :', errorMessage);
+            console.error('Error getting slimfaas data:', errorMessage);
         } finally {
             this.intervalId = setTimeout(() => {
                 this.fetchStatus();
@@ -107,35 +116,35 @@ export default class SlimFaasPlanetSaver {
 
     stopPolling() {
         if (this.intervalId) {
-            clearInterval(this.intervalId);
+            clearTimeout(this.intervalId);
             this.intervalId = null;
         }
     }
 
     injectStyles() {
         const cssString = `
-      .environment-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        cursor: not-allowed;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        font-size: 1.5rem;
-        font-weight: bold;
-        z-index: 1000;
-        visibility: hidden;
-      }
+          .environment-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            cursor: not-allowed;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            z-index: 1000;
+            visibility: hidden;
+          }
 
-      .environment-overlay.visible {
-        visibility: visible;
-      }
-    `;
+          .environment-overlay.visible {
+            visibility: visible;
+          }
+        `;
 
         this.styleElement = document.createElement('style');
         this.styleElement.textContent = cssString;
@@ -175,6 +184,7 @@ export default class SlimFaasPlanetSaver {
     cleanup() {
         this.stopPolling();
         document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+        document.removeEventListener('mousemove', this.handleMouseMove); // Remove mousemove listener
         if (this.overlayElement) {
             document.body.removeChild(this.overlayElement);
         }
