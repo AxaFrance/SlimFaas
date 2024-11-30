@@ -10,7 +10,9 @@ export default class SlimFaasPlanetSaver {
         this.updateCallback = options.updateCallback || (() => {});
         this.errorCallback = options.errorCallback || (() => {});
         this.interval = options.interval || 5000;
-        this.overlayMessage = options.overlayMessage || 'Starting in progress...';
+        this.overlayStartingMessage = options.overlayStartingMessage || 'Starting in progress...';
+        this.overlayNoActivityMessage = options.overlayNoActivityMessage || 'Waiting activity to start environment...';
+        this.overlayErrorMessage = options.overlayErrorMessage || 'An error occured when starting environment. Please contact an administrator.';
         this.fetch = options.fetch || fetch;
         this.intervalId = null;
         this.isDocumentVisible = !document.hidden;
@@ -77,16 +79,19 @@ export default class SlimFaasPlanetSaver {
             const now = Date.now();
             const mouseMovedRecently = now - this.lastMouseMoveTime <= 60000; // 1 minute in milliseconds
 
-            // Modified condition to check mouse movement
+            if (!allReady && this.isDocumentVisible && !mouseMovedRecently) {
+                this.updateOverlayMessage(this.overlayNoActivityMessage);
+            }
+
             if (!this.isDocumentVisible || mouseMovedRecently) {
+                this.updateOverlayMessage(this.overlayStartingMessage);
                 await this.wakeUpPods(data);
             }
         } catch (error) {
             const errorMessage = error.message;
+            this.updateOverlayMessage(this.overlayErrorMessage);
             this.errorCallback(errorMessage);
-
             this.triggerEvent('error', { message: errorMessage });
-
             console.error('Error getting slimfaas data:', errorMessage);
         } finally {
             this.intervalId = setTimeout(() => {

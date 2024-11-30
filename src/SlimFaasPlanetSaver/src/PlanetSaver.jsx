@@ -18,7 +18,6 @@ const PlanetSaver = ({ children, baseUrl, fetch }) => {
             },
             errorCallback: (error) => {
                 console.error('Error detected :', error);
-                environmentStarter.updateOverlayMessage('An error occured when starting environment. Please contact an administrator.');
             },
             overlayMessage: 'Starting the environment...',
         });

@@ -1,5 +1,7 @@
 # @axa-fr/slimfaas-planet-saver
 
+[![npm version](https://badge.fury.io/js/%40axa-fr%2Fslimfaas-planet-saver.svg)](https://badge.fury.io/js/%40axa-fr%2Fslimfaas-planet-saver)
+
 ![SlimFaas.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/SlimFaas.png)
 
 A Vanilla JS project to save the planet. SlimFaas (https://github.com/AxaFrance/slimfaas) is the slimest and simplest Function As A Service on Kubernetes.
@@ -42,9 +44,10 @@ const PlanetSaver = ({ children, baseUrl, fetch }) => {
             },
             errorCallback: (error) => {
                 console.error('Error detected :', error);
-                environmentStarter.updateOverlayMessage('An error occured when starting environment. Please contact an administrator.');
             },
-            overlayMessage: 'Starting the environment...',
+            overlayStartingMessage: 'Starting the environment...',
+            overlayNoActivityMessage: 'Waiting activity to start environment...',
+            overlayErrorMessage: 'An error occured when starting environment. Please contact an administrator.',
         });
 
         // Start polling
