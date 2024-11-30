@@ -163,10 +163,10 @@ jobs:
         run: |
           git config --global user.email "github-action@bot.com"
           git config --global user.name "GitHub"
-      - name: pnpm version ${{ steps.tags.outputs.new_version }}
+      - name: pnpm version ${{ needs.tags.outputs.new_version }}
         if: github.ref == 'refs/heads/main'
         run: |
-          pnpm version ${{ steps.tags.outputs.new_version }}
+          pnpm version ${{ needs.tags.outputs.new_version }}
         working-directory: ./src/SlimFaasPlanetSaver
       - id: Publish
         uses: JS-DevTools/npm-publish@v1
