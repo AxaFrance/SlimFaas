@@ -51,6 +51,12 @@ setTimeout(toggleStatusFunctionsBody, 8000);
 // Mock fetch function
 function mockFetch(url, options = {}) {
     return new Promise((resolve, reject) => {
+        // Lancer une exception aléatoirement 1 fois sur 20
+        if (Math.floor(Math.random() * 20) === 0) {
+            reject(new Error("Exception aléatoire"));
+            return;
+        }
+
         // Route: /status-functions
         if (url === "https://slimfaas/status-functions" && (!options.method || options.method === "GET")) {
             resolve({
@@ -82,5 +88,4 @@ function mockFetch(url, options = {}) {
         }
     });
 }
-
 export default mockFetch;

@@ -4,25 +4,32 @@
     return tempUrl;
 }
 
+
+
 export default class SlimFaasPlanetSaver {
     constructor(baseUrl, options = {}) {
         this.baseUrl = normalizeBaseUrl(baseUrl);
         this.updateCallback = options.updateCallback || (() => {});
         this.errorCallback = options.errorCallback || (() => {});
         this.interval = options.interval || 5000;
-        this.overlayStartingMessage = options.overlayStartingMessage || '🌍 Starting the environment.... 🌳';
+        this.overlayStartingMessage = options.overlayStartingMessage || '🌳 Starting the environment.... 🌳';
         this.overlayNoActivityMessage = options.overlayNoActivityMessage || 'Waiting activity to start environment...';
-        this.overlayErrorMessage = options.overlayErrorMessage || 'Une erreur est survenue lors du démarrage de l\'environnement. Veuillez contacter un administrateur.';
+        this.overlayErrorMessage = options.overlayErrorMessage || 'An error occurred while starting the environment.';
         this.overlaySecondaryMessage = options.overlaySecondaryMessage || 'Startup should be fast, but if no machines are available it can take several minutes.';
+        this.overlayErrorSecondaryMessage = options.overlayErrorSecondaryMessage || 'If the error persists, please contact an administrator.';
+        this.overlayLoadingIcon = options.overlayLoadingIcon || '🌍';
         this.fetch = options.fetch || fetch;
         this.intervalId = null;
         this.isDocumentVisible = !document.hidden;
         this.overlayElement = null;
-        this.spanElement = null; // Nouvel élément pour le <span>
+        this.spanElement = null;
         this.styleElement = null;
         this.isReady = false;
 
-        // Initialisation du temps du dernier mouvement de souris et liaison du gestionnaire
+        this.events = document.createElement('div');
+    }
+
+    initialize() {
         this.lastMouseMoveTime = Date.now();
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
@@ -32,10 +39,7 @@ export default class SlimFaasPlanetSaver {
 
         this.createOverlay();
         this.injectStyles();
-
-        this.events = document.createElement('div');
     }
-
     handleMouseMove() {
         this.lastMouseMoveTime = Date.now();
     }
@@ -52,24 +56,29 @@ export default class SlimFaasPlanetSaver {
     async wakeUpPods(data) {
         const wakePromises = data
             .filter((item) => item.NumberReady === 0)
-            .map((item) =>
-                this.fetch(`${this.baseUrl}/wake-function/${item.Name}`, {
+            .map(async (item) => {
+                const response = await this.fetch(`${this.baseUrl}/wake-function/${item.Name}`, {
                     method: 'POST',
-                })
-            );
+                });
+                if (response.status >= 400) {
+                    throw new Error(`HTTP Error! status: ${response.status} for function ${item.Name}`);
+                }
+                return response;
+            });
 
         try {
             await Promise.all(wakePromises);
         } catch (error) {
-            console.error("Erreur lors du réveil des pods :", error);
+            console.error("Error waking up pods:", error);
+            throw error;
         }
     }
 
     async fetchStatus() {
         try {
             const response = await this.fetch(`${this.baseUrl}/status-functions`);
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP ! statut : ${response.status}`);
+            if (response.status >= 400) {
+                throw new Error(`HTTP Error! status: ${response.status}`);
             }
             const data = await response.json();
 
@@ -79,7 +88,7 @@ export default class SlimFaasPlanetSaver {
             this.updateCallback(data);
 
             const now = Date.now();
-            const mouseMovedRecently = now - this.lastMouseMoveTime <= 60000; // 1 minute en millisecondes
+            const mouseMovedRecently = now - this.lastMouseMoveTime <= 60000; // 1 minute
 
             if (!allReady && this.isDocumentVisible && !mouseMovedRecently) {
                 this.updateOverlayMessage(this.overlayNoActivityMessage, 'waiting-action');
@@ -89,10 +98,10 @@ export default class SlimFaasPlanetSaver {
             }
         } catch (error) {
             const errorMessage = error.message;
-            this.updateOverlayMessage(this.overlayErrorMessage, 'error');
+            this.updateOverlayMessage(this.overlayErrorMessage, 'error', this.overlayErrorSecondaryMessage);
             this.errorCallback(errorMessage);
             this.triggerEvent('error', { message: errorMessage });
-            console.error('Erreur lors de la récupération des données slimfaas :', errorMessage);
+            console.error('Error fetching slimfaas data:', errorMessage);
         } finally {
             this.intervalId = setTimeout(() => {
                 this.fetchStatus();
@@ -128,61 +137,67 @@ export default class SlimFaasPlanetSaver {
 
     injectStyles() {
         const cssString = `
-          .environment-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            cursor: not-allowed;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 2rem;
-            font-weight: bold;
-            z-index: 1000;
-            visibility: hidden;
-            text-align: center;
-          }
+            .slimfaas-environment-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                cursor: not-allowed;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.8);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                font-size: 2rem;
+                font-weight: bold;
+                z-index: 1000;
+                text-align: center;
+            }
 
-          .environment-overlay.visible {
-            visibility: visible;
-          }
+            .slimfaas-environment-overlay__icon {
+                font-size: 4rem;
+                animation: slimfaas-environment-overlay__icon-spin 0.5s linear infinite;
+            }
 
-          .environment-overlay .main-message {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: white;
-          }
+            @keyframes slimfaas-environment-overlay__icon-spin {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
 
-          .environment-overlay .secondary-message {
-            font-size: 1.2rem;
-            font-weight: normal;
-            margin-top: 1rem;
-          }
+            .slimfaas-environment-overlay__main-message {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
 
-          .environment-overlay--waiting{
-            color: white;
-          }
+            .slimfaas-environment-overlay__secondary-message {
+                font-size: 1.2rem;
+                font-weight: normal;
+                margin-top: 1rem;
+            }
 
-          .environment-overlay--waiting-action  {
-            color: lightyellow;
-          }
-          .environment-overlay--waiting-action .secondary-message  {
-            visibility: hidden;
-          }
+            .slimfaas-environment-overlay--waiting {
+                color: white;
+            }
 
-          .environment-overlay--error  {
-            color: lightred;
-          }
-          .environment-overlay--error .secondary-message  {
-            visibility: hidden;
-          }
+            .slimfaas-environment-overlay--waiting-action {
+                color: lightyellow;
+            }
+            .slimfaas-environment-overlay--waiting-action .slimfaas-environment-overlay__secondary-message {
+                visibility: hidden;
+            }
+            .slimfaas-environment-overlay--waiting-action .slimfaas-environment-overlay__icon {
+                animation: none;
+            }
 
+            .slimfaas-environment-overlay--error {
+                color: lightcoral;
+            }
         `;
 
         this.styleElement = document.createElement('style');
@@ -192,43 +207,60 @@ export default class SlimFaasPlanetSaver {
 
     createOverlay() {
         this.overlayElement = document.createElement('div');
-        this.overlayElement.className = 'environment-overlay';
+        this.overlayElement.className = 'slimfaas-environment-overlay';
 
-        // Créer un élément <span> pour le texte et les icônes
+        // Créer l'élément icône
+        this.iconElement = document.createElement('div');
+        this.iconElement.className = 'slimfaas-environment-overlay__icon';
+        this.iconElement.innerText = this.overlayLoadingIcon;
+
+        // Créer l'élément du message principal
         this.spanElement = document.createElement('span');
+        this.spanElement.className = 'slimfaas-environment-overlay__main-message';
         this.spanElement.innerHTML = `${this.overlayStartingMessage}`;
 
-        // Créer un élément <span> pour le second message
+        // Créer l'élément du message secondaire
         this.secondarySpanElement = document.createElement('span');
-        this.secondarySpanElement.className = 'secondary-message';
+        this.secondarySpanElement.className = 'slimfaas-environment-overlay__secondary-message';
         this.secondarySpanElement.innerText = this.overlaySecondaryMessage;
 
-        // Ajouter le <span> à l'overlay
+        // Ajouter les éléments à l'overlay
+        this.overlayElement.appendChild(this.iconElement);
         this.overlayElement.appendChild(this.spanElement);
         this.overlayElement.appendChild(this.secondarySpanElement);
 
-        document.body.appendChild(this.overlayElement);
+        // Ne pas ajouter l'overlay au DOM ici
+        // document.body.appendChild(this.overlayElement);
     }
 
     showOverlay() {
-        if (this.overlayElement) {
-            this.overlayElement.classList.add('visible');
+        if (this.overlayElement && !document.body.contains(this.overlayElement)) {
+            document.body.appendChild(this.overlayElement);
         }
     }
 
     hideOverlay() {
-        if (this.overlayElement) {
-            this.overlayElement.classList.remove('visible');
+        if (this.overlayElement && document.body.contains(this.overlayElement)) {
+            document.body.removeChild(this.overlayElement);
         }
     }
 
-    updateOverlayMessage(newMessage, status = 'waiting') {
+    updateOverlayMessage(newMessage, status = 'waiting', secondaryMessage = null) {
         if (this.spanElement) {
             this.spanElement.innerHTML = `${newMessage}`;
         }
+        if (this.secondarySpanElement && secondaryMessage !== null) {
+            this.secondarySpanElement.innerText = secondaryMessage;
+        } else {
+            this.secondarySpanElement.innerText = this.overlaySecondaryMessage;
+        }
         if (this.overlayElement) {
-            this.overlayElement.classList.remove('environment-overlay--error', 'environment--overlay-waiting', 'environment-overlay--waiting-action');
-            this.overlayElement.classList.add("environment-overlay--"+status);
+            this.overlayElement.classList.remove(
+                'slimfaas-environment-overlay--error',
+                'slimfaas-environment-overlay--waiting',
+                'slimfaas-environment-overlay--waiting-action'
+            );
+            this.overlayElement.classList.add('slimfaas-environment-overlay--' + status);
         }
     }
 
@@ -241,10 +273,10 @@ export default class SlimFaasPlanetSaver {
         this.stopPolling();
         document.removeEventListener('visibilitychange', this.handleVisibilityChange);
         document.removeEventListener('mousemove', this.handleMouseMove);
-        if (this.overlayElement) {
+        if (this.overlayElement && document.body.contains(this.overlayElement)) {
             document.body.removeChild(this.overlayElement);
         }
-        if (this.styleElement) {
+        if (this.styleElement && document.head.contains(this.styleElement)) {
             document.head.removeChild(this.styleElement);
         }
     }
