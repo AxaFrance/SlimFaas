@@ -45,9 +45,10 @@ const PlanetSaver = ({ children, baseUrl, fetch }) => {
             errorCallback: (error) => {
                 console.error('Error detected :', error);
             },
-            overlayStartingMessage: 'Starting the environment...',
+            overlayStartingMessage: '🌍 Starting the environment.... 🌳',
             overlayNoActivityMessage: 'Waiting activity to start environment...',
             overlayErrorMessage: 'An error occured when starting environment. Please contact an administrator.',
+            overlaySecondaryMessage: 'Startup should be fast, but if no machines are available it can take several minutes.',
         });
 
         // Start polling

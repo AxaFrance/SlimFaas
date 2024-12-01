@@ -10,17 +10,19 @@ export default class SlimFaasPlanetSaver {
         this.updateCallback = options.updateCallback || (() => {});
         this.errorCallback = options.errorCallback || (() => {});
         this.interval = options.interval || 5000;
-        this.overlayStartingMessage = options.overlayStartingMessage || 'Starting in progress...';
+        this.overlayStartingMessage = options.overlayStartingMessage || '🌍 Starting the environment.... 🌳';
         this.overlayNoActivityMessage = options.overlayNoActivityMessage || 'Waiting activity to start environment...';
-        this.overlayErrorMessage = options.overlayErrorMessage || 'An error occured when starting environment. Please contact an administrator.';
+        this.overlayErrorMessage = options.overlayErrorMessage || 'Une erreur est survenue lors du démarrage de l\'environnement. Veuillez contacter un administrateur.';
+        this.overlaySecondaryMessage = options.overlaySecondaryMessage || 'Startup should be fast, but if no machines are available it can take several minutes.';
         this.fetch = options.fetch || fetch;
         this.intervalId = null;
         this.isDocumentVisible = !document.hidden;
         this.overlayElement = null;
+        this.spanElement = null; // Nouvel élément pour le <span>
         this.styleElement = null;
         this.isReady = false;
 
-        // Initialize lastMouseMoveTime and bind the handler
+        // Initialisation du temps du dernier mouvement de souris et liaison du gestionnaire
         this.lastMouseMoveTime = Date.now();
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
@@ -59,7 +61,7 @@ export default class SlimFaasPlanetSaver {
         try {
             await Promise.all(wakePromises);
         } catch (error) {
-            console.error("Error waking up pods:", error);
+            console.error("Erreur lors du réveil des pods :", error);
         }
     }
 
@@ -67,7 +69,7 @@ export default class SlimFaasPlanetSaver {
         try {
             const response = await this.fetch(`${this.baseUrl}/status-functions`);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`Erreur HTTP ! statut : ${response.status}`);
             }
             const data = await response.json();
 
@@ -77,22 +79,20 @@ export default class SlimFaasPlanetSaver {
             this.updateCallback(data);
 
             const now = Date.now();
-            const mouseMovedRecently = now - this.lastMouseMoveTime <= 60000; // 1 minute in milliseconds
+            const mouseMovedRecently = now - this.lastMouseMoveTime <= 60000; // 1 minute en millisecondes
 
             if (!allReady && this.isDocumentVisible && !mouseMovedRecently) {
-                this.updateOverlayMessage(this.overlayNoActivityMessage);
-            }
-
-            if (!this.isDocumentVisible || mouseMovedRecently) {
-                this.updateOverlayMessage(this.overlayStartingMessage);
+                this.updateOverlayMessage(this.overlayNoActivityMessage, 'waiting-action');
+            } else if (!this.isDocumentVisible || mouseMovedRecently) {
+                this.updateOverlayMessage(this.overlayStartingMessage, 'waiting');
                 await this.wakeUpPods(data);
             }
         } catch (error) {
             const errorMessage = error.message;
-            this.updateOverlayMessage(this.overlayErrorMessage);
+            this.updateOverlayMessage(this.overlayErrorMessage, 'error');
             this.errorCallback(errorMessage);
             this.triggerEvent('error', { message: errorMessage });
-            console.error('Error getting slimfaas data:', errorMessage);
+            console.error('Erreur lors de la récupération des données slimfaas :', errorMessage);
         } finally {
             this.intervalId = setTimeout(() => {
                 this.fetchStatus();
@@ -135,20 +135,54 @@ export default class SlimFaasPlanetSaver {
             width: 100%;
             cursor: not-allowed;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.8);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             color: white;
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: bold;
             z-index: 1000;
             visibility: hidden;
+            text-align: center;
           }
 
           .environment-overlay.visible {
             visibility: visible;
           }
+
+          .environment-overlay .main-message {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+          }
+
+          .environment-overlay .secondary-message {
+            font-size: 1.2rem;
+            font-weight: normal;
+            margin-top: 1rem;
+          }
+
+          .environment-overlay--waiting{
+            color: white;
+          }
+
+          .environment-overlay--waiting-action  {
+            color: lightyellow;
+          }
+          .environment-overlay--waiting-action .secondary-message  {
+            visibility: hidden;
+          }
+
+          .environment-overlay--error  {
+            color: lightred;
+          }
+          .environment-overlay--error .secondary-message  {
+            visibility: hidden;
+          }
+
         `;
 
         this.styleElement = document.createElement('style');
@@ -159,7 +193,20 @@ export default class SlimFaasPlanetSaver {
     createOverlay() {
         this.overlayElement = document.createElement('div');
         this.overlayElement.className = 'environment-overlay';
-        this.overlayElement.innerText = this.overlayMessage;
+
+        // Créer un élément <span> pour le texte et les icônes
+        this.spanElement = document.createElement('span');
+        this.spanElement.innerHTML = `${this.overlayStartingMessage}`;
+
+        // Créer un élément <span> pour le second message
+        this.secondarySpanElement = document.createElement('span');
+        this.secondarySpanElement.className = 'secondary-message';
+        this.secondarySpanElement.innerText = this.overlaySecondaryMessage;
+
+        // Ajouter le <span> à l'overlay
+        this.overlayElement.appendChild(this.spanElement);
+        this.overlayElement.appendChild(this.secondarySpanElement);
+
         document.body.appendChild(this.overlayElement);
     }
 
@@ -175,9 +222,13 @@ export default class SlimFaasPlanetSaver {
         }
     }
 
-    updateOverlayMessage(newMessage) {
+    updateOverlayMessage(newMessage, status = 'waiting') {
+        if (this.spanElement) {
+            this.spanElement.innerHTML = `${newMessage}`;
+        }
         if (this.overlayElement) {
-            this.overlayElement.innerText = newMessage;
+            this.overlayElement.classList.remove('environment-overlay--error', 'environment--overlay-waiting', 'environment-overlay--waiting-action');
+            this.overlayElement.classList.add("environment-overlay--"+status);
         }
     }
 
@@ -189,7 +240,7 @@ export default class SlimFaasPlanetSaver {
     cleanup() {
         this.stopPolling();
         document.removeEventListener('visibilitychange', this.handleVisibilityChange);
-        document.removeEventListener('mousemove', this.handleMouseMove); // Remove mousemove listener
+        document.removeEventListener('mousemove', this.handleMouseMove);
         if (this.overlayElement) {
             document.body.removeChild(this.overlayElement);
         }
