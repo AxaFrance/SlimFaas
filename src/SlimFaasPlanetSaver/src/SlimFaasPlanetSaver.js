@@ -4,7 +4,7 @@
     return tempUrl;
 }
 
-
+let id =1;
 
 export default class SlimFaasPlanetSaver {
     constructor(baseUrl, options = {}) {
@@ -25,11 +25,12 @@ export default class SlimFaasPlanetSaver {
         this.spanElement = null;
         this.styleElement = null;
         this.isReady = false;
-
-        this.events = document.createElement('div');
+        this.id = id++;
+        this.cleanned = false;
     }
 
     initialize() {
+        this.cleanned = false;
         this.lastMouseMoveTime = Date.now();
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
@@ -39,6 +40,7 @@ export default class SlimFaasPlanetSaver {
 
         this.createOverlay();
         this.injectStyles();
+
     }
     handleMouseMove() {
         this.lastMouseMoveTime = Date.now();
@@ -46,11 +48,6 @@ export default class SlimFaasPlanetSaver {
 
     handleVisibilityChange() {
         this.isDocumentVisible = !document.hidden;
-        if (this.isDocumentVisible) {
-            this.startPolling();
-        } else {
-            this.stopPolling();
-        }
     }
 
     async wakeUpPods(data) {
@@ -100,9 +97,11 @@ export default class SlimFaasPlanetSaver {
             const errorMessage = error.message;
             this.updateOverlayMessage(this.overlayErrorMessage, 'error', this.overlayErrorSecondaryMessage);
             this.errorCallback(errorMessage);
-            this.triggerEvent('error', { message: errorMessage });
             console.error('Error fetching slimfaas data:', errorMessage);
         } finally {
+            if(!this.intervalId)  {
+                return;
+            }
             this.intervalId = setTimeout(() => {
                 this.fetchStatus();
             }, this.interval);
@@ -119,7 +118,7 @@ export default class SlimFaasPlanetSaver {
     }
 
     startPolling() {
-        if (this.intervalId || !this.baseUrl) return;
+        if (this.intervalId || !this.baseUrl || this.cleanned) return;
 
         this.fetchStatus();
 
@@ -208,6 +207,7 @@ export default class SlimFaasPlanetSaver {
     createOverlay() {
         this.overlayElement = document.createElement('div');
         this.overlayElement.className = 'slimfaas-environment-overlay';
+        this.overlayElement.id = `slimfaas-environment-overlay-${this.id}`;
 
         // Créer l'élément icône
         this.iconElement = document.createElement('div');
@@ -234,6 +234,7 @@ export default class SlimFaasPlanetSaver {
     }
 
     showOverlay() {
+        if(this.cleanned) return;
         if (this.overlayElement && !document.body.contains(this.overlayElement)) {
             document.body.appendChild(this.overlayElement);
         }
@@ -264,15 +265,14 @@ export default class SlimFaasPlanetSaver {
         }
     }
 
-    triggerEvent(eventName, detail) {
-        const event = new CustomEvent(eventName, { detail });
-        this.events.dispatchEvent(event);
-    }
-
     cleanup() {
+        this.cleanned = true;
         this.stopPolling();
         document.removeEventListener('visibilitychange', this.handleVisibilityChange);
         document.removeEventListener('mousemove', this.handleMouseMove);
+
+        document.getElementById(`slimfaas-environment-overlay-${this.id}`)?.remove();
+
         if (this.overlayElement && document.body.contains(this.overlayElement)) {
             document.body.removeChild(this.overlayElement);
         }
