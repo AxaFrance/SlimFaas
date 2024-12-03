@@ -21,7 +21,6 @@ RUN dotnet publish "./src/SlimFaas/SlimFaas.csproj" -c Release -a $RUNTIME_ID  -
 RUN ls -la /app/publish
 RUN rm /app/publish/*.pdb
 RUN rm /app/publish/*.dbg
-RUN rm /app/publish/SlimData
 
 FROM --platform=$BUILDPLATFORM  base AS final
 WORKDIR /app
