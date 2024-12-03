@@ -9,7 +9,7 @@ USER appuser
 EXPOSE 80
 EXPOSE 443
 
-FROM --platform=$BUILDPLATFORM  mcr.microsoft.com/dotnet/sdk:8.0-alpine3.19 AS build
+FROM --platform=$BUILDPLATFORM  mcr.microsoft.com/dotnet/sdk:9.0-alpine3.19 AS build
 RUN apk update && apk upgrade
 RUN apk add --no-cache clang build-base zlib-dev
 WORKDIR /src
