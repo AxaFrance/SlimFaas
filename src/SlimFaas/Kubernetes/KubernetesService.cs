@@ -382,9 +382,11 @@ public class KubernetesService : IKubernetesService
             V1ContainerStatus? containerStatus = item.Status.ContainerStatuses.FirstOrDefault();
             bool started = containerStatus?.Started ?? false;
             bool containerReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "ContainersReady")?.Status == "True";
+            bool podReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "Ready")?.Status == "True";
+            bool? isReady = containerStatus?.Ready;
             string? podName = item.Metadata.Name;
             string deploymentName = item.Metadata.OwnerReferences[0].Name;
-            PodInformation podInformation = new(podName, started, containerReady, podIp, deploymentName);
+            PodInformation podInformation = new(podName, started, containerReady && podReady && isReady.HasValue && isReady.Value, podIp, deploymentName);
             yield return podInformation;
         }
     }
