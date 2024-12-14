@@ -391,7 +391,7 @@ public class KubernetesService : IKubernetesService
             bool readyAddress = false;
             if(podReady)
             {
-                var endpoints = await client.CoreV1.ReadNamespacedEndpointsAsync(podName, item.Namespace());
+                var endpoints = await client.CoreV1.ReadNamespacedEndpointsAsync(deploymentName, item.Namespace());
                 var readyAddresses = endpoints.Subsets.SelectMany(s => s.Addresses).ToList();
                 readyAddress = readyAddresses.Count > 0;
             }
