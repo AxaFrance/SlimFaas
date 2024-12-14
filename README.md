@@ -42,6 +42,7 @@ kubectl apply -f deployment-functions.yml
 kubectl apply -f deployment-mysql.yml
 # to run Single Page webapp demo (optional) on http://localhost:8000
 docker run -p 8000:8000 --rm axaguildev/fibonacci-webapp:latest
+kubectl port-forward svc/slimfaas-nodeport 30021:5000 -n slimfaas-demo
 ```
 
 Now, you can access your pod via SlimFaas proxy:

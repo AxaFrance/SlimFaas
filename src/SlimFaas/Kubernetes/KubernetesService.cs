@@ -184,7 +184,7 @@ public class KubernetesService : IKubernetesService
 
             await Task.WhenAll(deploymentListTask, podListTask, statefulSetListTask);
             V1DeploymentList? deploymentList = deploymentListTask.Result;
-            IEnumerable<PodInformation> podList = MapPodInformations(podListTask.Result);
+            IEnumerable<PodInformation> podList = await MapPodInformations(podListTask.Result, client);
             V1StatefulSetList? statefulSetList = statefulSetListTask.Result;
 
             SlimFaasDeploymentInformation? slimFaasDeploymentInformation = statefulSetList.Items
@@ -369,8 +369,9 @@ public class KubernetesService : IKubernetesService
         }
     }
 
-    private static IEnumerable<PodInformation> MapPodInformations(V1PodList v1PodList)
+    private static async Task<IEnumerable<PodInformation>> MapPodInformations(V1PodList v1PodList, k8s.Kubernetes client)
     {
+        var result = new List<PodInformation>();
         foreach (V1Pod? item in v1PodList.Items)
         {
             string? podIp = item.Status.PodIP;
@@ -386,9 +387,20 @@ public class KubernetesService : IKubernetesService
             bool? isReady = containerStatus?.Ready;
             string? podName = item.Metadata.Name;
             string deploymentName = item.Metadata.OwnerReferences[0].Name;
-            PodInformation podInformation = new(podName, started, containerReady && podReady && isReady.HasValue && isReady.Value, podIp, deploymentName);
-            yield return podInformation;
+
+            bool readyAddress = false;
+            if(podReady)
+            {
+                var endpoints = await client.CoreV1.ReadNamespacedEndpointsAsync(podName, item.Namespace());
+                var readyAddresses = endpoints.Subsets.SelectMany(s => s.Addresses).ToList();
+                readyAddress = readyAddresses.Count > 0;
+            }
+
+
+            PodInformation podInformation = new(podName, started, readyAddress, podIp, deploymentName);
+            result.Add(podInformation);
         }
+        return result;
     }
 
 
