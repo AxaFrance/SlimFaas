@@ -195,7 +195,7 @@ public class KubernetesService : IKubernetesService
                 .FirstOrDefault();
 
             IEnumerable<PodInformation> podInformations = podList.ToArray();
-            AddDeployments(kubeNamespace, deploymentList, podInformations, deploymentInformationList, _logger, client);
+            await AddDeployments(kubeNamespace, deploymentList, podInformations, deploymentInformationList, _logger, client);
             AddStatefulSets(kubeNamespace, statefulSetList, podInformations, deploymentInformationList, _logger);
 
             return new DeploymentsInformations(deploymentInformationList,
