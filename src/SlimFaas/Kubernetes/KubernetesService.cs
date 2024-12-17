@@ -4,7 +4,6 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using DotNext.Collections.Generic;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
@@ -254,7 +253,6 @@ public class KubernetesService : IKubernetesService
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
-                    throw;
                 }
 
                 DeploymentInformation deploymentInformation = new(
