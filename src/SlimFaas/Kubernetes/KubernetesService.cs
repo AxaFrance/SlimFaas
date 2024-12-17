@@ -246,8 +246,15 @@ public class KubernetesService : IKubernetesService
                 {
 
                     var endpoints = await client.CoreV1.ReadNamespacedEndpointsAsync(name, kubeNamespace);
-                    var readyAddresses = endpoints.Subsets.SelectMany(s => s.Addresses).ToList();
-                    Console.WriteLine("ReadyAdresses: " + name + " - " +readyAddresses.Count);
+                    if(endpoints != null && endpoints.Subsets != null)
+                    {
+                        var readyAddresses = endpoints.Subsets
+                            .Where(s => s.Addresses != null)
+                            .SelectMany(s => s.Addresses)
+                            .ToList();
+                        Console.WriteLine("ReadyAdresses: " + name + " - " +readyAddresses.Count);
+                    }
+
 
                 }
                 catch (Exception e)
