@@ -389,12 +389,22 @@ public class KubernetesService : IKubernetesService
             string deploymentName = item.Metadata.OwnerReferences[0].Name;
 
             bool readyAddress = false;
-            if(podReady)
+
+            try
             {
-                var endpoints = await client.CoreV1.ReadNamespacedEndpointsAsync(deploymentName, item.Namespace());
-                var readyAddresses = endpoints.Subsets.SelectMany(s => s.Addresses).ToList();
-                readyAddress = readyAddresses.Count > 0;
+                if(podReady)
+                {
+                    var endpoints = await client.CoreV1.ReadNamespacedEndpointsAsync(deploymentName, item.Namespace());
+                    var readyAddresses = endpoints.Subsets.SelectMany(s => s.Addresses).ToList();
+                    readyAddress = readyAddresses.Count > 0;
+                }
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
 
 
             PodInformation podInformation = new(podName, started, readyAddress, podIp, deploymentName);
