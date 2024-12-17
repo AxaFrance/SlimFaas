@@ -74,21 +74,23 @@ public class SlimDataInterpreter : CommandInterpreter
             {
                 queueAvailableElement.RetryQueueElements.Add(new QueueHttpTryElement(nowTicks));
             }
-        }
-        
-        // print all queue elements
-        foreach (var queueElemen in queue)
-        {
-            Console.WriteLine("DoListRightPopAsync QueueElement Id " +  queueElemen.Id);
-            Console.WriteLine("DoListRightPopAsync QueueElement Value " +  queueElemen.Value);
-            Console.WriteLine("DoListRightPopAsync QueueElement InsertTimeStamp " +  queueElemen.InsertTimeStamp);
-            foreach (var retryQueueElemen in queueElemen.RetryQueueElements)
+            Console.WriteLine("DoListRightPopAsync");
+            // print all queue elements
+            foreach (var queueElemen in queue)
             {
-                Console.WriteLine("DoListRightPopAsync QueueElement RetryQueueElement StartTimeStamp " +  retryQueueElemen.StartTimeStamp);
-                Console.WriteLine("DoListRightPopAsync QueueElement RetryQueueElement EndTimeStamp " +  retryQueueElemen.EndTimeStamp);
-                Console.WriteLine("DoListRightPopAsync QueueElement RetryQueueElement HttpCode " +  retryQueueElemen.HttpCode);
+                Console.WriteLine("DoListRightPopAsync QueueElement Id " +  queueElemen.Id);
+                Console.WriteLine("DoListRightPopAsync QueueElement Value " +  queueElemen.Value);
+                Console.WriteLine("DoListRightPopAsync QueueElement InsertTimeStamp " +  queueElemen.InsertTimeStamp);
+                foreach (var retryQueueElemen in queueElemen.RetryQueueElements)
+                {
+                    Console.WriteLine("DoListRightPopAsync QueueElement RetryQueueElement StartTimeStamp " +  retryQueueElemen.StartTimeStamp);
+                    Console.WriteLine("DoListRightPopAsync QueueElement RetryQueueElement EndTimeStamp " +  retryQueueElemen.EndTimeStamp);
+                    Console.WriteLine("DoListRightPopAsync QueueElement RetryQueueElement HttpCode " +  retryQueueElemen.HttpCode);
+                }
             }
         }
+        
+
 
         return default;
     }
