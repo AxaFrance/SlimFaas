@@ -52,6 +52,7 @@ public class SlimDataInterpreter : CommandInterpreter
 
     internal static ValueTask DoListRightPopAsync(ListRightPopCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
     {
+        Console.WriteLine("DoListRightPopAsync Key " +  addHashSetCommand.Key);
         if (queues.TryGetValue(addHashSetCommand.Key, out var queue))
         {
             var nowTicks =addHashSetCommand.NowTicks;
@@ -74,7 +75,7 @@ public class SlimDataInterpreter : CommandInterpreter
             {
                 queueAvailableElement.RetryQueueElements.Add(new QueueHttpTryElement(nowTicks));
             }
-            Console.WriteLine("DoListRightPopAsync");
+
             // print all queue elements
             foreach (var queueElemen in queue)
             {
@@ -108,6 +109,7 @@ public class SlimDataInterpreter : CommandInterpreter
         else
             queues.Add(listLeftPushCommand.Key, new List<QueueElement>() {new(listLeftPushCommand.Value,listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks, listLeftPushCommand.RetryTimeout, listLeftPushCommand.Retries,new List<QueueHttpTryElement>())});
         // print all queue elements
+        Console.WriteLine("DoListLeftPushAsync key " +  listLeftPushCommand.Key + " Identifier " + listLeftPushCommand.Identifier);
         var elements = queues[listLeftPushCommand.Key];
         foreach (var queueElemen in elements)
         {
@@ -134,6 +136,7 @@ public class SlimDataInterpreter : CommandInterpreter
     {
         if (!queues.TryGetValue(listSetQueueItemStatusCommand.Key, out List<QueueElement>? value)) return default;
 
+        Console.WriteLine("DoListSetQueueItemStatusAsync QueueKey " +  listSetQueueItemStatusCommand.Key + " Identifier " + listSetQueueItemStatusCommand.Identifier);
         var queueElement = value.FirstOrDefault(x => x.Id == listSetQueueItemStatusCommand.Identifier);
         if (queueElement == null)
         {
@@ -147,7 +150,7 @@ public class SlimDataInterpreter : CommandInterpreter
         {
             value.Remove(queueElement);
         }
-        Console.WriteLine("DoListSetQueueItemStatusAsync QueueKey " +  listSetQueueItemStatusCommand.Key);
+       
         // print all queue elements
         foreach (var queueElemen in value)
         {
