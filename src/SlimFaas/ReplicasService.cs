@@ -49,7 +49,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
     public async Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace)
     {
-        DeploymentsInformations deployments = await kubernetesService.ListFunctionsAsync(kubeNamespace);
+        DeploymentsInformations deployments = await kubernetesService.ListFunctionsAsync(kubeNamespace, Deployments);
         lock (Lock)
         {
             if (logger.IsEnabled(LogLevel.Information))

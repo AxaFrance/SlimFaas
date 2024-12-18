@@ -71,7 +71,8 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
     IList<string>? ExcludeDeploymentsFromVisibilityPrivate = null,
     string ResourceVersion = "",
     IList<int>? AsynchrounousRetry = null,
-    IList<int>? SynchrounousRetry = null
+    IList<int>? SynchrounousRetry = null,
+    bool EndpointReady = false
     );
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
@@ -170,7 +171,7 @@ public class KubernetesService : IKubernetesService
     }
 
 
-    public async Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace)
+    public async Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace, DeploymentsInformations previousDeployments)
     {
         try
         {
@@ -183,7 +184,7 @@ public class KubernetesService : IKubernetesService
 
             await Task.WhenAll(deploymentListTask, podListTask, statefulSetListTask);
             V1DeploymentList? deploymentList = deploymentListTask.Result;
-            IEnumerable<PodInformation> podList = await MapPodInformations(podListTask.Result, client);
+            IEnumerable<PodInformation> podList = await MapPodInformations(podListTask.Result);
             V1StatefulSetList? statefulSetList = statefulSetListTask.Result;
 
             SlimFaasDeploymentInformation? slimFaasDeploymentInformation = statefulSetList.Items
@@ -194,7 +195,7 @@ public class KubernetesService : IKubernetesService
                 .FirstOrDefault();
 
             IEnumerable<PodInformation> podInformations = podList.ToArray();
-            await AddDeployments(kubeNamespace, deploymentList, podInformations, deploymentInformationList, _logger, client);
+            await AddDeployments(kubeNamespace, deploymentList, podInformations, deploymentInformationList, _logger, client, previousDeployments.Functions);
             AddStatefulSets(kubeNamespace, statefulSetList, podInformations, deploymentInformationList, _logger);
 
             return new DeploymentsInformations(deploymentInformationList,
@@ -226,7 +227,7 @@ public class KubernetesService : IKubernetesService
     }
 
     private static async Task AddDeployments(string kubeNamespace, V1DeploymentList deploymentList, IEnumerable<PodInformation> podList,
-        IList<DeploymentInformation> deploymentInformationList, ILogger<KubernetesService> logger, k8s.Kubernetes client )
+        IList<DeploymentInformation> deploymentInformationList, ILogger<KubernetesService> logger, k8s.Kubernetes client , IList<DeploymentInformation> previousDeploymentInformationList)
     {
         foreach (V1Deployment? deploymentListItem in deploymentList.Items)
         {
@@ -240,32 +241,14 @@ public class KubernetesService : IKubernetesService
                 }
 
                 var name = deploymentListItem.Metadata.Name;
+                var pods = podList.Where(p => p.DeploymentName.StartsWith(name)).ToList();
                 ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
-
-                try
-                {
-
-                    var endpoints = await client.CoreV1.ReadNamespacedEndpointsAsync(name, kubeNamespace);
-                    if(endpoints != null && endpoints.Subsets != null)
-                    {
-                        var readyAddresses = endpoints.Subsets
-                            .Where(s => s.Addresses != null)
-                            .SelectMany(s => s.Addresses)
-                            .ToList();
-                        Console.WriteLine("ReadyAdresses: " + name + " - " +readyAddresses.Count);
-                    }
-
-
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
+                bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeploymentInformationList, name, pods);
 
                 DeploymentInformation deploymentInformation = new(
                     name,
                     kubeNamespace,
-                    podList.Where(p => p.DeploymentName.StartsWith(name)).ToList(),
+                    pods,
                     deploymentListItem.Spec.Replicas ?? 0,
                     annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
                         ? int.Parse(annotationReplicasAtStart)
@@ -297,7 +280,8 @@ public class KubernetesService : IKubernetesService
                     annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
                     deploymentListItem.Metadata.ResourceVersion,
                     AsynchrounousRetry: ReadRetryAnnotation(annotations),
-                    SynchrounousRetry: ReadRetryAnnotation(annotations)
+                    SynchrounousRetry: ReadRetryAnnotation(annotations),
+                    EndpointReady: endpointReady
                     );
                 deploymentInformationList.Add(deploymentInformation);
             }
@@ -306,6 +290,34 @@ public class KubernetesService : IKubernetesService
                 logger.LogError(e, "Error while adding deployment {Deployment}", deploymentListItem.Metadata.Name);
             }
         }
+    }
+
+    private static async Task<bool> GetEndpointReady(string kubeNamespace, k8s.Kubernetes client,
+        IList<DeploymentInformation> previousDeploymentInformationList, string name, List<PodInformation> pods)
+    {
+        bool endpointReady = false;
+        try
+        {
+            var previousDeployment = previousDeploymentInformationList.FirstOrDefault(d => d.Deployment == name);
+            if (previousDeployment is { EndpointReady: false } && pods.Count == 1)
+            {
+                var endpoints = await client.CoreV1.ReadNamespacedEndpointsAsync(name, kubeNamespace);
+                if(endpoints is { Subsets: not null })
+                {
+                    var readyAddresses = endpoints.Subsets
+                        .Where(s => s.Addresses != null)
+                        .SelectMany(s => s.Addresses)
+                        .ToList();
+                    endpointReady = readyAddresses.Count > 0;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+
+        return endpointReady;
     }
 
     private static ScheduleConfig? GetScheduleConfig(IDictionary<string, string> annotations, string name, ILogger<KubernetesService> logger)
@@ -388,7 +400,7 @@ public class KubernetesService : IKubernetesService
         }
     }
 
-    private static async Task<IEnumerable<PodInformation>> MapPodInformations(V1PodList v1PodList, k8s.Kubernetes client)
+    private static async Task<IEnumerable<PodInformation>> MapPodInformations(V1PodList v1PodList)
     {
         var result = new List<PodInformation>();
         foreach (V1Pod? item in v1PodList.Items)
@@ -403,17 +415,10 @@ public class KubernetesService : IKubernetesService
             bool started = containerStatus?.Started ?? false;
             bool containerReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "ContainersReady")?.Status == "True";
             bool podReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "Ready")?.Status == "True";
-            bool? isReady = containerStatus?.Ready;
             string? podName = item.Metadata.Name;
             string deploymentName = item.Metadata.OwnerReferences[0].Name;
 
-            bool readyAddress = false;
-
-
-
-
-
-            PodInformation podInformation = new(podName, started, containerReady, podIp, deploymentName);
+            PodInformation podInformation = new(podName, started, containerReady && podReady, podIp, deploymentName);
             result.Add(podInformation);
         }
         return result;

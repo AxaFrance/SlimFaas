@@ -74,7 +74,7 @@ public class MockKubernetesService : IKubernetesService
         return Task.FromResult(request);
     }
 
-    public Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace)
+    public Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace, DeploymentsInformations previousDeployments)
     {
         return Task.FromResult(_deploymentInformations);
     }
