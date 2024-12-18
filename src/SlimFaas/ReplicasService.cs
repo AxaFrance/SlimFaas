@@ -71,17 +71,16 @@ public class ReplicasService(IKubernetesService kubernetesService,
                                                   "with {PodType} pod type \n" +
                                                   "with {ResourceVersion} resource version \n"+
                                                   "with {NumberParallelRequest} number parallel request \n" +
-                                                  "with dependOn {DependsOn}  \n",
+                                                  "with dependOn {DependsOn}  \n" +
+                                                  "with {EndpointReady} endpoint ready \n",
                                 deploymentInformation.Deployment, deploymentInformation.Replicas, deploymentInformation.ReplicasAtStart, deploymentInformation.ReplicasMin,
                                 deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest, deploymentInformation.TimeoutSecondBeforeSetReplicasMin,
-                                deploymentInformation.PodType, deploymentInformation.ResourceVersion, deploymentInformation.NumberParallelRequest, deploymentInformation.DependsOn);
-
+                                deploymentInformation.PodType, deploymentInformation.ResourceVersion, deploymentInformation.NumberParallelRequest,
+                                                  deploymentInformation.DependsOn,
+                                                  deploymentInformation.EndpointReady);
                         }
                     }
-
             }
-
-
             _deployments = deployments;
         }
         return deployments;
