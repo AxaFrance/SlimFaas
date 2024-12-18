@@ -61,7 +61,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                 }
 
                 bool? isAnyContainerStarted = function.Pods?.Any(p => p.Ready.HasValue && p.Ready.Value);
-                if (!isAnyContainerStarted.HasValue || !isAnyContainerStarted.Value)
+                if (!isAnyContainerStarted.HasValue || !isAnyContainerStarted.Value || !function.EndpointReady)
                 {
                     continue;
                 }
