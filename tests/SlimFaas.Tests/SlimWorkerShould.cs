@@ -52,14 +52,14 @@ public class SlimWorkerShould
                 new(Replicas: 1, Deployment: "fibonacci", Namespace: "default", NumberParallelRequest: 1,
                     ReplicasMin: 0, ReplicasAtStart: 1, TimeoutSecondBeforeSetReplicasMin: 300,
                     ReplicasStartAsSoonAsOneFunctionRetrieveARequest: true,
-                    Pods: new List<PodInformation> { new("", true, true, "", "") }),
+                    Pods: new List<PodInformation> { new("", true, true, "", "")}, EndpointReady: true),
                 new(Replicas: 1, Deployment: "no-pod-started", Namespace: "default", NumberParallelRequest: 1,
                     ReplicasMin: 0, ReplicasAtStart: 1, TimeoutSecondBeforeSetReplicasMin: 300,
                     ReplicasStartAsSoonAsOneFunctionRetrieveARequest: true,
-                    Pods: new List<PodInformation> { new("", false, false, "", "") }),
+                    Pods: new List<PodInformation> { new("", false, false, "", "")}, EndpointReady: true),
                 new(Replicas: 0, Deployment: "no-replicas", Namespace: "default", NumberParallelRequest: 1,
                     ReplicasMin: 0, ReplicasAtStart: 1, TimeoutSecondBeforeSetReplicasMin: 300,
-                    ReplicasStartAsSoonAsOneFunctionRetrieveARequest: true, Pods: new List<PodInformation>())
+                    ReplicasStartAsSoonAsOneFunctionRetrieveARequest: true, Pods: new List<PodInformation>(), EndpointReady: false)
             }, Pods: new List<PodInformation>()));
         HistoryHttpMemoryService historyHttpService = new HistoryHttpMemoryService();
         Mock<ILogger<SlimWorker>> logger = new Mock<ILogger<SlimWorker>>();
