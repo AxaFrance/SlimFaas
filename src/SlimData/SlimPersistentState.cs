@@ -12,7 +12,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
 
     private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), 
         new Dictionary<string, ReadOnlyMemory<byte>>(), 
-        new Dictionary<string, List<ReadOnlyMemory<byte>>>()
+        new Dictionary<string, List<QueueElement>>()
         );
     public CommandInterpreter Interpreter { get; }
 
@@ -42,9 +42,9 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
     {
         return new SlimDataPayload()
         {
-            KeyValues = _state.keyValues,
-            Hashsets = _state.hashsets,
-            Queues = _state.queues
+            KeyValues = _state.KeyValues,
+            Hashsets = _state.Hashsets,
+            Queues = _state.Queues
         };
     }
 
@@ -67,7 +67,7 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
     {
         private readonly SlimDataState _state = new(new Dictionary<string, Dictionary<string, string>>(), 
             new Dictionary<string, ReadOnlyMemory<byte>>(), 
-            new Dictionary<string, List<ReadOnlyMemory<byte>>>()
+            new Dictionary<string, List<QueueElement>>()
             );   
         private readonly CommandInterpreter _interpreter;
 
@@ -84,9 +84,9 @@ public sealed class SlimPersistentState : MemoryBasedStateMachine, ISupplier<Sli
 
         public override async ValueTask WriteToAsync<TWriter>(TWriter writer, CancellationToken token)
         {
-            var keysValues = _state.keyValues;
-            var queues =  _state.queues;
-            var hashsets = _state.hashsets;
+            var keysValues = _state.KeyValues;
+            var queues =  _state.Queues;
+            var hashsets = _state.Hashsets;
             
             LogSnapshotCommand command = new(keysValues, hashsets, queues);
             await command.WriteToAsync(writer, token).ConfigureAwait(false);

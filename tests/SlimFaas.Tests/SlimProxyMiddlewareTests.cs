@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Moq;
 using SlimFaas.Kubernetes;
 using MemoryPack;
+using SlimData;
 using SlimFaas.Database;
 
 namespace SlimFaas.Tests;
@@ -72,11 +73,15 @@ internal class MemoryReplicas2ReplicasService : IReplicasService
 
 internal class MemorySlimFaasQueue : ISlimFaasQueue
 {
-    public Task<IList<byte[]>> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
+    public Task<IList<QueueData>?> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
 
-    public Task<long> CountAsync(string key) => throw new NotImplementedException();
+    public Task<long> CountAvailableElementAsync(string key, int maximum) => throw new NotImplementedException();
+    public Task<long> CountElementAsync(string key, int maximum) => throw new NotImplementedException();
+
+    public Task ListSetQueueItemStatusAsync(string key, ListQueueItemStatus queueItemStatus) => throw new NotImplementedException();
 
     public async Task EnqueueAsync(string key, byte[] message) => await Task.Delay(100);
+
 }
 
 internal record SendData(string FunctionName, string Path, string BaseUrl);
@@ -84,7 +89,7 @@ internal record SendData(string FunctionName, string Path, string BaseUrl);
 internal class SendClientMock : ISendClient
 {
     public IList<SendData> SendDatas = new List<SendData>();
-    public Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null, string? baseUrl = null)
+    public Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, int timeout, string? baseUrl = null)
     {
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
@@ -169,7 +174,7 @@ public class ProxyMiddlewareTests
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
         Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
-        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>(), It.IsAny<string?>()))
+        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<int>(), It.IsAny<string?>()))
             .ReturnsAsync(responseMessage);
 
         using IHost host = await new HostBuilder()

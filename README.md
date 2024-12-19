@@ -6,10 +6,11 @@
 
 Why use SlimFaas?
 - Scale to 0 after a period of inactivity (work with deployment and statefulset)
+- Scale up : compatible with HPA (Horizontal Auto Scaler) and Keda
 - Synchronous HTTP calls
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
-- Retry: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
+- Retry Pattern Configurable: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
 - Private and Public functions
   - Private functions can be accessed only by internal namespace http call from pods
 - Synchronous Publish/Subscribe internal events via HTTP calls to every replicas via HTTP  without any use of specific drivers/libraries (**Couple you application with SlimFaas**)
@@ -41,6 +42,7 @@ kubectl apply -f deployment-functions.yml
 kubectl apply -f deployment-mysql.yml
 # to run Single Page webapp demo (optional) on http://localhost:8000
 docker run -p 8000:8000 --rm axaguildev/fibonacci-webapp:latest
+kubectl port-forward svc/slimfaas-nodeport 30021:5000 -n slimfaas-demo
 ```
 
 Now, you can access your pod via SlimFaas proxy:
@@ -165,6 +167,8 @@ spec:
         SlimFaas/SubscribeEvents: "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
         SlimFaas/DefaultVisibility: "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
         SlimFaas/UrlsPathStartWithVisibility: "Private:/mypath/subPath,Private:/mysecondpath" # Public or Private (private can be accessed only by internal namespace https call from pods)
+        SlimFaas/SynchrounousRetry: "2;4;8"
+        SlimFaas/AsynchrounousRetry: "2;4;8"
     spec:
       serviceAccountName: default
       containers:
@@ -372,6 +376,15 @@ spec:
 - **SlimFaas/ExcludeDeploymentsFromVisibilityPrivate** : ""
   - Comma separated list of deployment names or statefulset names
   - Message from that pods will be considered as public. It is useful if you want to exclude some pods from the private visibility, for example for a backend for frontend.
+- **SlimFaas/Async** : json configuration
+    - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00. Time zones are defined as IANA time zones. The full list is available [here](https://nodatime.org/TimeZones)
+
+````bash
+{
+  "Timeout": 30, # Timeout in seconds
+  "Retries": [2,4,8] # Retry pattern
+}
+````
 - **SlimFaas/Schedule** : json configuration
   - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00. Time zones are defined as IANA time zones. The full list is available [here](https://nodatime.org/TimeZones)
 
@@ -380,10 +393,10 @@ spec:
 {
   "TimeZoneID":"Europe/Paris", # Time Zone ID can be found here: https://nodatime.org/TimeZones
   "Default":{
-    "WakeUp":["07:00"], // Wake up your infrastructure at 07:00
+    "WakeUp":["07:00"], # Wake up your infrastructure at 07:00
     "ScaleDownTimeout":[
-              {"Time":"07:00","Value":20}, // Scale down after 20 seconds of inactivity after 07:00
-              {"Time":"21:00","Value":10} // Scale down after 10 seconds of inactivity after 21:00
+              {"Time":"07:00","Value":20}, # Scale down after 20 seconds of inactivity after 07:00
+              {"Time":"21:00","Value":10} # Scale down after 10 seconds of inactivity after 21:00
             ]
   }
 }
