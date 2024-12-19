@@ -310,6 +310,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             await InitCustomRequest(context, context.Request, "", functionPath);
 
         List<Task> tasks = new();
+        var queryString = context.Request.QueryString.ToUriComponent();
         foreach (DeploymentInformation function in functions)
         {
             foreach (var pod in function.Pods)
@@ -332,7 +333,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
 
                 var baseUrl = SlimDataEndpoint.Get(pod, baseFunctionPodUrl);
                 logger.LogDebug("Sending event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, function.Deployment, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
-                Task task = SendRequest(context, sendClient, customRequest with {FunctionName =  function.Deployment}, baseUrl, logger, eventName);
+                Task task = SendRequest(queryString, sendClient, customRequest with {FunctionName =  function.Deployment}, baseUrl, logger, eventName);
                 tasks.Add(task);
             }
         }
@@ -342,7 +343,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             foreach (string baseUrl in slimFaasSubscribeEvent.Value)
             {
                 logger.LogDebug("Sending event {EventName} to {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
-                Task task = SendRequest(context, sendClient, customRequest with {FunctionName = ""}, baseUrl, logger, eventName);
+                Task task = SendRequest(queryString, sendClient, customRequest with {FunctionName = ""}, baseUrl, logger, eventName);
                 tasks.Add(task);
             }
         }
@@ -366,20 +367,20 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         context.Response.StatusCode = 204;
     }
 
-    private static async Task SendRequest(HttpContext context, ISendClient sendClient, CustomRequest customRequest, string baseUrl, ILogger<SlimProxyMiddleware> logger, string eventName)
+    private static async Task SendRequest(string queryString, ISendClient sendClient, CustomRequest customRequest, string baseUrl, ILogger<SlimProxyMiddleware> logger, string eventName)
     {
         try
         {
-            using HttpResponseMessage responseMessage = await sendClient.SendHttpRequestAsync(customRequest, context, baseUrl);
+            using HttpResponseMessage responseMessage = await sendClient.SendHttpRequestAsync(customRequest, 30, baseUrl);
             logger.LogDebug(
                 "Response from event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent} is {StatusCode}",
-                eventName, customRequest.FunctionName, baseUrl, customRequest.Path, context.Request.QueryString.ToUriComponent(),
+                eventName, customRequest.FunctionName, baseUrl, customRequest.Path, queryString,
                 responseMessage.StatusCode);
         }
         catch (Exception e)
         {
             logger.LogError(e, "Error in sending event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent}",
-                eventName, customRequest.FunctionName, baseUrl, customRequest.Path, context.Request.QueryString.ToUriComponent());
+                eventName, customRequest.FunctionName, baseUrl, customRequest.Path, queryString);
         }
     }
 

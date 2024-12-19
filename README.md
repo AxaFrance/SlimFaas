@@ -376,20 +376,13 @@ spec:
 - **SlimFaas/ExcludeDeploymentsFromVisibilityPrivate** : ""
   - Comma separated list of deployment names or statefulset names
   - Message from that pods will be considered as public. It is useful if you want to exclude some pods from the private visibility, for example for a backend for frontend.
-- **SlimFaas/Retries** : json configuration
+- **SlimFaas/Async** : json configuration
     - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00. Time zones are defined as IANA time zones. The full list is available [here](https://nodatime.org/TimeZones)
-
 
 ````bash
 {
-  "TimeZoneID":"Europe/Paris", # Time Zone ID can be found here: https://nodatime.org/TimeZones
-  "Default":{
-    "WakeUp":["07:00"], // Wake up your infrastructure at 07:00
-    "ScaleDownTimeout":[
-              {"Time":"07:00","Value":20}, // Scale down after 20 seconds of inactivity after 07:00
-              {"Time":"21:00","Value":10} // Scale down after 10 seconds of inactivity after 21:00
-            ]
-  }
+  "Timeout": 30, # Timeout in seconds
+  "Retries": [2,4,8] # Retry pattern
 }
 ````
 - **SlimFaas/Schedule** : json configuration
@@ -400,10 +393,10 @@ spec:
 {
   "TimeZoneID":"Europe/Paris", # Time Zone ID can be found here: https://nodatime.org/TimeZones
   "Default":{
-    "WakeUp":["07:00"], // Wake up your infrastructure at 07:00
+    "WakeUp":["07:00"], # Wake up your infrastructure at 07:00
     "ScaleDownTimeout":[
-              {"Time":"07:00","Value":20}, // Scale down after 20 seconds of inactivity after 07:00
-              {"Time":"21:00","Value":10} // Scale down after 10 seconds of inactivity after 21:00
+              {"Time":"07:00","Value":20}, # Scale down after 20 seconds of inactivity after 07:00
+              {"Time":"21:00","Value":10} # Scale down after 10 seconds of inactivity after 21:00
             ]
   }
 }

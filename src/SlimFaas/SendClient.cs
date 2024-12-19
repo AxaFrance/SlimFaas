@@ -4,7 +4,7 @@ namespace SlimFaas;
 
 public interface ISendClient
 {
-    Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null, string? baseUrl = null);
+    Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, int timeout=30, string? baseUrl = null);
 
     Task<HttpResponseMessage> SendHttpRequestSync(HttpContext httpContext, string functionName, string functionPath,
         string functionQuery, string? baseUrl = null);
@@ -19,7 +19,7 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
         Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
 
     public async Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest,
-        HttpContext? context = null, string? baseUrl = null)
+        int timeout=30, string? baseUrl = null)
     {
         try
         {
@@ -31,14 +31,10 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
                 ComputeTargetUrl(functionUrl, customRequestFunctionName, customRequestPath, customRequestQuery, _namespaceSlimFaas);
             logger.LogDebug("Sending async request to {TargetUrl}", targetUrl);
             HttpRequestMessage targetRequestMessage = CreateTargetMessage(customRequest, new Uri(targetUrl));
-            if (context != null)
-            {
-                return await httpClient.SendAsync(targetRequestMessage,
-                    HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
-            }
+            using var cancellationToken = new CancellationTokenSource(timeout);
 
             return await httpClient.SendAsync(targetRequestMessage,
-                HttpCompletionOption.ResponseHeadersRead);
+                HttpCompletionOption.ResponseHeadersRead, cancellationToken.Token);
         }
         catch (Exception e)
         {
