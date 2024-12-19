@@ -5,7 +5,11 @@ using SlimData.Commands;
 
 namespace SlimData;
 
-    
+[MemoryPackable]
+public partial record ListLeftPushInput(byte[] Value, byte[] RetryInformation);
+
+[MemoryPackable]
+public partial record RetryInformation(List<int> Retries, int RetryTimeoutSeconds);
 
 [MemoryPackable]
 public partial record QueueItemStatus(string Id="", int HttpCode=0);
@@ -160,10 +164,7 @@ public class Endpoints
         return values;
         
     }
-    
-    public record ListLeftPushInput(byte[] Value, byte[] RetryInformation);
 
-    public record RetryInformation(List<int> Retries, int RetryTimeoutSeconds);
 
     public static Task ListLeftPush(HttpContext context)
     {
