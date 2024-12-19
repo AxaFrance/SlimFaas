@@ -4,11 +4,11 @@ public static class QueueElementExtensions
 {
     public static int[] HttpStatusCodesWorthRetrying =
     [
-        408 , // HttpStatusCode.RequestTimeout,
+       // 408 , // HttpStatusCode.RequestTimeout,
         500, // HttpStatusCode.InternalServerError, 
         502, // HttpStatusCode.BadGateway, 
         503, // HttpStatusCode.ServiceUnavailable,
-        504, // HttpStatusCode.GatewayTimeout 
+        //504, // HttpStatusCode.GatewayTimeout 
     ];
     
     public static bool IsTimeout(this QueueElement element, long nowTicks, int timeout=30)
