@@ -64,13 +64,13 @@ public class SlimDataInterpreter : CommandInterpreter
                 retryQueueElement.HttpCode = 504;
             }
             
-            var queueFinishedElements = queue.GetQueueFinishedElement(nowTicks, Retries, RetryTimeout);
+            var queueFinishedElements = queue.GetQueueFinishedElement(nowTicks);
             foreach (var queueFinishedElement in queueFinishedElements)
             {
                 queue.Remove(queueFinishedElement);
             }
             
-            var queueAvailableElements = queue.GetQueueAvailableElement(Retries, nowTicks, addHashSetCommand.Count);
+            var queueAvailableElements = queue.GetQueueAvailableElement(nowTicks, addHashSetCommand.Count);
             foreach (var queueAvailableElement in queueAvailableElements)
             {
                 queueAvailableElement.RetryQueueElements.Add(new QueueHttpTryElement(nowTicks));
@@ -146,7 +146,7 @@ public class SlimDataInterpreter : CommandInterpreter
         retryQueueElement.EndTimeStamp = listSetQueueItemStatusCommand.NowTicks;
         retryQueueElement.HttpCode = listSetQueueItemStatusCommand.HttpCode;
 
-        if (queueElement.IsFinished(listSetQueueItemStatusCommand.NowTicks, Retries, RetryTimeout))
+        if (queueElement.IsFinished(listSetQueueItemStatusCommand.NowTicks))
         {
             value.Remove(queueElement);
         }

@@ -47,7 +47,7 @@ public class QueueElementExtentionsTests
         queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "3", 090902, timeout, SlimDataInterpreter.Retries, new List<QueueHttpTryElement>()));
         queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "4", 090902, timeout, SlimDataInterpreter.Retries, new List<QueueHttpTryElement>()));
 
-        var availableElements = queueElements.GetQueueAvailableElement(SlimDataInterpreter.Retries, nowTicks, 3, 30);
+        var availableElements = queueElements.GetQueueAvailableElement(nowTicks, 3);
 
         Assert.Equal(2, availableElements.Count);
         Assert.Equal("2", availableElements[0].Id);
@@ -58,7 +58,7 @@ public class QueueElementExtentionsTests
         Assert.Equal("1", runningElements[0].Id);
 
 
-        var finishedElements = queueElements.GetQueueFinishedElement(nowTicks, SlimDataInterpreter.Retries);
+        var finishedElements = queueElements.GetQueueFinishedElement(nowTicks);
         Assert.Equal(4, finishedElements.Count);
     }
 
