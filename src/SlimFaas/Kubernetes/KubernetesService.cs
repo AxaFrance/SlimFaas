@@ -428,7 +428,7 @@ public class KubernetesService : IKubernetesService
             string? podName = item.Metadata.Name;
             string deploymentName = item.Metadata.OwnerReferences[0].Name;
 
-            PodInformation podInformation = new(podName, started, containerReady && podReady, podIp, deploymentName);
+            PodInformation podInformation = new(podName, started, started && containerReady && podReady, podIp, deploymentName);
             result.Add(podInformation);
         }
         return result;

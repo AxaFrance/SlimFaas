@@ -114,15 +114,18 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
     private async Task DoListLeftPushAsync(string key, byte[] field)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
+        Endpoints.RetryInformation retryInformation = new([2, 4, 10], 30);
+        Endpoints.ListLeftPushInput listLeftPushInput = new(field, MemoryPackSerializer.Serialize(retryInformation));
+        byte[] serialize = MemoryPackSerializer.Serialize(listLeftPushInput);
         if (!cluster.LeadershipToken.IsCancellationRequested)
         {
             var simplePersistentState = serviceProvider.GetRequiredService<SlimPersistentState>();
-            await Endpoints.ListLeftPushCommand(simplePersistentState, key, field, cluster, new CancellationTokenSource());
+            await Endpoints.ListLeftPushCommand(simplePersistentState, key, serialize, cluster, new CancellationTokenSource());
         }
         else
         {
             using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListLeftPush?key={key}"));
-            request.Content = new ByteArrayContent(field);
+            request.Content = new ByteArrayContent(serialize);
             using var httpClient = httpClientFactory.CreateClient(HttpClientName);
             HttpResponseMessage response = await httpClient.SendAsync(request);
             if ((int)response.StatusCode >= 500)

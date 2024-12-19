@@ -139,7 +139,7 @@ public class Endpoints
             var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
             if (queues.TryGetValue(key, out var queue))
             {
-                var queueElements = queue.GetQueueAvailableElement( nowTicks, count);
+                var queueElements = queue.GetQueueAvailableElement(nowTicks, count);
                 foreach (var queueElement in queueElements)
                 {
                     Console.WriteLine("Endpoint ListRightPopCommand " + queueElement.Id);
@@ -160,6 +160,10 @@ public class Endpoints
         return values;
         
     }
+    
+    public record ListLeftPushInput(byte[] Value, byte[] RetryInformation);
+
+    public record RetryInformation(List<int> Retries, int RetryTimeoutSeconds);
 
     public static Task ListLeftPush(HttpContext context)
     {
@@ -184,13 +188,15 @@ public class Endpoints
     public static async Task ListLeftPushCommand(SlimPersistentState provider, string key, byte[] value,
         IRaftCluster cluster, CancellationTokenSource source)
     {
+        ListLeftPushInput input = MemoryPackSerializer.Deserialize<ListLeftPushInput>(value);
+        RetryInformation retryInformation = MemoryPackSerializer.Deserialize<RetryInformation>(input.RetryInformation);
         var logEntry =
             provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, 
                     Identifier = Guid.NewGuid().ToString(), 
-                    Value = value, 
+                    Value = input.Value, 
                     NowTicks = DateTime.UtcNow.Ticks,
-                    Retries = SlimDataInterpreter.Retries,
-                    RetryTimeout = SlimDataInterpreter.RetryTimeout,
+                    Retries = retryInformation.Retries,
+                    RetryTimeout = retryInformation.RetryTimeoutSeconds,
                 },
                 cluster.Term);
         await cluster.ReplicateAsync(logEntry, source.Token);
