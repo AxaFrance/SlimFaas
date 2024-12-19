@@ -189,10 +189,10 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         if (data.Queues.TryGetValue(key, out List<QueueElement>? value))
         {
             var nowTicks = DateTime.UtcNow.Ticks;
-            var elements = value.GetQueueAvailableElement([2, 6, 10], DateTime.UtcNow.Ticks, maximum);
+            var elements = value.GetQueueAvailableElement([2, 6, 10], nowTicks, maximum);
             var runningElements = elements.GetQueueRunningElement(nowTicks);
             var runningWaitingForRetryElements = elements.GetQueueWaitingForRetryElement(nowTicks, [2, 6, 10]);
-            return elements.Count + runningElements.Count + runningWaitingForRetryElements.Count;;
+            return elements.Count + runningElements.Count + runningWaitingForRetryElements.Count;
         }
 
         return 0L;
