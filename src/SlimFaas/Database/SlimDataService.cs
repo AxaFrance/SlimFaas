@@ -132,12 +132,12 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         }
     }
 
-    public async Task<IList<byte[]>> ListRightPopAsync(string key, int count = 1)
+    public async Task<IList<QueueData>?> ListRightPopAsync(string key, int count = 1)
     {
-        return await Retry.Do(() =>DoListRightPopAsync(key, count), _retryInterval, logger, MaxAttemptCount);
+        return await Retry.Do(() => DoListRightPopAsync(key, count), _retryInterval, logger, MaxAttemptCount);
     }
 
-    private async Task<IList<byte[]>> DoListRightPopAsync(string key, int count = 1)
+    private async Task<IList<QueueData>?> DoListRightPopAsync(string key, int count = 1)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)
@@ -161,24 +161,90 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
             }
 
             var bin = await response.Content.ReadAsByteArrayAsync();
-            ListString? result = MemoryPackSerializer.Deserialize<ListString>(bin);
-            return result?.Items ?? new List<byte[]>();
+            ListItems? result = MemoryPackSerializer.Deserialize<ListItems>(bin);
+            if(result != null && result.Items != null)
+            {
+                foreach (var listItem in result.Items)
+                {
+                    Console.WriteLine($"DoListRightPopAsync: Id: {listItem.Id}");
+                }
+            }
+
+            return result?.Items ?? new List<QueueData>();
         }
     }
 
-    public async Task<long> ListLengthAsync(string key)
+    public Task<long> ListCountElementAsync(string key, int maximum = Int32.MaxValue)
     {
-        return await Retry.Do(() =>DoListLengthAsync(key), _retryInterval, logger, MaxAttemptCount);
+        return Retry.Do(() => DoListCountElementAsync(key, maximum), _retryInterval, logger, MaxAttemptCount);
     }
 
-    private async Task<long> DoListLengthAsync(string key)
+    private async Task<long> DoListCountElementAsync(string key, int maximum)
     {
         await GetAndWaitForLeader();
         await MasterWaitForleaseToken();
 
         SlimDataPayload data = SimplePersistentState.Invoke();
-        long result = data.Queues.TryGetValue(key, out List<ReadOnlyMemory<byte>>? value) ? value.Count : 0L;
-        return result;
+
+        if (data.Queues.TryGetValue(key, out List<QueueElement>? value))
+        {
+            var nowTicks = DateTime.UtcNow.Ticks;
+            var elements = value.GetQueueAvailableElement([2, 6, 10], DateTime.UtcNow.Ticks, maximum);
+            var runningElements = elements.GetQueueRunningElement(nowTicks);
+            var runningWaitingForRetryElements = elements.GetQueueWaitingForRetryElement(nowTicks, [2, 6, 10]);
+            return elements.Count + runningElements.Count + runningWaitingForRetryElements.Count;;
+        }
+
+        return 0L;
+    }
+
+    public async Task ListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus)
+    {
+        await Retry.Do(() => DoListSetQueueItemStatus(key, queueItemStatus), _retryInterval, logger, MaxAttemptCount);
+    }
+
+    private async Task DoListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus)
+    {
+        EndPoint endpoint = await GetAndWaitForLeader();
+        if (!cluster.LeadershipToken.IsCancellationRequested)
+        {
+            var simplePersistentState = serviceProvider.GetRequiredService<SlimPersistentState>();
+            await Endpoints.ListSetQueueItemStatusCommand(simplePersistentState, key, queueItemStatus, cluster, new CancellationTokenSource());
+        }
+        else
+        {
+            using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListSetQueueItemStatus?key={key}"));
+            var field = MemoryPackSerializer.Serialize(queueItemStatus);
+            request.Content = new ByteArrayContent(field);
+            using var httpClient = httpClientFactory.CreateClient(HttpClientName);
+            using HttpResponseMessage response = await httpClient.SendAsync(request);
+            if ((int)response.StatusCode >= 500)
+            {
+                throw new DataException("Error in calling SlimData HTTP Service");
+            }
+        }
+    }
+
+    public async Task<long> ListCountAvailableElementAsync(string key, int maximum)
+    {
+        return await Retry.Do(() => DoListCountAvailableElementAsync(key, maximum), _retryInterval, logger, MaxAttemptCount);
+    }
+
+    private async Task<long> DoListCountAvailableElementAsync(string key, int maximum)
+    {
+        await GetAndWaitForLeader();
+        await MasterWaitForleaseToken();
+
+        SlimDataPayload data = SimplePersistentState.Invoke();
+
+        if (data.Queues.TryGetValue(key, out List<QueueElement>? value))
+        {
+            var elements = value.GetQueueAvailableElement([2, 6, 10], DateTime.UtcNow.Ticks, maximum);
+            var number = elements.Count;
+            return number;
+        }
+
+        return 0L;
     }
 
     private async Task MasterWaitForleaseToken()
@@ -210,7 +276,6 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 #pragma warning restore CA2252
 public static class Retry
 {
-
 
     public static T Do<T>(
         Func<T> action,

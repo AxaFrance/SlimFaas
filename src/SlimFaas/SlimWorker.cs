@@ -1,14 +1,17 @@
 ﻿using MemoryPack;
+using SlimData;
 using SlimFaas.Database;
 using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
-internal record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest);
+internal record struct RequestToWait(Task<HttpResponseMessage> Task, CustomRequest CustomRequest, string Id);
 
 public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasService,
-        HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger, IServiceProvider serviceProvider,
+        HistoryHttpMemoryService historyHttpService, ILogger<SlimWorker> logger,
+        IServiceProvider serviceProvider,
         ISlimDataStatus slimDataStatus,
+        IMasterService masterService,
         int delay = EnvironmentVariables.SlimWorkerDelayMillisecondsDefault)
     : BackgroundService
 {
@@ -40,23 +43,29 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
             {
                 string functionDeployment = function.Deployment;
                 setTickLastCallCounterDictionary.TryAdd(functionDeployment, 0);
-                int numberProcessingTasks = ManageProcessingTasks(processingTasks, functionDeployment);
-                int? numberLimitProcessingTasks = ComputeNumberLimitProcessingTasks(slimFaas, function);
+                int numberProcessingTasks = await ManageProcessingTasksAsync(slimFaasQueue, processingTasks, functionDeployment);
+                int numberLimitProcessingTasks = ComputeNumberLimitProcessingTasks(slimFaas, function);
                 setTickLastCallCounterDictionary[functionDeployment]++;
                 int functionReplicas = function.Replicas;
-                long queueLength = await UpdateTickLastCallIfRequestStillInProgress(functionReplicas,
+                long queueLength = await UpdateTickLastCallIfRequestStillInProgress(
+                    masterService,
+                    functionReplicas,
                     setTickLastCallCounterDictionary,
-                    functionDeployment, numberProcessingTasks);
+                    functionDeployment,
+                    numberProcessingTasks,
+                    numberLimitProcessingTasks);
+
                 if (functionReplicas == 0 || queueLength <= 0)
                 {
                     continue;
                 }
 
                 bool? isAnyContainerStarted = function.Pods?.Any(p => p.Ready.HasValue && p.Ready.Value);
-                if (!isAnyContainerStarted.HasValue || !isAnyContainerStarted.Value)
+                if (!isAnyContainerStarted.HasValue || !isAnyContainerStarted.Value || !function.EndpointReady)
                 {
                     continue;
                 }
+                logger.LogDebug("Function {FunctionDeployment} is ready", functionDeployment);
 
                 if (numberProcessingTasks >= numberLimitProcessingTasks)
                 {
@@ -74,15 +83,18 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
     }
 
     private async Task SendHttpRequestToFunction(Dictionary<string, IList<RequestToWait>> processingTasks,
-        int? numberLimitProcessingTasks, int numberProcessingTasks,
+        int numberLimitProcessingTasks, int numberProcessingTasks,
         string functionDeployment)
     {
-        int? numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
-        IList<byte[]> jsons = await slimFaasQueue.DequeueAsync(functionDeployment,
-            numberTasksToDequeue.HasValue ? (long)numberTasksToDequeue : 1);
+        int numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
+        var jsons = await slimFaasQueue.DequeueAsync(functionDeployment, numberTasksToDequeue);
+        if (jsons == null)
+        {
+            return;
+        }
         foreach (var requestJson in jsons)
         {
-            CustomRequest customRequest = MemoryPackSerializer.Deserialize<CustomRequest>(requestJson);
+            CustomRequest customRequest = MemoryPackSerializer.Deserialize<CustomRequest>(requestJson.Data);
 
             logger.LogDebug("{CustomRequestMethod}: {CustomRequestPath}{CustomRequestQuery} Sending",
                 customRequest.Method, customRequest.Path, customRequest.Query);
@@ -91,32 +103,43 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
             using IServiceScope scope = serviceProvider.CreateScope();
             Task<HttpResponseMessage> taskResponse = scope.ServiceProvider.GetRequiredService<ISendClient>()
                 .SendHttpRequestAsync(customRequest);
-            processingTasks[functionDeployment].Add(new RequestToWait(taskResponse, customRequest));
+            processingTasks[functionDeployment].Add(new RequestToWait(taskResponse, customRequest, requestJson.Id));
         }
     }
 
-    private async Task<long> UpdateTickLastCallIfRequestStillInProgress(int? functionReplicas,
-        Dictionary<string, int> setTickLastCallCounterDictionnary, string functionDeployment, int numberProcessingTasks)
+    private async Task<long> UpdateTickLastCallIfRequestStillInProgress(IMasterService masterService, int? functionReplicas,
+        Dictionary<string, int> setTickLastCallCounterDictionnary,
+        string functionDeployment,
+        int numberProcessingTasks,
+        int numberLimitProcessingTasks)
     {
-        int counterLimit = functionReplicas == 0 ? 10 : 300;
-        long queueLength = await slimFaasQueue.CountAsync(functionDeployment);
-        if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
+        if (masterService.IsMaster)
         {
-            setTickLastCallCounterDictionnary[functionDeployment] = 0;
-
-            if (queueLength > 0 || numberProcessingTasks > 0)
+            int counterLimit = functionReplicas == 0 ? 10 : 40;
+            long queueLength = await slimFaasQueue.CountElementAsync(functionDeployment);
+            if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
             {
-                historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
+                setTickLastCallCounterDictionnary[functionDeployment] = 0;
+
+                if (queueLength > 0 || numberProcessingTasks > 0)
+                {
+                    historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
+                }
+            }
+
+            if (queueLength == 0)
+            {
+                return 0;
             }
         }
 
-        return queueLength;
+        return await slimFaasQueue.CountAvailableElementAsync(functionDeployment, numberLimitProcessingTasks);
     }
 
-    private static int? ComputeNumberLimitProcessingTasks(SlimFaasDeploymentInformation slimFaas,
+    private static int ComputeNumberLimitProcessingTasks(SlimFaasDeploymentInformation slimFaas,
         DeploymentInformation function)
     {
-        int? numberLimitProcessingTasks;
+        int numberLimitProcessingTasks;
         int numberReplicas = slimFaas.Replicas;
 
         if (function.NumberParallelRequest < numberReplicas || numberReplicas == 0)
@@ -131,14 +154,17 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         return numberLimitProcessingTasks;
     }
 
-    private int ManageProcessingTasks(Dictionary<string, IList<RequestToWait>> processingTasks,
+    private async Task<int> ManageProcessingTasksAsync(ISlimFaasQueue slimFaasQueue,
+        Dictionary<string, IList<RequestToWait>> processingTasks,
         string functionDeployment)
     {
         if (processingTasks.ContainsKey(functionDeployment) == false)
         {
             processingTasks.Add(functionDeployment, new List<RequestToWait>());
         }
-
+        var listQueueItemStatus = new ListQueueItemStatus();
+        var queueItemStatusList = new List<QueueItemStatus>();
+        listQueueItemStatus.Items = queueItemStatusList;
         List<RequestToWait> httpResponseMessagesToDelete = new();
         foreach (RequestToWait processing in processingTasks[functionDeployment])
         {
@@ -151,15 +177,26 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                 }
 
                 HttpResponseMessage httpResponseMessage = processing.Task.Result;
-                httpResponseMessage.Dispose();
+                var statusCode = (int)httpResponseMessage.StatusCode;
                 logger.LogDebug(
                     "{CustomRequestMethod}: /async-function/{CustomRequestPath}{CustomRequestQuery} {StatusCode}",
                     processing.CustomRequest.Method, processing.CustomRequest.Path, processing.CustomRequest.Query,
                     httpResponseMessage.StatusCode);
                 httpResponseMessagesToDelete.Add(processing);
+                queueItemStatusList.Add(new QueueItemStatus(processing.Id, statusCode));
+                httpResponseMessage.Dispose();
+            }
+            // Filter by InnerException.
+            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+            {
+                queueItemStatusList.Add(new QueueItemStatus(processing.Id, 504));
+                httpResponseMessagesToDelete.Add(processing);
+                logger.LogWarning("Request Timeout Error: {Message} {StackTrace}", ex.Message, ex.StackTrace);
+                historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
             }
             catch (Exception e)
             {
+                queueItemStatusList.Add(new QueueItemStatus(processing.Id, 500));
                 httpResponseMessagesToDelete.Add(processing);
                 logger.LogWarning("Request Error: {Message} {StackTrace}", e.Message, e.StackTrace);
                 historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
@@ -169,6 +206,11 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         foreach (RequestToWait httpResponseMessage in httpResponseMessagesToDelete)
         {
             processingTasks[functionDeployment].Remove(httpResponseMessage);
+        }
+
+        if (listQueueItemStatus.Items.Count > 0)
+        {
+            await slimFaasQueue.ListSetQueueItemStatusAsync(functionDeployment, listQueueItemStatus);
         }
 
         int numberProcessingTasks = processingTasks[functionDeployment].Count;
