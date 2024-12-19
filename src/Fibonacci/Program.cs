@@ -28,8 +28,9 @@ app.UseCors(builder => builder
 
 app.MapGet("/health", () => "OK");
 
-app.MapGet("/error", () =>
+app.MapGet("/error", async () =>
 {
+    await Task.Delay(100);
     throw new Exception("Error");
 });
 

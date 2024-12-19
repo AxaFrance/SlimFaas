@@ -226,7 +226,6 @@ public class Endpoints
 
         foreach (var queueItemStatus in list.Items)
         {
-
             var logEntry =
                 provider.Interpreter.CreateLogEntry(new ListSetQueueItemStatusCommand
                     {

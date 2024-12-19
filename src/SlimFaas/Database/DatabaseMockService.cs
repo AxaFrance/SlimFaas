@@ -93,7 +93,19 @@ public class DatabaseMockService : IDatabaseService
         return Task.FromResult<IList<QueueData>?>(new List<QueueData>());
     }
 
-    public Task<long> ListLengthAsync(string key, int maximum = int.MaxValue)
+    public Task<long> ListCountAvailableElementAsync(string key, int maximum = int.MaxValue)
+    {
+        if (!queue.ContainsKey(key))
+        {
+            return Task.FromResult<long>(0);
+        }
+
+        var list = queue[key];
+
+        return Task.FromResult<long>(list.Count);
+    }
+
+    public Task<long> ListCountElementAsync(string key, int maximum = Int32.MaxValue)
     {
         if (!queue.ContainsKey(key))
         {

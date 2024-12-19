@@ -116,7 +116,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         if (masterService.IsMaster)
         {
             int counterLimit = functionReplicas == 0 ? 10 : 40;
-            long queueLength = await slimFaasQueue.CountAsync(functionDeployment);
+            long queueLength = await slimFaasQueue.CountElementAsync(functionDeployment);
             if (setTickLastCallCounterDictionnary[functionDeployment] > counterLimit)
             {
                 setTickLastCallCounterDictionnary[functionDeployment] = 0;
@@ -133,7 +133,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
             }
         }
 
-        return await slimFaasQueue.CountAsync(functionDeployment, numberLimitProcessingTasks);
+        return await slimFaasQueue.CountAvailableElementAsync(functionDeployment, numberLimitProcessingTasks);
     }
 
     private static int ComputeNumberLimitProcessingTasks(SlimFaasDeploymentInformation slimFaas,
