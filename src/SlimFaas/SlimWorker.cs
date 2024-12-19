@@ -65,6 +65,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                 {
                     continue;
                 }
+                logger.LogDebug("Function {FunctionDeployment} is ready", functionDeployment);
 
                 if (numberProcessingTasks >= numberLimitProcessingTasks)
                 {
@@ -198,7 +199,11 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         {
             processingTasks[functionDeployment].Remove(httpResponseMessage);
         }
-        await slimFaasQueue.ListSetQueueItemStatusAsync(functionDeployment, listQueueItemStatus);
+
+        if (listQueueItemStatus.Items.Count > 0)
+        {
+            await slimFaasQueue.ListSetQueueItemStatusAsync(functionDeployment, listQueueItemStatus);
+        }
 
         int numberProcessingTasks = processingTasks[functionDeployment].Count;
         return numberProcessingTasks;

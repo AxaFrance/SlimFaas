@@ -41,6 +41,8 @@ spec:
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
+            - name: Logging__LogLevel__Default
+              value: Debug
           resources:
             limits:
               memory: "96Mi"
