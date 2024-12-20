@@ -114,7 +114,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
     private async Task DoListLeftPushAsync(string key, byte[] field)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
-        RetryInformation retryInformation = new([2, 4, 10], 30);
+        RetryInformation retryInformation = new([2, 4, 10], 30, [500, 502,503]);
         ListLeftPushInput listLeftPushInput = new(field, MemoryPackSerializer.Serialize(retryInformation));
         byte[] serialize = MemoryPackSerializer.Serialize(listLeftPushInput);
         if (!cluster.LeadershipToken.IsCancellationRequested)

@@ -9,7 +9,7 @@ namespace SlimData;
 public partial record ListLeftPushInput(byte[] Value, byte[] RetryInformation);
 
 [MemoryPackable]
-public partial record RetryInformation(List<int> Retries, int RetryTimeoutSeconds);
+public partial record RetryInformation(List<int> Retries, int RetryTimeoutSeconds, List<int> HttpStatusRetries);
 
 [MemoryPackable]
 public partial record QueueItemStatus(string Id="", int HttpCode=0);
@@ -206,7 +206,7 @@ public class Endpoints
                     NowTicks = DateTime.UtcNow.Ticks,
                     Retries = retryInformation.Retries,
                     RetryTimeout = retryInformation.RetryTimeoutSeconds,
-                    HttpStatusCodesWorthRetrying = new List<int>(HttpStatusCodesWorthRetrying)
+                    HttpStatusCodesWorthRetrying = retryInformation.HttpStatusRetries
                 },
                 cluster.Term);
         await cluster.ReplicateAsync(logEntry, source.Token);
