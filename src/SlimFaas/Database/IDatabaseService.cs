@@ -12,5 +12,5 @@ public interface IDatabaseService
     Task<IList<QueueData>?> ListRightPopAsync(string key, int count = 1);
     Task<long> ListCountAvailableElementAsync(string key, int maximum = int.MaxValue);
     Task<long> ListCountElementAsync(string key, int maximum = int.MaxValue);
-    Task ListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus);
+    Task ListCallbackAsync(string key, ListQueueItemStatus queueItemStatus);
 }

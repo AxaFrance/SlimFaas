@@ -201,12 +201,12 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         return 0L;
     }
 
-    public async Task ListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus)
+    public async Task ListCallbackAsync(string key, ListQueueItemStatus queueItemStatus)
     {
-        await Retry.Do(() => DoListSetQueueItemStatus(key, queueItemStatus), _retryInterval, logger, MaxAttemptCount);
+        await Retry.Do(() => DoListCallbackAsync(key, queueItemStatus), _retryInterval, logger, MaxAttemptCount);
     }
 
-    private async Task DoListSetQueueItemStatus(string key, ListQueueItemStatus queueItemStatus)
+    private async Task DoListCallbackAsync(string key, ListQueueItemStatus queueItemStatus)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
         if (!cluster.LeadershipToken.IsCancellationRequested)

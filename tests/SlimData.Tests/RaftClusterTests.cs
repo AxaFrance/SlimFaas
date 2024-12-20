@@ -269,7 +269,7 @@ public class RaftClusterTests
                 HttpCode = 200,
             });
         }
-        await databaseServiceSlave.ListSetQueueItemStatus("listKey1", queueItemStatus);
+        await databaseServiceSlave.ListCallbackAsync("listKey1", queueItemStatus);
 
         await GetLocalClusterView(host1).ForceReplicationAsync();
         var listLength2 = await databaseServiceSlave.ListCountAvailableElementAsync("listKey1");

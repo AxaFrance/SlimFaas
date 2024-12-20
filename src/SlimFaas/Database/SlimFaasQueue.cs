@@ -17,7 +17,7 @@ public class SlimFaasQueue(IDatabaseService databaseService) : ISlimFaasQueue
         return data;
     }
 
-    public async Task ListSetQueueItemStatusAsync(string key, ListQueueItemStatus queueItemStatus) => await databaseService.ListSetQueueItemStatus($"{KeyPrefix}{key}", queueItemStatus);
+    public async Task ListCallbackAsync(string key, ListQueueItemStatus queueItemStatus) => await databaseService.ListCallbackAsync($"{KeyPrefix}{key}", queueItemStatus);
 
     public async Task<long> CountAvailableElementAsync(string key, int maximum = int.MaxValue) => await databaseService.ListCountAvailableElementAsync($"{KeyPrefix}{key}", maximum);
 

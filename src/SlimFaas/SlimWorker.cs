@@ -210,7 +210,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
 
         if (listQueueItemStatus.Items.Count > 0)
         {
-            await slimFaasQueue.ListSetQueueItemStatusAsync(functionDeployment, listQueueItemStatus);
+            await slimFaasQueue.ListCallbackAsync(functionDeployment, listQueueItemStatus);
         }
 
         int numberProcessingTasks = processingTasks[functionDeployment].Count;
