@@ -1,4 +1,6 @@
-﻿namespace SlimFaas;
+﻿using SlimData;
+
+namespace SlimFaas;
 
 public interface IDatabaseService
 {
@@ -7,6 +9,8 @@ public interface IDatabaseService
     Task HashSetAsync(string key, IDictionary<string, string> values);
     Task<IDictionary<string, string>> HashGetAllAsync(string key);
     Task ListLeftPushAsync(string key, byte[] field);
-    Task<IList<byte[]>> ListRightPopAsync(string key, int count = 1);
-    Task<long> ListLengthAsync(string key);
+    Task<IList<QueueData>?> ListRightPopAsync(string key, int count = 1);
+    Task<long> ListCountAvailableElementAsync(string key, int maximum = int.MaxValue);
+    Task<long> ListCountElementAsync(string key, int maximum = int.MaxValue);
+    Task ListCallbackAsync(string key, ListQueueItemStatus queueItemStatus);
 }

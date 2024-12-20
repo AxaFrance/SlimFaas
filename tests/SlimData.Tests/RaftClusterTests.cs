@@ -251,11 +251,30 @@ public class RaftClusterTests
 
        await databaseServiceSlave.ListLeftPushAsync("listKey1",   MemoryPackSerializer.Serialize("value1"));
        await GetLocalClusterView(host1).ForceReplicationAsync();
-        long listLength = await databaseServiceSlave.ListLengthAsync("listKey1");
+        long listLength = await databaseServiceSlave.ListCountAvailableElementAsync("listKey1");
         Assert.Equal(1, listLength);
 
-        IList<byte[]> listRightPop = await databaseServiceSlave.ListRightPopAsync("listKey1");
-        Assert.Equal("value1", MemoryPackSerializer.Deserialize<string>(listRightPop[0]));
+        IList<QueueData>? listRightPop = await databaseServiceSlave.ListRightPopAsync("listKey1");
+        Assert.Equal("value1", MemoryPackSerializer.Deserialize<string>(listRightPop.First().Data));
+
+        ListQueueItemStatus queueItemStatus = new()
+        {
+            Items = new List<QueueItemStatus> {  },
+        };
+        foreach (QueueData queueData in listRightPop)
+        {
+            queueItemStatus.Items.Add(new QueueItemStatus
+            {
+                Id = queueData.Id,
+                HttpCode = 200,
+            });
+        }
+        await databaseServiceSlave.ListCallbackAsync("listKey1", queueItemStatus);
+
+        await GetLocalClusterView(host1).ForceReplicationAsync();
+        var listLength2 = await databaseServiceSlave.ListCountAvailableElementAsync("listKey1");
+
+        Assert.Equal(0, listLength2);
 
         await host1.StopAsync();
         await host2.StopAsync();
