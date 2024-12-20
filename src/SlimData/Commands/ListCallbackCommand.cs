@@ -5,7 +5,7 @@ using DotNext.Text;
 
 namespace SlimData.Commands;
 
-public struct ListSetQueueItemStatusCommand  : ISerializable<ListSetQueueItemStatusCommand>
+public struct ListCallbackCommand  : ISerializable<ListCallbackCommand>
 {
     public const int Id = 15;
 
@@ -29,12 +29,12 @@ public struct ListSetQueueItemStatusCommand  : ISerializable<ListSetQueueItemSta
 
     long? IDataTransferObject.Length => Encoding.UTF8.GetByteCount(Identifier)  + sizeof(int) + Encoding.UTF8.GetByteCount(Key) + sizeof(long);
 
-    public static async ValueTask<ListSetQueueItemStatusCommand> ReadFromAsync<TReader>(TReader reader, CancellationToken token) where TReader : notnull, IAsyncBinaryReader
+    public static async ValueTask<ListCallbackCommand> ReadFromAsync<TReader>(TReader reader, CancellationToken token) where TReader : notnull, IAsyncBinaryReader
     {
         var identifier = await reader.DecodeAsync( new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token).ConfigureAwait(false);
         var key = await reader.DecodeAsync( new DecodingContext(Encoding.UTF8, false), LengthFormat.LittleEndian, token: token).ConfigureAwait(false);
         
-        return new ListSetQueueItemStatusCommand
+        return new ListCallbackCommand
         {
             Identifier = identifier.ToString(),
             Key = key.ToString(),

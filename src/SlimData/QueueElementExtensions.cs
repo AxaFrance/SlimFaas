@@ -7,7 +7,7 @@ public static class QueueElementExtensions
     public static bool IsTimeout(this QueueElement element, long nowTicks)
     {
         if (element.RetryQueueElements.Count <= 0) return false;
-        int timeout=element.Timeout;
+        int timeout=element.HttpTimeout;
         var retryQueueElement = element.RetryQueueElements[^1];
         if (retryQueueElement.EndTimeStamp == 0 &&
             retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeout).Ticks <= nowTicks)
@@ -19,7 +19,7 @@ public static class QueueElementExtensions
     
     public static bool IsWaitingForRetry(this QueueElement element, long nowTicks)
     {
-        List<int> retries= element.Retries;
+        List<int> retries= element.TimeoutRetries;
         var count = element.RetryQueueElements.Count;
         if(count == 0 || count > retries.Count ) return false;
         
@@ -47,10 +47,10 @@ public static class QueueElementExtensions
     {
         var count = queueElement.RetryQueueElements.Count;
         if (count <= 0) return false;
-        List<int> retries= queueElement.Retries;
+        List<int> retries= queueElement.TimeoutRetries;
         var retryQueueElement = queueElement.RetryQueueElements[^1];
         if (retryQueueElement.EndTimeStamp > 0 &&
-            !queueElement.HttpStatusCodesWorthRetrying.Contains(retryQueueElement.HttpCode))
+            !queueElement.HttpStatusRetries.Contains(retryQueueElement.HttpCode))
         {
             return true;
         }

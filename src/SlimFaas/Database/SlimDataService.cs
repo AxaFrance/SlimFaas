@@ -212,11 +212,11 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         if (!cluster.LeadershipToken.IsCancellationRequested)
         {
             var simplePersistentState = serviceProvider.GetRequiredService<SlimPersistentState>();
-            await Endpoints.ListSetQueueItemStatusCommand(simplePersistentState, key, queueItemStatus, cluster, new CancellationTokenSource());
+            await Endpoints.ListCallbackCommandAsync(simplePersistentState, key, queueItemStatus, cluster, new CancellationTokenSource());
         }
         else
         {
-            using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListSetQueueItemStatus?key={key}"));
+            using HttpRequestMessage request = new(HttpMethod.Post, new Uri($"{endpoint}SlimData/ListCallback?key={key}"));
             var field = MemoryPackSerializer.Serialize(queueItemStatus);
             request.Content = new ByteArrayContent(field);
             using var httpClient = httpClientFactory.CreateClient(HttpClientName);

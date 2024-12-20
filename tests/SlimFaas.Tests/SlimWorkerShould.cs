@@ -18,7 +18,7 @@ public class SlimWorkerShould
         responseMessage.StatusCode = HttpStatusCode.OK;
 
         Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
-        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<int>(), It.IsAny<string?>()))
+        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<CancellationTokenSource?>()))
             .ReturnsAsync(responseMessage);
 
         Mock<IServiceProvider> serviceProvider = new Mock<IServiceProvider>();
@@ -51,14 +51,14 @@ public class SlimWorkerShould
             {
                 new(Replicas: 1, Deployment: "fibonacci", Namespace: "default", NumberParallelRequest: 1,
                     ReplicasMin: 0, ReplicasAtStart: 1, TimeoutSecondBeforeSetReplicasMin: 300,
-                    ReplicasStartAsSoonAsOneFunctionRetrieveARequest: true,
+                    ReplicasStartAsSoonAsOneFunctionRetrieveARequest: true, Configuration: new SlimFaasConfiguration(),
                     Pods: new List<PodInformation> { new("", true, true, "", "")}, EndpointReady: true),
                 new(Replicas: 1, Deployment: "no-pod-started", Namespace: "default", NumberParallelRequest: 1,
                     ReplicasMin: 0, ReplicasAtStart: 1, TimeoutSecondBeforeSetReplicasMin: 300,
-                    ReplicasStartAsSoonAsOneFunctionRetrieveARequest: true,
+                    ReplicasStartAsSoonAsOneFunctionRetrieveARequest: true, Configuration: new SlimFaasConfiguration(),
                     Pods: new List<PodInformation> { new("", false, false, "", "")}, EndpointReady: true),
                 new(Replicas: 0, Deployment: "no-replicas", Namespace: "default", NumberParallelRequest: 1,
-                    ReplicasMin: 0, ReplicasAtStart: 1, TimeoutSecondBeforeSetReplicasMin: 300,
+                    ReplicasMin: 0, ReplicasAtStart: 1, TimeoutSecondBeforeSetReplicasMin: 300, Configuration: new SlimFaasConfiguration(),
                     ReplicasStartAsSoonAsOneFunctionRetrieveARequest: true, Pods: new List<PodInformation>(), EndpointReady: false)
             }, Pods: new List<PodInformation>()));
         HistoryHttpMemoryService historyHttpService = new HistoryHttpMemoryService();
@@ -96,7 +96,7 @@ public class SlimWorkerShould
         await Task.Delay(3000);
 
         Assert.True(task.IsCompleted);
-        sendClientMock.Verify(v => v.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<int>(), It.IsAny<string?>()),
+        sendClientMock.Verify(v => v.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<CancellationTokenSource?>()),
             Times.Once());
     }
 

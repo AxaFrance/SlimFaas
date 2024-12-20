@@ -61,7 +61,7 @@ public class Endpoints
         }
     }
 
-    public static Task AddHashSet(HttpContext context)
+    public static Task AddHashSetAsync(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
@@ -95,7 +95,7 @@ public class Endpoints
         await cluster.ReplicateAsync(logEntry, source.Token);
     }
 
-    public static Task ListRightPop(HttpContext context)
+    public static Task ListRightPopAsync(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
@@ -166,7 +166,7 @@ public class Endpoints
     }
 
 
-    public static Task ListLeftPush(HttpContext context)
+    public static Task ListLeftPushAsync(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
@@ -212,7 +212,7 @@ public class Endpoints
         await cluster.ReplicateAsync(logEntry, source.Token);
     }
     
-    public static Task ListSetQueueItemStatus(HttpContext context)
+    public static Task ListCallbackAsync(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
@@ -229,11 +229,11 @@ public class Endpoints
             await inputStream.CopyToAsync(memoryStream, source.Token);
             var value = memoryStream.ToArray();
             var list = MemoryPackSerializer.Deserialize<ListQueueItemStatus>(value);
-            await ListSetQueueItemStatusCommand(provider, key, list, cluster, source);
+            await ListCallbackCommandAsync(provider, key, list, cluster, source);
         });
     }
 
-    public static async Task ListSetQueueItemStatusCommand(SlimPersistentState provider, string key, ListQueueItemStatus list, IRaftCluster cluster, CancellationTokenSource source)
+    public static async Task ListCallbackCommandAsync(SlimPersistentState provider, string key, ListQueueItemStatus list, IRaftCluster cluster, CancellationTokenSource source)
     {
         if (list.Items == null)
         {
@@ -243,7 +243,7 @@ public class Endpoints
         foreach (var queueItemStatus in list.Items)
         {
             var logEntry =
-                provider.Interpreter.CreateLogEntry(new ListSetQueueItemStatusCommand
+                provider.Interpreter.CreateLogEntry(new ListCallbackCommand
                     {
                         Identifier = queueItemStatus.Id,
                         Key = key,
@@ -270,7 +270,7 @@ public class Endpoints
         return (key, value);
     }
 
-    public static Task AddKeyValue(HttpContext context)
+    public static Task AddKeyValueAsync(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {

@@ -23,7 +23,7 @@ public class Startup(IConfiguration configuration)
         const string ListLeftPushResource = "/SlimData/ListLeftPush";
         const string AddKeyValueResource = "/SlimData/AddKeyValue";
         const string ListLengthResource = "/SlimData/ListLength";
-        const string ListSetQueueItemStatus = "/SlimData/ListSetQueueItemStatus";
+        const string ListSetQueueItemStatus = "/SlimData/ListCallback";
         const string HealthResource = "/health";
 
         app.UseConsensusProtocolHandler()
@@ -39,11 +39,11 @@ public class Startup(IConfiguration configuration)
             {
                 endpoints.MapGet(LeaderResource, Endpoints.RedirectToLeaderAsync);
                 endpoints.MapGet(HealthResource, async context => { await context.Response.WriteAsync("OK"); });
-                endpoints.MapPost(ListLeftPushResource,  Endpoints.ListLeftPush);
-                endpoints.MapPost(ListRightPopResource,  Endpoints.ListRightPop);
-                endpoints.MapPost(AddHashSetResource,  Endpoints.AddHashSet);
-                endpoints.MapPost(AddKeyValueResource,  Endpoints.AddKeyValue);
-                endpoints.MapPost(ListSetQueueItemStatus,  Endpoints.ListSetQueueItemStatus);
+                endpoints.MapPost(ListLeftPushResource,  Endpoints.ListLeftPushAsync);
+                endpoints.MapPost(ListRightPopResource,  Endpoints.ListRightPopAsync);
+                endpoints.MapPost(AddHashSetResource,  Endpoints.AddHashSetAsync);
+                endpoints.MapPost(AddKeyValueResource,  Endpoints.AddKeyValueAsync);
+                endpoints.MapPost(ListSetQueueItemStatus,  Endpoints.ListCallbackAsync);
             });
     }
 

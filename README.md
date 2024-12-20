@@ -376,13 +376,21 @@ spec:
 - **SlimFaas/ExcludeDeploymentsFromVisibilityPrivate** : ""
   - Comma separated list of deployment names or statefulset names
   - Message from that pods will be considered as public. It is useful if you want to exclude some pods from the private visibility, for example for a backend for frontend.
-- **SlimFaas/Async** : json configuration
-    - Allows you to define a schedule for your functions. If you want to wake up your infrastructure at 07:00 or for example scale down after 60 seconds of inactivity after 07:00 and scale down after 10 seconds of inactivity after 21:00. Time zones are defined as IANA time zones. The full list is available [here](https://nodatime.org/TimeZones)
+- **SlimFaas/Configuration** : json configuration
+    - Allows you to define a configuration for your functions. For example, you can define a timeout for HTTP calls, a retry pattern for timeouts and HTTP status codes.
 
 ````bash
 {
-  "Timeout": 30, # Timeout in seconds
-  "Retries": [2,4,8] # Retry pattern
+    "DefaultSync":{
+        "HttpTimeout": 30, # Timeout in seconds
+        "TimeoutRetries": [2,4,8] # Retry pattern
+        "HttpStatusRetries": [500,502,503] # Retry pattern
+    }
+    "DefaultAsync":{
+        "HttpTimeout": 30, # Timeout in seconds
+        "TimeoutRetries": [2,4,8] # Retry pattern
+        "HttpStatusRetries": [500,502,503] # Retry pattern
+    }
 }
 ````
 - **SlimFaas/Schedule** : json configuration

@@ -32,6 +32,24 @@ public record ScaleDownTimeout
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 public partial class ScheduleConfigSerializerContext : JsonSerializerContext;
 
+public record SlimFaasConfiguration {
+
+    public SlimFaasDefaultConfiguration DefaultSync { get; init; } = new();
+
+    public SlimFaasDefaultConfiguration DefaultAsync { get; init; } = new();
+
+}
+
+public record SlimFaasDefaultConfiguration {
+
+    public int HttpTimeout { get; init; } = 30;
+    public List<int> TimeoutRetries { get; init; } = [2, 4, 8];
+    public List<int> HttpStatusRetries { get; init; } = [500, 502, 503];
+}
+
+[JsonSerializable(typeof(SlimFaasConfiguration))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class SlimFaasConfigurationSerializerContext : JsonSerializerContext;
 
 public enum FunctionVisibility
 {
@@ -56,7 +74,11 @@ public record DeploymentsInformations(IList<DeploymentInformation> Functions,
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 public partial class DeploymentsInformationsSerializerContext : JsonSerializerContext;
 
-public record DeploymentInformation(string Deployment, string Namespace, IList<PodInformation> Pods, int Replicas,
+public record DeploymentInformation(string Deployment,
+    string Namespace,
+    IList<PodInformation> Pods,
+    SlimFaasConfiguration Configuration,
+    int Replicas,
     int ReplicasAtStart = 1,
     int ReplicasMin = 0,
     int TimeoutSecondBeforeSetReplicasMin = 300,
@@ -70,8 +92,6 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
     IList<string>? PathsStartWithVisibility = null,
     IList<string>? ExcludeDeploymentsFromVisibilityPrivate = null,
     string ResourceVersion = "",
-    IList<int>? AsynchrounousRetry = null,
-    IList<int>? SynchrounousRetry = null,
     bool EndpointReady = false
     );
 
@@ -82,6 +102,7 @@ public class KubernetesService : IKubernetesService
 {
     private const string ReplicasMin = "SlimFaas/ReplicasMin";
     private const string Schedule = "SlimFaas/Schedule";
+    private const string Configuration = "SlimFaas/Configuration";
     private const string Function = "SlimFaas/Function";
     private const string ReplicasAtStart = "SlimFaas/ReplicasAtStart";
     private const string DependsOn = "SlimFaas/DependsOn";
@@ -243,12 +264,14 @@ public class KubernetesService : IKubernetesService
                 var name = deploymentListItem.Metadata.Name;
                 var pods = podList.Where(p => p.DeploymentName.StartsWith(name)).ToList();
                 ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
+                SlimFaasConfiguration configuration = GetConfiguration(annotations, name, logger);
                 bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeploymentInformationList, name, pods);
 
                 DeploymentInformation deploymentInformation = new(
                     name,
                     kubeNamespace,
                     pods,
+                    configuration,
                     deploymentListItem.Spec.Replicas ?? 0,
                     annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
                         ? int.Parse(annotationReplicasAtStart)
@@ -279,8 +302,6 @@ public class KubernetesService : IKubernetesService
                         : new List<string>(),
                     annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
                     deploymentListItem.Metadata.ResourceVersion,
-                    AsynchrounousRetry: ReadRetryAnnotation(annotations),
-                    SynchrounousRetry: ReadRetryAnnotation(annotations),
                     EndpointReady: endpointReady
                     );
                 deploymentInformationList.Add(deploymentInformation);
@@ -344,6 +365,23 @@ public class KubernetesService : IKubernetesService
         return new ScheduleConfig();
     }
 
+    private static SlimFaasConfiguration GetConfiguration(IDictionary<string, string> annotations, string name, ILogger<KubernetesService> logger)
+    {
+        try
+        {
+            if (annotations.TryGetValue(Configuration, out string? annotation) && !string.IsNullOrEmpty(annotation.Trim()))
+            {
+                return JsonSerializer.Deserialize(annotation, SlimFaasConfigurationSerializerContext.Default.SlimFaasConfiguration) ?? new SlimFaasConfiguration();
+            }
+        }
+        catch (Exception e)
+        {
+            logger.LogError( e, "name: {Name}\\n annotations[Configuration]: {Configuration}", name, annotations[Configuration]);
+        }
+
+        return new SlimFaasConfiguration();
+    }
+
     private static async Task AddStatefulSets(string kubeNamespace, V1StatefulSetList deploymentList, IEnumerable<PodInformation> podList,
         IList<DeploymentInformation> deploymentInformationList, ILogger<KubernetesService> logger, k8s.Kubernetes client , IList<DeploymentInformation> previousDeploymentInformationList)
     {
@@ -361,12 +399,14 @@ public class KubernetesService : IKubernetesService
                 var name = deploymentListItem.Metadata.Name;
                 var pods = podList.Where(p => p.DeploymentName.StartsWith(name)).ToList();
                 ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
+                SlimFaasConfiguration configuration = GetConfiguration(annotations, name, logger);
                 bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeploymentInformationList, name, pods);
 
                 DeploymentInformation deploymentInformation = new(
                     name,
                     kubeNamespace,
                     pods,
+                    configuration,
                     deploymentListItem.Spec.Replicas ?? 0,
                     annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
                         ? int.Parse(annotationReplicasAtStart)
@@ -397,8 +437,6 @@ public class KubernetesService : IKubernetesService
                         : new List<string>(),
                     annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
                     deploymentListItem.Metadata.ResourceVersion,
-                    AsynchrounousRetry: ReadRetryAnnotation(annotations),
-                    SynchrounousRetry: ReadRetryAnnotation(annotations),
                     EndpointReady: endpointReady);
 
                 deploymentInformationList.Add(deploymentInformation);
