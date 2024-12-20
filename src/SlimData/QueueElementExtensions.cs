@@ -2,18 +2,12 @@
 
 public static class QueueElementExtensions
 {
-    public static int[] HttpStatusCodesWorthRetrying =
-    [
-       // 408 , // HttpStatusCode.RequestTimeout,
-        500, // HttpStatusCode.InternalServerError, 
-        502, // HttpStatusCode.BadGateway, 
-        503, // HttpStatusCode.ServiceUnavailable,
-        //504, // HttpStatusCode.GatewayTimeout 
-    ];
+
     
-    public static bool IsTimeout(this QueueElement element, long nowTicks, int timeout=30)
+    public static bool IsTimeout(this QueueElement element, long nowTicks)
     {
         if (element.RetryQueueElements.Count <= 0) return false;
+        int timeout=element.Timeout;
         var retryQueueElement = element.RetryQueueElements[^1];
         if (retryQueueElement.EndTimeStamp == 0 &&
             retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(timeout).Ticks <= nowTicks)
@@ -26,17 +20,16 @@ public static class QueueElementExtensions
     public static bool IsWaitingForRetry(this QueueElement element, long nowTicks)
     {
         List<int> retries= element.Retries;
-        int timeoutSeconds = element.Timeout;
         var count = element.RetryQueueElements.Count;
         if(count == 0 || count > retries.Count ) return false;
         
         if(element.IsFinished(nowTicks)) return false;
 
-        if(element.IsRunning(nowTicks, timeoutSeconds)) return false;
+        if(element.IsRunning(nowTicks)) return false;
         
         var retryQueueElement = element.RetryQueueElements[^1];
         var retryTimeout = retries[count - 1];
-        if(element.IsTimeout(nowTicks, timeoutSeconds) && retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(retryTimeout).Ticks <= nowTicks)
+        if(element.IsTimeout(nowTicks) && retryQueueElement.StartTimeStamp + TimeSpan.FromSeconds(retryTimeout).Ticks <= nowTicks)
         {
             return true;
         }
@@ -55,17 +48,16 @@ public static class QueueElementExtensions
         var count = queueElement.RetryQueueElements.Count;
         if (count <= 0) return false;
         List<int> retries= queueElement.Retries;
-        int timeoutSeconds=queueElement.Timeout;
         var retryQueueElement = queueElement.RetryQueueElements[^1];
         if (retryQueueElement.EndTimeStamp > 0 &&
-            !HttpStatusCodesWorthRetrying.Contains(retryQueueElement.HttpCode))
+            !queueElement.HttpStatusCodesWorthRetrying.Contains(retryQueueElement.HttpCode))
         {
             return true;
         }
 
         if (retries.Count < count)
         {
-            if (queueElement.IsTimeout(nowTicks, timeoutSeconds) || retryQueueElement.EndTimeStamp > 0)
+            if (queueElement.IsTimeout(nowTicks) || retryQueueElement.EndTimeStamp > 0)
             {
                 return true;
             }
@@ -74,24 +66,24 @@ public static class QueueElementExtensions
         return false;
     }
     
-    public static bool IsRunning(this QueueElement queueElement, long nowTicks, int timeoutSeconds=30)
+    public static bool IsRunning(this QueueElement queueElement, long nowTicks)
     {
         if (queueElement.RetryQueueElements.Count <= 0) return false;
         var retryQueueElement = queueElement.RetryQueueElements[^1];
         if (retryQueueElement.EndTimeStamp == 0 &&
-            !queueElement.IsTimeout(nowTicks, timeoutSeconds))
+            !queueElement.IsTimeout(nowTicks))
         {
             return true;
         }
         return false;
     }
     
-    public static List<QueueElement> GetQueueTimeoutElement(this List<QueueElement> element, long nowTicks, int timeout=30)
+    public static List<QueueElement> GetQueueTimeoutElement(this List<QueueElement> element, long nowTicks)
     {
         var timeoutElements = new List<QueueElement>();
         foreach (var queueElement in element)
         {
-            if(queueElement.IsTimeout(nowTicks, timeout))
+            if(queueElement.IsTimeout(nowTicks))
             {
                 timeoutElements.Add(queueElement);
             }
@@ -100,12 +92,12 @@ public static class QueueElementExtensions
         return timeoutElements;
     }
     
-    public static List<QueueElement> GetQueueRunningElement(this List<QueueElement> element, long nowTicks, int timeoutSeconds=30)
+    public static List<QueueElement> GetQueueRunningElement(this List<QueueElement> element, long nowTicks)
     {
         var runningElement = new List<QueueElement>();
         foreach (var queueElement in element)
         {
-            if(queueElement.IsRunning(nowTicks, timeoutSeconds))
+            if(queueElement.IsRunning(nowTicks))
             {
                 runningElement.Add(queueElement);
             }

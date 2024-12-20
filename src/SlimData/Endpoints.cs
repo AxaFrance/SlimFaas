@@ -186,6 +186,14 @@ public class Endpoints
         });
     }
 
+    public static int[] HttpStatusCodesWorthRetrying =
+    [
+        // 408 , // HttpStatusCode.RequestTimeout,
+        500, // HttpStatusCode.InternalServerError, 
+        502, // HttpStatusCode.BadGateway, 
+        503, // HttpStatusCode.ServiceUnavailable,
+        //504, // HttpStatusCode.GatewayTimeout 
+    ];
     public static async Task ListLeftPushCommand(SlimPersistentState provider, string key, byte[] value,
         IRaftCluster cluster, CancellationTokenSource source)
     {
@@ -198,6 +206,7 @@ public class Endpoints
                     NowTicks = DateTime.UtcNow.Ticks,
                     Retries = retryInformation.Retries,
                     RetryTimeout = retryInformation.RetryTimeoutSeconds,
+                    HttpStatusCodesWorthRetrying = new List<int>(HttpStatusCodesWorthRetrying)
                 },
                 cluster.Term);
         await cluster.ReplicateAsync(logEntry, source.Token);

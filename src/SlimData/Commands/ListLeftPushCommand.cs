@@ -18,9 +18,11 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
     
     public List<int> Retries { get; set; }
     
+    public List<int> HttpStatusCodesWorthRetrying  { get; set; }
+    
     public ReadOnlyMemory<byte> Value { get; set; }
 
-    long? IDataTransferObject.Length => Encoding.UTF8.GetByteCount(Key)  + Value.Length + Encoding.UTF8.GetByteCount(Identifier) + sizeof(long) + sizeof(int) + Retries.Count * sizeof(int);
+    long? IDataTransferObject.Length => Encoding.UTF8.GetByteCount(Key)  + Value.Length + Encoding.UTF8.GetByteCount(Identifier) + sizeof(long) + sizeof(int) + Retries.Count * sizeof(int) + sizeof(int) + sizeof(int) + HttpStatusCodesWorthRetrying.Count * sizeof(int);
 
     public async ValueTask WriteToAsync<TWriter>(TWriter writer, CancellationToken token)
         where TWriter : notnull, IAsyncBinaryWriter
@@ -38,6 +40,12 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
         {
             await writer.WriteLittleEndianAsync(retry, token).ConfigureAwait(false);
         }
+        await writer.WriteLittleEndianAsync(HttpStatusCodesWorthRetrying.Count, token).ConfigureAwait(false);
+        foreach (var httpStatus in HttpStatusCodesWorthRetrying)
+        {
+            await writer.WriteLittleEndianAsync(httpStatus, token).ConfigureAwait(false);
+        }
+        
     }
 
 #pragma warning disable CA2252
@@ -56,6 +64,12 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
         {
             retries.Add(await reader.ReadLittleEndianAsync<Int32>(token).ConfigureAwait(false));
         }
+        var httpStatusCodesWorthRetryingCount = await reader.ReadLittleEndianAsync<Int32>(token).ConfigureAwait(false);
+        var httpStatusCodesWorthRetrying = new List<int>(httpStatusCodesWorthRetryingCount);
+        while (httpStatusCodesWorthRetryingCount-- > 0)
+        {
+            httpStatusCodesWorthRetrying.Add(await reader.ReadLittleEndianAsync<Int32>(token).ConfigureAwait(false));
+        }
         
         return new ListLeftPushCommand
         {
@@ -64,7 +78,8 @@ public struct ListLeftPushCommand : ISerializable<ListLeftPushCommand>
             NowTicks = nowTicks,
             RetryTimeout = timeout,
             Retries = retries,
-            Value = value.Memory.ToArray()
+            Value = value.Memory.ToArray(),
+            HttpStatusCodesWorthRetrying = httpStatusCodesWorthRetrying
         };
     }
 }

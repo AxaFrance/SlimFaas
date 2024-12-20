@@ -16,7 +16,9 @@ public class QueueElement(
     long insertTimeStamp,
     int timeout,
     List<int> retries,
-    IList<QueueHttpTryElement> retryQueueElements)
+    IList<QueueHttpTryElement> retryQueueElements,
+    List<int> httpStatusCodesWorthRetrying
+    )
 {
     public ReadOnlyMemory<byte> Value { get; } = value;
     public string Id { get; } = id;
@@ -26,6 +28,8 @@ public class QueueElement(
 
     public int Timeout { get; } = timeout;
     public IList<QueueHttpTryElement> RetryQueueElements { get; } = retryQueueElements;
+    
+    public List<int> HttpStatusCodesWorthRetrying { get; } = httpStatusCodesWorthRetrying;
 }
 
 public class QueueHttpTryElement(long startTimeStamp=0, long endTimeStamp=0, int httpCode=0)
@@ -56,7 +60,7 @@ public class SlimDataInterpreter : CommandInterpreter
         if (queues.TryGetValue(addHashSetCommand.Key, out var queue))
         {
             var nowTicks =addHashSetCommand.NowTicks;
-            var queueTimeoutElements = queue.GetQueueTimeoutElement(nowTicks, RetryTimeout);
+            var queueTimeoutElements = queue.GetQueueTimeoutElement(nowTicks);
             foreach (var queueTimeoutElement in queueTimeoutElements)
             {
                 var retryQueueElement = queueTimeoutElement.RetryQueueElements[^1];
@@ -105,9 +109,9 @@ public class SlimDataInterpreter : CommandInterpreter
     internal static ValueTask DoListLeftPushAsync(ListLeftPushCommand listLeftPushCommand, Dictionary<string, List<QueueElement>> queues)
     {
         if (queues.TryGetValue(listLeftPushCommand.Key, out List<QueueElement>? value))
-            value.Add(new QueueElement(listLeftPushCommand.Value, listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks, listLeftPushCommand.RetryTimeout, listLeftPushCommand.Retries,new List<QueueHttpTryElement>()));
+            value.Add(new QueueElement(listLeftPushCommand.Value, listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks, listLeftPushCommand.RetryTimeout, listLeftPushCommand.Retries,new List<QueueHttpTryElement>(), listLeftPushCommand.HttpStatusCodesWorthRetrying));
         else
-            queues.Add(listLeftPushCommand.Key, new List<QueueElement>() {new(listLeftPushCommand.Value,listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks, listLeftPushCommand.RetryTimeout, listLeftPushCommand.Retries,new List<QueueHttpTryElement>())});
+            queues.Add(listLeftPushCommand.Key, new List<QueueElement>() {new(listLeftPushCommand.Value,listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks, listLeftPushCommand.RetryTimeout, listLeftPushCommand.Retries,new List<QueueHttpTryElement>(), listLeftPushCommand.HttpStatusCodesWorthRetrying)});
         // print all queue elements
         Console.WriteLine("DoListLeftPushAsync key " +  listLeftPushCommand.Key + " Identifier " + listLeftPushCommand.Identifier);
         var elements = queues[listLeftPushCommand.Key];
