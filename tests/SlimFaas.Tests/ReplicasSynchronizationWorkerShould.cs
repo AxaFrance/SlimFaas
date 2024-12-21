@@ -20,8 +20,8 @@ public class DeploymentsTestData : IEnumerable<object[]>
             new DeploymentsInformations(
                 new List<DeploymentInformation>
                 {
-                    new("fibonacci1", "default", Replicas: 1, Pods: new List<PodInformation>()),
-                    new("fibonacci2", "default", Replicas: 0, Pods: new List<PodInformation>())
+                    new("fibonacci1", "default", Replicas: 1, Pods: new List<PodInformation>(), Configuration: new SlimFaasConfiguration()),
+                    new("fibonacci2", "default", Replicas: 0, Pods: new List<PodInformation>(), Configuration: new SlimFaasConfiguration())
                 },
                 new SlimFaasDeploymentInformation(1, new List<PodInformation>()),
                 new List<PodInformation>()

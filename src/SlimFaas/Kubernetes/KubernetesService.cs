@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -31,6 +32,24 @@ public record ScaleDownTimeout
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 public partial class ScheduleConfigSerializerContext : JsonSerializerContext;
 
+public record SlimFaasConfiguration {
+
+    public SlimFaasDefaultConfiguration DefaultSync { get; init; } = new();
+
+    public SlimFaasDefaultConfiguration DefaultAsync { get; init; } = new();
+
+}
+
+public record SlimFaasDefaultConfiguration {
+
+    public int HttpTimeout { get; init; } = 30;
+    public List<int> TimeoutRetries { get; init; } = [2, 4, 8];
+    public List<int> HttpStatusRetries { get; init; } = [500, 502, 503];
+}
+
+[JsonSerializable(typeof(SlimFaasConfiguration))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class SlimFaasConfigurationSerializerContext : JsonSerializerContext;
 
 public enum FunctionVisibility
 {
@@ -55,7 +74,11 @@ public record DeploymentsInformations(IList<DeploymentInformation> Functions,
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 public partial class DeploymentsInformationsSerializerContext : JsonSerializerContext;
 
-public record DeploymentInformation(string Deployment, string Namespace, IList<PodInformation> Pods, int Replicas,
+public record DeploymentInformation(string Deployment,
+    string Namespace,
+    IList<PodInformation> Pods,
+    SlimFaasConfiguration Configuration,
+    int Replicas,
     int ReplicasAtStart = 1,
     int ReplicasMin = 0,
     int TimeoutSecondBeforeSetReplicasMin = 300,
@@ -68,7 +91,8 @@ public record DeploymentInformation(string Deployment, string Namespace, IList<P
     FunctionVisibility Visibility = FunctionVisibility.Public,
     IList<string>? PathsStartWithVisibility = null,
     IList<string>? ExcludeDeploymentsFromVisibilityPrivate = null,
-    string ResourceVersion = ""
+    string ResourceVersion = "",
+    bool EndpointReady = false
     );
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
@@ -78,6 +102,7 @@ public class KubernetesService : IKubernetesService
 {
     private const string ReplicasMin = "SlimFaas/ReplicasMin";
     private const string Schedule = "SlimFaas/Schedule";
+    private const string Configuration = "SlimFaas/Configuration";
     private const string Function = "SlimFaas/Function";
     private const string ReplicasAtStart = "SlimFaas/ReplicasAtStart";
     private const string DependsOn = "SlimFaas/DependsOn";
@@ -91,6 +116,10 @@ public class KubernetesService : IKubernetesService
 
     private const string TimeoutSecondBeforeSetReplicasMin = "SlimFaas/TimeoutSecondBeforeSetReplicasMin";
     private const string NumberParallelRequest = "SlimFaas/NumberParallelRequest";
+    private const string SynchrounousRetry = "SlimFaas/SynchrounousRetry";
+    private const string AsynchrounousRetry = "SlimFaas/AsynchrounousRetry";
+
+
     private const string SlimfaasDeploymentName = "slimfaas";
     private readonly ILogger<KubernetesService> _logger;
     private readonly k8s.Kubernetes _client;
@@ -163,7 +192,7 @@ public class KubernetesService : IKubernetesService
     }
 
 
-    public async Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace)
+    public async Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace, DeploymentsInformations previousDeployments)
     {
         try
         {
@@ -176,7 +205,7 @@ public class KubernetesService : IKubernetesService
 
             await Task.WhenAll(deploymentListTask, podListTask, statefulSetListTask);
             V1DeploymentList? deploymentList = deploymentListTask.Result;
-            IEnumerable<PodInformation> podList = MapPodInformations(podListTask.Result);
+            IEnumerable<PodInformation> podList = await MapPodInformations(podListTask.Result);
             V1StatefulSetList? statefulSetList = statefulSetListTask.Result;
 
             SlimFaasDeploymentInformation? slimFaasDeploymentInformation = statefulSetList.Items
@@ -187,8 +216,8 @@ public class KubernetesService : IKubernetesService
                 .FirstOrDefault();
 
             IEnumerable<PodInformation> podInformations = podList.ToArray();
-            AddDeployments(kubeNamespace, deploymentList, podInformations, deploymentInformationList, _logger);
-            AddStatefulSets(kubeNamespace, statefulSetList, podInformations, deploymentInformationList, _logger);
+            await AddDeployments(kubeNamespace, deploymentList, podInformations, deploymentInformationList, _logger, client, previousDeployments.Functions);
+            await AddStatefulSets(kubeNamespace, statefulSetList, podInformations, deploymentInformationList, _logger, client, previousDeployments.Functions);
 
             return new DeploymentsInformations(deploymentInformationList,
                 slimFaasDeploymentInformation ?? new SlimFaasDeploymentInformation(1, new List<PodInformation>()), podInformations);
@@ -201,8 +230,25 @@ public class KubernetesService : IKubernetesService
         }
     }
 
-    private static void AddDeployments(string kubeNamespace, V1DeploymentList deploymentList, IEnumerable<PodInformation> podList,
-        IList<DeploymentInformation> deploymentInformationList, ILogger<KubernetesService> logger)
+    private static IList<int> ReadRetryAnnotation( IDictionary<string, string>? annotations)
+    {
+        if (annotations != null && annotations.TryGetValue(AsynchrounousRetry, out string? valueAsynchrounousRetry))
+        {
+            var result = new List<int>();
+            var array = valueAsynchrounousRetry.Split(';');
+            foreach (string s in array)
+            {
+                result.Add( int.Parse(s, NumberStyles.Integer));
+            }
+
+            return result;
+        }
+
+        return new List<int>(){2, 4, 8};
+    }
+
+    private static async Task AddDeployments(string kubeNamespace, V1DeploymentList deploymentList, IEnumerable<PodInformation> podList,
+        IList<DeploymentInformation> deploymentInformationList, ILogger<KubernetesService> logger, k8s.Kubernetes client , IList<DeploymentInformation> previousDeploymentInformationList)
     {
         foreach (V1Deployment? deploymentListItem in deploymentList.Items)
         {
@@ -216,12 +262,16 @@ public class KubernetesService : IKubernetesService
                 }
 
                 var name = deploymentListItem.Metadata.Name;
+                var pods = podList.Where(p => p.DeploymentName.StartsWith(name)).ToList();
                 ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
+                SlimFaasConfiguration configuration = GetConfiguration(annotations, name, logger);
+                bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeploymentInformationList, name, pods);
 
                 DeploymentInformation deploymentInformation = new(
                     name,
                     kubeNamespace,
-                    podList.Where(p => p.DeploymentName.StartsWith(name)).ToList(),
+                    pods,
+                    configuration,
                     deploymentListItem.Spec.Replicas ?? 0,
                     annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
                         ? int.Parse(annotationReplicasAtStart)
@@ -251,7 +301,8 @@ public class KubernetesService : IKubernetesService
                         ? valueUrlsStartWithVisibility.Split(',').ToList()
                         : new List<string>(),
                     annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
-                    deploymentListItem.Metadata.ResourceVersion
+                    deploymentListItem.Metadata.ResourceVersion,
+                    EndpointReady: endpointReady
                     );
                 deploymentInformationList.Add(deploymentInformation);
             }
@@ -260,6 +311,41 @@ public class KubernetesService : IKubernetesService
                 logger.LogError(e, "Error while adding deployment {Deployment}", deploymentListItem.Metadata.Name);
             }
         }
+    }
+
+    private static async Task<bool> GetEndpointReady(string kubeNamespace, k8s.Kubernetes client,
+        IList<DeploymentInformation> previousDeploymentInformationList, string name, List<PodInformation> pods)
+    {
+        try
+        {
+            if (pods.Count == 0)
+            {
+                return false;
+            }
+
+            var previousDeployment = previousDeploymentInformationList.FirstOrDefault(d => d.Deployment == name);
+            if (previousDeployment is not { EndpointReady: false } || pods.Count != 1)
+            {
+                return previousDeployment is { EndpointReady: true };
+            }
+
+            var endpoints = await client.CoreV1.ReadNamespacedEndpointsAsync(name, kubeNamespace);
+            if (endpoints is not { Subsets: not null })
+            {
+                return previousDeployment is { EndpointReady: true };
+            }
+
+            var readyAddresses = endpoints.Subsets
+                .Where(s => s.Addresses != null)
+                .SelectMany(s => s.Addresses)
+                .ToList();
+            return readyAddresses.Count > 0;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+        return false;
     }
 
     private static ScheduleConfig? GetScheduleConfig(IDictionary<string, string> annotations, string name, ILogger<KubernetesService> logger)
@@ -279,8 +365,25 @@ public class KubernetesService : IKubernetesService
         return new ScheduleConfig();
     }
 
-    private static void AddStatefulSets(string kubeNamespace, V1StatefulSetList deploymentList, IEnumerable<PodInformation> podList,
-        IList<DeploymentInformation> deploymentInformationList, ILogger<KubernetesService> logger)
+    private static SlimFaasConfiguration GetConfiguration(IDictionary<string, string> annotations, string name, ILogger<KubernetesService> logger)
+    {
+        try
+        {
+            if (annotations.TryGetValue(Configuration, out string? annotation) && !string.IsNullOrEmpty(annotation.Trim()))
+            {
+                return JsonSerializer.Deserialize(annotation, SlimFaasConfigurationSerializerContext.Default.SlimFaasConfiguration) ?? new SlimFaasConfiguration();
+            }
+        }
+        catch (Exception e)
+        {
+            logger.LogError( e, "name: {Name}\\n annotations[Configuration]: {Configuration}", name, annotations[Configuration]);
+        }
+
+        return new SlimFaasConfiguration();
+    }
+
+    private static async Task AddStatefulSets(string kubeNamespace, V1StatefulSetList deploymentList, IEnumerable<PodInformation> podList,
+        IList<DeploymentInformation> deploymentInformationList, ILogger<KubernetesService> logger, k8s.Kubernetes client , IList<DeploymentInformation> previousDeploymentInformationList)
     {
         foreach (V1StatefulSet? deploymentListItem in deploymentList.Items)
         {
@@ -294,12 +397,16 @@ public class KubernetesService : IKubernetesService
                 }
 
                 var name = deploymentListItem.Metadata.Name;
+                var pods = podList.Where(p => p.DeploymentName.StartsWith(name)).ToList();
                 ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
+                SlimFaasConfiguration configuration = GetConfiguration(annotations, name, logger);
+                bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeploymentInformationList, name, pods);
 
                 DeploymentInformation deploymentInformation = new(
                     name,
                     kubeNamespace,
-                    podList.Where(p => p.DeploymentName.StartsWith(name)).ToList(),
+                    pods,
+                    configuration,
                     deploymentListItem.Spec.Replicas ?? 0,
                     annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
                         ? int.Parse(annotationReplicasAtStart)
@@ -329,7 +436,8 @@ public class KubernetesService : IKubernetesService
                         ? valueUrlsStartWithVisibility.Split(',').ToList()
                         : new List<string>(),
                     annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
-                    deploymentListItem.Metadata.ResourceVersion);
+                    deploymentListItem.Metadata.ResourceVersion,
+                    EndpointReady: endpointReady);
 
                 deploymentInformationList.Add(deploymentInformation);
             }
@@ -340,8 +448,9 @@ public class KubernetesService : IKubernetesService
         }
     }
 
-    private static IEnumerable<PodInformation> MapPodInformations(V1PodList v1PodList)
+    private static async Task<IEnumerable<PodInformation>> MapPodInformations(V1PodList v1PodList)
     {
+        var result = new List<PodInformation>();
         foreach (V1Pod? item in v1PodList.Items)
         {
             string? podIp = item.Status.PodIP;
@@ -351,13 +460,17 @@ public class KubernetesService : IKubernetesService
             }
 
             V1ContainerStatus? containerStatus = item.Status.ContainerStatuses.FirstOrDefault();
-            bool ready = containerStatus?.Ready ?? false;
             bool started = containerStatus?.Started ?? false;
+            bool containerReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "ContainersReady")?.Status == "True";
+            bool podReady = item.Status.Conditions.FirstOrDefault(c => c.Type == "Ready")?.Status == "True";
             string? podName = item.Metadata.Name;
             string deploymentName = item.Metadata.OwnerReferences[0].Name;
-            PodInformation podInformation = new(podName, started, ready, podIp, deploymentName);
-            yield return podInformation;
+
+            PodInformation podInformation = new(podName, started, started && containerReady && podReady, podIp, deploymentName);
+            result.Add(podInformation);
         }
+        return result;
     }
+
 
 }
