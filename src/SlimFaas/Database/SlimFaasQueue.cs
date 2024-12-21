@@ -8,8 +8,8 @@ public class SlimFaasQueue(IDatabaseService databaseService) : ISlimFaasQueue
 {
     private const string KeyPrefix = "Queue:";
 
-    public async Task EnqueueAsync(string key, byte[] data) =>
-        await databaseService.ListLeftPushAsync($"{KeyPrefix}{key}", data);
+    public async Task EnqueueAsync(string key, byte[] data, RetryInformation retryInformation) =>
+        await databaseService.ListLeftPushAsync($"{KeyPrefix}{key}", data, retryInformation);
 
     public async Task<IList<QueueData>?> DequeueAsync(string key, long count = 1)
     {

@@ -6,6 +6,7 @@ using Moq;
 using SlimFaas.Kubernetes;
 using MemoryPack;
 using SlimFaas.Database;
+using SlimData;
 
 namespace SlimFaas.Tests;
 
@@ -64,26 +65,27 @@ public class SlimWorkerShould
         HistoryHttpMemoryService historyHttpService = new HistoryHttpMemoryService();
         Mock<ILogger<SlimWorker>> logger = new Mock<ILogger<SlimWorker>>();
 
-        SlimFaasQueue redisQueue = new SlimFaasQueue(new DatabaseMockService());
+        SlimFaasQueue slimFaasQueue = new SlimFaasQueue(new DatabaseMockService());
         CustomRequest customRequest =
             new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new[] { "value1" } } },
                 new byte[1], "fibonacci", "/download", "GET", "");
         var jsonCustomRequest = MemoryPackSerializer.Serialize(customRequest);
-        await redisQueue.EnqueueAsync("fibonacci", jsonCustomRequest);
+        var retryInformation = new RetryInformation([], 30, []);
+        await slimFaasQueue.EnqueueAsync("fibonacci", jsonCustomRequest, retryInformation);
 
         CustomRequest customRequestNoPodStarted =
             new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new[] { "value1" } } },
                 new byte[1], "no-pod-started", "/download", "GET", "");
         var jsonCustomNoPodStarted = MemoryPackSerializer.Serialize(customRequestNoPodStarted);
-        await redisQueue.EnqueueAsync("no-pod-started", jsonCustomNoPodStarted);
+        await slimFaasQueue.EnqueueAsync("no-pod-started", jsonCustomNoPodStarted, retryInformation);
 
         CustomRequest customRequestReplicas =
             new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new[] { "value1" } } },
                 new byte[1], "no-replicas", "/download", "GET", "");
         var jsonCustomNoReplicas = MemoryPackSerializer.Serialize(customRequestReplicas);
-        await redisQueue.EnqueueAsync("no-replicas", jsonCustomNoReplicas);
+        await slimFaasQueue.EnqueueAsync("no-replicas", jsonCustomNoReplicas, retryInformation);
 
-        SlimWorker service = new SlimWorker(redisQueue,
+        SlimWorker service = new SlimWorker(slimFaasQueue,
             replicasService.Object,
             historyHttpService,
             logger.Object,

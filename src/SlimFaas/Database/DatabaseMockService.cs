@@ -58,7 +58,7 @@ public class DatabaseMockService : IDatabaseService
         return Task.FromResult<IDictionary<string, string>>(new Dictionary<string, string>());
     }
 
-    public Task ListLeftPushAsync(string key, byte[] field)
+    public Task ListLeftPushAsync(string key, byte[] field, RetryInformation retryInformation)
     {
         List<QueueData> list;
         if (queue.ContainsKey(key))

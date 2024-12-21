@@ -249,7 +249,7 @@ public class RaftClusterTests
         Assert.Equal("value1", hashGet["field1"]);
         Assert.Equal("value2", hashGet["field2"]);
 
-       await databaseServiceSlave.ListLeftPushAsync("listKey1",   MemoryPackSerializer.Serialize("value1"));
+       await databaseServiceSlave.ListLeftPushAsync("listKey1",   MemoryPackSerializer.Serialize("value1"), new RetryInformation([], 30, []));
        await GetLocalClusterView(host1).ForceReplicationAsync();
         long listLength = await databaseServiceSlave.ListCountAvailableElementAsync("listKey1");
         Assert.Equal(1, listLength);

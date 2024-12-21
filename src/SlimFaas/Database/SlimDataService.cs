@@ -106,15 +106,14 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
             : new Dictionary<string, string>();
     }
 
-    public async Task ListLeftPushAsync(string key, byte[] field)
+    public async Task ListLeftPushAsync(string key, byte[] field, RetryInformation retryInformation)
     {
-        await Retry.Do(() =>DoListLeftPushAsync(key, field), _retryInterval, logger, MaxAttemptCount);
+        await Retry.Do(() =>DoListLeftPushAsync(key, field, retryInformation), _retryInterval, logger, MaxAttemptCount);
     }
 
-    private async Task DoListLeftPushAsync(string key, byte[] field)
+    private async Task DoListLeftPushAsync(string key, byte[] field, RetryInformation retryInformation)
     {
         EndPoint endpoint = await GetAndWaitForLeader();
-        RetryInformation retryInformation = new([2, 4, 10], 30, [500, 502,503]);
         ListLeftPushInput listLeftPushInput = new(field, MemoryPackSerializer.Serialize(retryInformation));
         byte[] serialize = MemoryPackSerializer.Serialize(listLeftPushInput);
         if (!cluster.LeadershipToken.IsCancellationRequested)
