@@ -13,7 +13,7 @@ Why use SlimFaas?
 - Retry Pattern Configurable: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
 - Private and Public functions
   - Private functions can be accessed only by internal namespace http call from pods
-- Synchronous Publish/Subscribe internal events via HTTP calls to every replicas via HTTP  without any use of specific drivers/libraries (**Couple you application with SlimFaas**)
+- Synchronous Publish/Subscribe internal events via HTTP calls to every replicas via HTTP  without any use of specific drivers/libraries (**Couple your application with SlimFaas**)
 - Mind Changer: REST API that show the status of your functions and allow to wake up your infrastructure (**Couple your application with Slimfaas**)
   - Very useful to inform end users that your infrastructure is starting
 - Plug and Play: just deploy a standard pod
@@ -28,7 +28,8 @@ To test SlimFaas on your local machine by using kubernetes with Docker Desktop, 
 
 ```bash
 git clone https://github.com/AxaFrance/slimfaas.git
-cd slimfaas/demo
+cd slimfaas
+cd demo
 # Create slimfaas service account and pods
 kubectl apply -f deployment-slimfaas.yml
 # Expose SlimFaaS service as NodePort or Ingress

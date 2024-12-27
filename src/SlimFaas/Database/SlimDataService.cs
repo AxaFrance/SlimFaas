@@ -13,7 +13,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 {
     public const string HttpClientName = "SlimDataHttpClient";
     private const int MaxAttemptCount = 3;
-    private readonly TimeSpan _retryInterval = TimeSpan.FromSeconds(1);
+    private readonly IList<float> _retryInterval = new List<float> { 1, 1, 1 };
     private readonly TimeSpan _timeMaxToWaitForLeader = TimeSpan.FromMilliseconds(3000);
 
     private ISupplier<SlimDataPayload> SimplePersistentState =>
@@ -21,7 +21,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task<byte[]?> GetAsync(string key)
     {
-        return await Retry.Do(() => DoGetAsync(key), _retryInterval, logger, MaxAttemptCount);
+        return await Retry.DoAsync(() => DoGetAsync(key), logger,  _retryInterval);
     }
 
     private async Task<byte[]?> DoGetAsync(string key)
@@ -34,7 +34,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task SetAsync(string key, byte[] value)
     {
-        await Retry.Do(() =>DoSetAsync(key, value), _retryInterval, logger, MaxAttemptCount);
+        await Retry.DoAsync(() => DoSetAsync(key, value), logger, _retryInterval);
     }
 
     private async Task DoSetAsync(string key,  byte[] value)
@@ -61,7 +61,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task HashSetAsync(string key, IDictionary<string, string> values)
     {
-        await Retry.Do(() =>DoHashSetAsync(key, values), _retryInterval, logger, MaxAttemptCount);
+        await Retry.DoAsync(() => DoHashSetAsync(key, values), logger, _retryInterval);
     }
 
     private async Task DoHashSetAsync(string key, IDictionary<string, string> values)
@@ -92,7 +92,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task<IDictionary<string, string>> HashGetAllAsync(string key)
     {
-        return await Retry.Do(() =>DoHashGetAllAsync(key), _retryInterval, logger, MaxAttemptCount);
+        return await Retry.DoAsync(() =>DoHashGetAllAsync(key), logger, _retryInterval);
     }
 
     private async Task<IDictionary<string, string>> DoHashGetAllAsync(string key)
@@ -108,7 +108,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task ListLeftPushAsync(string key, byte[] field, RetryInformation retryInformation)
     {
-        await Retry.Do(() =>DoListLeftPushAsync(key, field, retryInformation), _retryInterval, logger, MaxAttemptCount);
+        await Retry.DoAsync(() =>DoListLeftPushAsync(key, field, retryInformation), logger, _retryInterval);
     }
 
     private async Task DoListLeftPushAsync(string key, byte[] field, RetryInformation retryInformation)
@@ -136,7 +136,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task<IList<QueueData>?> ListRightPopAsync(string key, int count = 1)
     {
-        return await Retry.Do(() => DoListRightPopAsync(key, count), _retryInterval, logger, MaxAttemptCount);
+        return await Retry.DoAsync(() => DoListRightPopAsync(key, count), logger, _retryInterval);
     }
 
     private async Task<IList<QueueData>?> DoListRightPopAsync(string key, int count = 1)
@@ -178,7 +178,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public Task<long> ListCountElementAsync(string key, int maximum = Int32.MaxValue)
     {
-        return Retry.Do(() => DoListCountElementAsync(key, maximum), _retryInterval, logger, MaxAttemptCount);
+        return Retry.DoAsync(() => DoListCountElementAsync(key, maximum), logger, _retryInterval);
     }
 
     private async Task<long> DoListCountElementAsync(string key, int maximum)
@@ -202,7 +202,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task ListCallbackAsync(string key, ListQueueItemStatus queueItemStatus)
     {
-        await Retry.Do(() => DoListCallbackAsync(key, queueItemStatus), _retryInterval, logger, MaxAttemptCount);
+        await Retry.DoAsync(() => DoListCallbackAsync(key, queueItemStatus), logger, _retryInterval);
     }
 
     private async Task DoListCallbackAsync(string key, ListQueueItemStatus queueItemStatus)
@@ -229,7 +229,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 
     public async Task<long> ListCountAvailableElementAsync(string key, int maximum)
     {
-        return await Retry.Do(() => DoListCountAvailableElementAsync(key, maximum), _retryInterval, logger, MaxAttemptCount);
+        return await Retry.DoAsync(() => DoListCountAvailableElementAsync(key, maximum), logger, _retryInterval);
     }
 
     private async Task<long> DoListCountAvailableElementAsync(string key, int maximum)
@@ -279,30 +279,66 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
 public static class Retry
 {
 
-    public static T Do<T>(
-        Func<T> action,
-        TimeSpan retryInterval,
-        ILogger<SlimDataService> logger,
-        int maxAttemptCount = 3)
+    public static async Task<T> DoAsync<T>(
+            Func<Task<T>> action,
+            ILogger logger,
+            IList<float> delays
+            )
+        {
+            var exceptions = new List<Exception>();
+
+            for (int attempt = 0; attempt < delays.Count; attempt++)
+            {
+                try
+                {
+                    if (attempt > 0)
+                    {
+                        var delay = delays[attempt];
+                        logger.LogWarning("Try {Attempt} : wait numnber {Delay} second", attempt, delay);
+                        await Task.Delay((int)delay * 1000);
+                    }
+
+                    return await action();
+                }
+                catch (Exception ex)
+                {
+                    exceptions.Add(ex);
+                }
+            }
+
+            throw new AggregateException(exceptions);
+        }
+
+    public static async Task DoAsync(
+        Func<Task> action,
+        ILogger logger,
+        IList<float> delays
+)
     {
         var exceptions = new List<Exception>();
 
-        for (int attempted = 0; attempted < maxAttemptCount; attempted++)
+        for (int attempt = 0; attempt < delays.Count; attempt++)
         {
             try
             {
-                if (attempted > 0)
+                if (attempt > 0)
                 {
-                    Task.Delay(retryInterval).Wait();
-                    logger.LogWarning("SlimDataService Retry number {RetryInterval}", retryInterval);
+                    var delay = delays[attempt];
+                    logger.LogWarning("Try {Attempt} : wait numnber {Delay} second", attempt, delay);
+                    await Task.Delay((int)delay * 1000);
                 }
-                return action();
+
+                // Exécuter la méthode asynchrone
+                await action();
+                return; // Si succès, on sort de la fonction
             }
             catch (Exception ex)
             {
                 exceptions.Add(ex);
             }
         }
+
+        // Si toutes les tentatives échouent, lever une AggregateException
         throw new AggregateException(exceptions);
     }
 }
