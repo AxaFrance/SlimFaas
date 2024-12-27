@@ -384,13 +384,18 @@ spec:
 {
     "DefaultSync":{
         "HttpTimeout": 30, # Timeout in seconds
-        "TimeoutRetries": [2,4,8] # Retry pattern
-        "HttpStatusRetries": [500,502,503] # Retry pattern
+        "TimeoutRetries": [2,4,8] # Retry pattern in seconds
+        "HttpStatusRetries": [500,502,503] # Retry only for 500,502,503 HTTP status codes
     }
     "DefaultAsync":{
         "HttpTimeout": 30, # Timeout in seconds
-        "TimeoutRetries": [2,4,8] # Retry pattern
-        "HttpStatusRetries": [500,502,503] # Retry pattern
+        "TimeoutRetries": [2,4,8] # Retry pattern in seconds
+        "HttpStatusRetries": [500,502,503] # Retry only for 500,502,503 HTTP status codes
+    },
+    "DefaultPublish":{
+        "HttpTimeout": 30, # Timeout in seconds
+        "TimeoutRetries": [2,4,8] # Retry pattern in seconds
+        "HttpStatusRetries": [500,502,503] # Retry only for 500,502,503 HTTP status codes
     }
 }
 ````

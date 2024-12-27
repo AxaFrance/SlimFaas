@@ -12,8 +12,7 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
     : IDatabaseService
 {
     public const string HttpClientName = "SlimDataHttpClient";
-    private const int MaxAttemptCount = 3;
-    private readonly IList<float> _retryInterval = new List<float> { 1, 1, 1 };
+    private readonly IList<int> _retryInterval = new List<int> { 1, 1, 1 };
     private readonly TimeSpan _timeMaxToWaitForLeader = TimeSpan.FromMilliseconds(3000);
 
     private ISupplier<SlimDataPayload> SimplePersistentState =>
@@ -276,69 +275,3 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
     }
 }
 #pragma warning restore CA2252
-public static class Retry
-{
-
-    public static async Task<T> DoAsync<T>(
-            Func<Task<T>> action,
-            ILogger logger,
-            IList<float> delays
-            )
-        {
-            var exceptions = new List<Exception>();
-
-            for (int attempt = 0; attempt < delays.Count; attempt++)
-            {
-                try
-                {
-                    if (attempt > 0)
-                    {
-                        var delay = delays[attempt];
-                        logger.LogWarning("Try {Attempt} : wait numnber {Delay} second", attempt, delay);
-                        await Task.Delay((int)delay * 1000);
-                    }
-
-                    return await action();
-                }
-                catch (Exception ex)
-                {
-                    exceptions.Add(ex);
-                }
-            }
-
-            throw new AggregateException(exceptions);
-        }
-
-    public static async Task DoAsync(
-        Func<Task> action,
-        ILogger logger,
-        IList<float> delays
-)
-    {
-        var exceptions = new List<Exception>();
-
-        for (int attempt = 0; attempt < delays.Count; attempt++)
-        {
-            try
-            {
-                if (attempt > 0)
-                {
-                    var delay = delays[attempt];
-                    logger.LogWarning("Try {Attempt} : wait numnber {Delay} second", attempt, delay);
-                    await Task.Delay((int)delay * 1000);
-                }
-
-                // Exécuter la méthode asynchrone
-                await action();
-                return; // Si succès, on sort de la fonction
-            }
-            catch (Exception ex)
-            {
-                exceptions.Add(ex);
-            }
-        }
-
-        // Si toutes les tentatives échouent, lever une AggregateException
-        throw new AggregateException(exceptions);
-    }
-}

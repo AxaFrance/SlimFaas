@@ -37,6 +37,7 @@ public record SlimFaasConfiguration {
     public SlimFaasDefaultConfiguration DefaultSync { get; init; } = new();
 
     public SlimFaasDefaultConfiguration DefaultAsync { get; init; } = new();
+    public SlimFaasDefaultConfiguration DefaultPublish { get; init; } = new();
 
 }
 
