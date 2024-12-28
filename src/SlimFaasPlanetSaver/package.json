@@ -3,22 +3,27 @@
   "private": false,
   "version": "1.0.2",
   "type": "module",
+  "main": "./src/SlimFaasPlanetSaver.js",
   "module": "./src/SlimFaasPlanetSaver.js",
-    "description": "Pure vanilla javascript which call SlimFaas API to convert infrastructures resilience to an UX resilience and help to save the planet",
-    "files": [
+  "types": "./src/index.d.ts",
+  "description": "Pure vanilla javascript which call SlimFaas API to convert infrastructures resilience to an UX resilience and help to save the planet",
+  "files": [
         "src/SlimFaasPlanetSaver.js",
+        "src/SlimFaasPlanetSaver.d.ts",
+        "src/index.js",
+        "src/index.d.ts",
         "README.md",
         "package.json",
         "package-lock.json"
     ],
-    "keywords": [
+  "keywords": [
         "Faas",
         "SlimFaas",
         "Function As A Service",
         "vanilla",
         "GreenIT"
     ],
-    "repository": {
+  "repository": {
         "type": "git",
         "url": "https://github.com/AxaFrance/slimfaas.git"
     },
