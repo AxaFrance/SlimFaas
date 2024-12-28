@@ -1,13 +1,14 @@
 ﻿using Microsoft.Extensions.Primitives;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas;
 
 public interface ISendClient
 {
-    Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, int timeout=30, string? baseUrl = null, CancellationTokenSource? cancellationToken = null);
+    Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, SlimFaasDefaultConfiguration slimFaasDefaultConfiguration, string? baseUrl = null, CancellationTokenSource? cancellationToken = null);
 
     Task<HttpResponseMessage> SendHttpRequestSync(HttpContext httpContext, string functionName, string functionPath,
-        string functionQuery, string? baseUrl = null);
+        string functionQuery, SlimFaasDefaultConfiguration slimFaasDefaultConfiguration, string? baseUrl = null);
 }
 
 public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISendClient
@@ -19,7 +20,7 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
         Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ?? EnvironmentVariables.NamespaceDefault;
 
     public async Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest,
-        int timeout=30, string? baseUrl = null, CancellationTokenSource? cancellationToken = null)
+        SlimFaasDefaultConfiguration slimFaasDefaultConfiguration, string? baseUrl = null, CancellationTokenSource? cancellationToken = null)
     {
         try
         {
@@ -32,9 +33,11 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
             logger.LogDebug("Sending async request to {TargetUrl}", targetUrl);
             HttpRequestMessage targetRequestMessage = CreateTargetMessage(customRequest, new Uri(targetUrl));
 
-            httpClient.Timeout = TimeSpan.FromSeconds(timeout);
-            return await httpClient.SendAsync(targetRequestMessage,
-                HttpCompletionOption.ResponseHeadersRead, cancellationToken?.Token ?? CancellationToken.None);
+            httpClient.Timeout = TimeSpan.FromSeconds(slimFaasDefaultConfiguration.HttpTimeout);
+            return await Retry.DoRequestAsync(() => httpClient.SendAsync(targetRequestMessage,
+                        HttpCompletionOption.ResponseHeadersRead, cancellationToken?.Token ?? CancellationToken.None),
+                    logger, slimFaasDefaultConfiguration.TimeoutRetries, slimFaasDefaultConfiguration.HttpStatusRetries)
+                .ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -44,15 +47,17 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
     }
 
     public async Task<HttpResponseMessage> SendHttpRequestSync(HttpContext context, string functionName,
-        string functionPath, string functionQuery, string? baseUrl = null)
+        string functionPath, string functionQuery, SlimFaasDefaultConfiguration slimFaasDefaultConfiguration, string? baseUrl = null)
     {
         try
         {
             string targetUrl = ComputeTargetUrl(baseUrl ?? _baseFunctionUrl, functionName, functionPath, functionQuery, _namespaceSlimFaas);
             logger.LogDebug("Sending sync request to {TargetUrl}", targetUrl);
             HttpRequestMessage targetRequestMessage = CreateTargetMessage(context, new Uri(targetUrl));
-            HttpResponseMessage responseMessage = await httpClient.SendAsync(targetRequestMessage,
-                HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
+            httpClient.Timeout = TimeSpan.FromSeconds(slimFaasDefaultConfiguration.HttpTimeout);
+            HttpResponseMessage responseMessage = await  Retry.DoRequestAsync(() =>  httpClient.SendAsync(targetRequestMessage,
+                HttpCompletionOption.ResponseHeadersRead, context.RequestAborted),
+                logger, slimFaasDefaultConfiguration.TimeoutRetries, slimFaasDefaultConfiguration.HttpStatusRetries).ConfigureAwait(false);
             return responseMessage;
         }
         catch (Exception e)

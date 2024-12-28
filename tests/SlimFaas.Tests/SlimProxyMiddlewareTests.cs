@@ -90,7 +90,7 @@ internal record SendData(string FunctionName, string Path, string BaseUrl);
 internal class SendClientMock : ISendClient
 {
     public IList<SendData> SendDatas = new List<SendData>();
-    public Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, int timeout, string? baseUrl = null, CancellationTokenSource? cancellationToken = null)
+    public Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, SlimFaasDefaultConfiguration slimFaasDefaultConfiguration, string? baseUrl = null, CancellationTokenSource? cancellationToken = null)
     {
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
@@ -100,7 +100,7 @@ internal class SendClientMock : ISendClient
     }
 
     public Task<HttpResponseMessage> SendHttpRequestSync(HttpContext httpContext, string functionName,
-        string functionPath, string functionQuery, string? baseUrl = null)
+        string functionPath, string functionQuery, SlimFaasDefaultConfiguration slimFaasDefaultConfiguration, string? baseUrl = null)
     {
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
@@ -175,7 +175,8 @@ public class ProxyMiddlewareTests
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
         Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
-        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<CancellationTokenSource?>()))
+        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(),
+                It.IsAny<SlimFaasDefaultConfiguration>(), It.IsAny<string?>(), It.IsAny<CancellationTokenSource?>()))
             .ReturnsAsync(responseMessage);
 
         using IHost host = await new HostBuilder()

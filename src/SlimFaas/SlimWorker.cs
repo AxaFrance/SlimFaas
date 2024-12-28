@@ -73,7 +73,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                 }
 
                 await SendHttpRequestToFunction(processingTasks, numberLimitProcessingTasks, numberProcessingTasks,
-                    functionDeployment);
+                    function);
             }
         }
         catch (Exception e)
@@ -84,8 +84,9 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
 
     private async Task SendHttpRequestToFunction(Dictionary<string, IList<RequestToWait>> processingTasks,
         int numberLimitProcessingTasks, int numberProcessingTasks,
-        string functionDeployment)
+        DeploymentInformation function)
     {
+        string functionDeployment = function.Deployment;
         int numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
         var jsons = await slimFaasQueue.DequeueAsync(functionDeployment, numberTasksToDequeue);
         if (jsons == null)
@@ -101,8 +102,14 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
             logger.LogDebug("{RequestJson}", requestJson);
             historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
             using IServiceScope scope = serviceProvider.CreateScope();
+            var slimfaasDefaultConfiguration = new SlimFaasDefaultConfiguration()
+            {
+                HttpTimeout = function.Configuration.DefaultAsync.HttpTimeout,
+                TimeoutRetries = [],
+                HttpStatusRetries = []
+            };
             Task<HttpResponseMessage> taskResponse = scope.ServiceProvider.GetRequiredService<ISendClient>()
-                .SendHttpRequestAsync(customRequest);
+                .SendHttpRequestAsync(customRequest, slimfaasDefaultConfiguration);
             processingTasks[functionDeployment].Add(new RequestToWait(taskResponse, customRequest, requestJson.Id));
         }
     }
