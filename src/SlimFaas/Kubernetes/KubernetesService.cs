@@ -266,46 +266,52 @@ public class KubernetesService : IKubernetesService
                 var pods = podList.Where(p => p.DeploymentName.StartsWith(name)).ToList();
                 ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
                 SlimFaasConfiguration configuration = GetConfiguration(annotations, name, logger);
-                bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeploymentInformationList, name, pods);
-
-                DeploymentInformation deploymentInformation = new(
-                    name,
-                    kubeNamespace,
-                    pods,
-                    configuration,
-                    deploymentListItem.Spec.Replicas ?? 0,
-                    annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
-                        ? int.Parse(annotationReplicasAtStart)
-                        : 1, annotations.TryGetValue(ReplicasMin, out string? annotationReplicaMin)
-                        ? int.Parse(annotationReplicaMin)
-                        : 0, annotations.TryGetValue(TimeoutSecondBeforeSetReplicasMin,
-                        out string? annotationTimeoutSecondBeforeSetReplicasMin)
-                        ? int.Parse(annotationTimeoutSecondBeforeSetReplicasMin)
-                        : 300, annotations.TryGetValue(NumberParallelRequest,
-                        out string? annotationNumberParallelRequest)
-                        ? int.Parse(annotationNumberParallelRequest)
-                        : 10, annotations.ContainsKey(
-                                  ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
-                              annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true",
-                    PodType.Deployment,
-                    annotations.TryGetValue(DependsOn, out string? value)
-                        ? value.Split(',').ToList()
-                        : new List<string>(),
-                    scheduleConfig,
-                    annotations.TryGetValue(SubscribeEvents, out string? valueSubscribeEvents)
-                        ? valueSubscribeEvents.Split(',').ToList()
-                        : new List<string>(),
-                    annotations.TryGetValue(DefaultVisibility, out string? visibility)
-                        ? Enum.Parse<FunctionVisibility>(visibility)
-                        : FunctionVisibility.Public,
-                    annotations.TryGetValue(PathsStartWithVisibility, out string? valueUrlsStartWithVisibility)
-                        ? valueUrlsStartWithVisibility.Split(',').ToList()
-                        : new List<string>(),
-                    annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
-                    deploymentListItem.Metadata.ResourceVersion,
-                    EndpointReady: endpointReady
+                var previousDeployment = previousDeploymentInformationList.FirstOrDefault(d => d.Deployment == name);
+                bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeployment, name, pods);
+                var resourceVersion = deploymentListItem.Metadata.ResourceVersion;
+                if (previousDeployment != null && endpointReady == previousDeployment.EndpointReady && previousDeployment.ResourceVersion ==  resourceVersion)
+                {
+                    deploymentInformationList.Add(previousDeployment);
+                } else {
+                    DeploymentInformation deploymentInformation = new(
+                        name,
+                        kubeNamespace,
+                        pods,
+                        configuration,
+                        deploymentListItem.Spec.Replicas ?? 0,
+                        annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
+                            ? int.Parse(annotationReplicasAtStart)
+                            : 1, annotations.TryGetValue(ReplicasMin, out string? annotationReplicaMin)
+                            ? int.Parse(annotationReplicaMin)
+                            : 0, annotations.TryGetValue(TimeoutSecondBeforeSetReplicasMin,
+                            out string? annotationTimeoutSecondBeforeSetReplicasMin)
+                            ? int.Parse(annotationTimeoutSecondBeforeSetReplicasMin)
+                            : 300, annotations.TryGetValue(NumberParallelRequest,
+                            out string? annotationNumberParallelRequest)
+                            ? int.Parse(annotationNumberParallelRequest)
+                            : 10, annotations.ContainsKey(
+                                      ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
+                                  annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true",
+                        PodType.Deployment,
+                        annotations.TryGetValue(DependsOn, out string? value)
+                            ? value.Split(',').ToList()
+                            : new List<string>(),
+                        scheduleConfig,
+                        annotations.TryGetValue(SubscribeEvents, out string? valueSubscribeEvents)
+                            ? valueSubscribeEvents.Split(',').ToList()
+                            : new List<string>(),
+                        annotations.TryGetValue(DefaultVisibility, out string? visibility)
+                            ? Enum.Parse<FunctionVisibility>(visibility)
+                            : FunctionVisibility.Public,
+                        annotations.TryGetValue(PathsStartWithVisibility, out string? valueUrlsStartWithVisibility)
+                            ? valueUrlsStartWithVisibility.Split(',').ToList()
+                            : new List<string>(),
+                        annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
+                        resourceVersion,
+                        EndpointReady: endpointReady
                     );
-                deploymentInformationList.Add(deploymentInformation);
+                    deploymentInformationList.Add(deploymentInformation);
+                }
             }
             catch (Exception e)
             {
@@ -315,7 +321,7 @@ public class KubernetesService : IKubernetesService
     }
 
     private static async Task<bool> GetEndpointReady(string kubeNamespace, k8s.Kubernetes client,
-        IList<DeploymentInformation> previousDeploymentInformationList, string name, List<PodInformation> pods)
+        DeploymentInformation? previousDeployment, string name, List<PodInformation> pods)
     {
         try
         {
@@ -324,7 +330,6 @@ public class KubernetesService : IKubernetesService
                 return false;
             }
 
-            var previousDeployment = previousDeploymentInformationList.FirstOrDefault(d => d.Deployment == name);
             if (previousDeployment is not { EndpointReady: false } || pods.Count != 1)
             {
                 return previousDeployment is { EndpointReady: true };
@@ -401,46 +406,57 @@ public class KubernetesService : IKubernetesService
                 var pods = podList.Where(p => p.DeploymentName.StartsWith(name)).ToList();
                 ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
                 SlimFaasConfiguration configuration = GetConfiguration(annotations, name, logger);
-                bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeploymentInformationList, name, pods);
+                var previousDeployment = previousDeploymentInformationList.FirstOrDefault(d => d.Deployment == name);
+                bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeployment, name, pods);
+                var resourceVersion = deploymentListItem.Metadata.ResourceVersion;
+                if (previousDeployment != null && endpointReady == previousDeployment.EndpointReady && previousDeployment.ResourceVersion ==  resourceVersion)
+                {
+                    deploymentInformationList.Add(previousDeployment);
+                }
+                else
+                {
+                    DeploymentInformation deploymentInformation = new(
+                        name,
+                        kubeNamespace,
+                        pods,
+                        configuration,
+                        deploymentListItem.Spec.Replicas ?? 0,
+                        annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
+                            ? int.Parse(annotationReplicasAtStart)
+                            : 1, annotations.TryGetValue(ReplicasMin, out string? annotationReplicasMin)
+                            ? int.Parse(annotationReplicasMin)
+                            : 0, annotations.TryGetValue(TimeoutSecondBeforeSetReplicasMin,
+                            out string? annotationTimeoutSecondBeforeSetReplicasMin)
+                            ? int.Parse(annotationTimeoutSecondBeforeSetReplicasMin)
+                            : 300, annotations.TryGetValue(NumberParallelRequest,
+                            out string? annotationNumberParallelRequest)
+                            ? int.Parse(annotationNumberParallelRequest)
+                            : 10, annotations.ContainsKey(
+                                      ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
+                                  annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true",
+                        PodType.StatefulSet,
+                        annotations.TryGetValue(DependsOn, out string? value)
+                            ? value.Split(',').ToList()
+                            : new List<string>(),
+                        scheduleConfig,
+                        annotations.TryGetValue(SubscribeEvents, out string? valueSubscribeEvents)
+                            ? valueSubscribeEvents.Split(',').ToList()
+                            : new List<string>(),
+                        annotations.TryGetValue(DefaultVisibility, out string? visibility)
+                            ? Enum.Parse<FunctionVisibility>(visibility)
+                            : FunctionVisibility.Public,
+                        annotations.TryGetValue(PathsStartWithVisibility, out string? valueUrlsStartWithVisibility)
+                            ? valueUrlsStartWithVisibility.Split(',').ToList()
+                            : new List<string>(),
+                        annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate,
+                            out string? valueExcludeDeploymentsFromVisibilityPrivate)
+                            ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList()
+                            : new List<string>(),
+                        resourceVersion,
+                        EndpointReady: endpointReady);
 
-                DeploymentInformation deploymentInformation = new(
-                    name,
-                    kubeNamespace,
-                    pods,
-                    configuration,
-                    deploymentListItem.Spec.Replicas ?? 0,
-                    annotations.TryGetValue(ReplicasAtStart, out string? annotationReplicasAtStart)
-                        ? int.Parse(annotationReplicasAtStart)
-                        : 1, annotations.TryGetValue(ReplicasMin, out string? annotationReplicasMin)
-                        ? int.Parse(annotationReplicasMin)
-                        : 0, annotations.TryGetValue(TimeoutSecondBeforeSetReplicasMin,
-                        out string? annotationTimeoutSecondBeforeSetReplicasMin)
-                        ? int.Parse(annotationTimeoutSecondBeforeSetReplicasMin)
-                        : 300, annotations.TryGetValue(NumberParallelRequest,
-                        out string? annotationNumberParallelRequest)
-                        ? int.Parse(annotationNumberParallelRequest)
-                        : 10, annotations.ContainsKey(
-                                  ReplicasStartAsSoonAsOneFunctionRetrieveARequest) &&
-                              annotations[ReplicasStartAsSoonAsOneFunctionRetrieveARequest].ToLower() == "true",
-                    PodType.StatefulSet,
-                    annotations.TryGetValue(DependsOn, out string? value)
-                        ? value.Split(',').ToList()
-                        : new List<string>(),
-                    scheduleConfig,
-                    annotations.TryGetValue(SubscribeEvents, out string? valueSubscribeEvents)
-                        ? valueSubscribeEvents.Split(',').ToList()
-                        : new List<string>(),
-                    annotations.TryGetValue(DefaultVisibility, out string? visibility)
-                        ? Enum.Parse<FunctionVisibility>(visibility)
-                        : FunctionVisibility.Public,
-                    annotations.TryGetValue(PathsStartWithVisibility, out string? valueUrlsStartWithVisibility)
-                        ? valueUrlsStartWithVisibility.Split(',').ToList()
-                        : new List<string>(),
-                    annotations.TryGetValue(ExcludeDeploymentsFromVisibilityPrivate, out string? valueExcludeDeploymentsFromVisibilityPrivate) ? valueExcludeDeploymentsFromVisibilityPrivate.Split(',').ToList() : new List<string>(),
-                    deploymentListItem.Metadata.ResourceVersion,
-                    EndpointReady: endpointReady);
-
-                deploymentInformationList.Add(deploymentInformation);
+                    deploymentInformationList.Add(deploymentInformation);
+                }
             }
             catch (Exception e)
             {
