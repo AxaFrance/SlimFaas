@@ -7,46 +7,48 @@ public class QueueElementExtentionsTests
     {
         // I want a test which text my extention
         var nowTicks = DateTime.UtcNow.Ticks;
+        List<int> Retries = [2, 6, 10];
+        int RetryTimeout = 30;
 
         var timeout = 30;
         var timeoutSpanTicks = TimeSpan.FromSeconds(31).Ticks;
         List<QueueElement> queueElements = new();
         var httpRetriesCode = new List<int>(Endpoints.HttpStatusCodesWorthRetrying) ;
-        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "-1", 090902, timeout, SlimDataInterpreter.Retries, new List<QueueHttpTryElement>()
+        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "-1", 090902, timeout, Retries, new List<QueueHttpTryElement>()
         {
             new(nowTicks -100, nowTicks, 500),
             new(nowTicks -50, nowTicks, 500),
             new(nowTicks -20, nowTicks, 500),
             new(nowTicks -10, nowTicks, 500),
         }, httpRetriesCode));
-        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "0", 090902, timeout, SlimDataInterpreter.Retries, new List<QueueHttpTryElement>()
+        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "0", 090902, timeout, Retries, new List<QueueHttpTryElement>()
         {
             new(nowTicks - timeoutSpanTicks -100, nowTicks, 500),
             new(nowTicks- timeoutSpanTicks -50, nowTicks, 500),
             new(nowTicks- timeoutSpanTicks -30, nowTicks, 500),
             new(nowTicks- timeoutSpanTicks -20, 0, 0),
         }, httpRetriesCode));
-        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "0-ok", 090902, timeout, SlimDataInterpreter.Retries, new List<QueueHttpTryElement>()
+        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "0-ok", 090902, timeout, Retries, new List<QueueHttpTryElement>()
         {
             new(nowTicks  -100, nowTicks, 200),
         }, httpRetriesCode));
-        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "1", 090902, timeout, SlimDataInterpreter.Retries, new List<QueueHttpTryElement>()
+        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "1", 090902, timeout, Retries, new List<QueueHttpTryElement>()
         {
             new(nowTicks - 1000, nowTicks, 500),
             new(nowTicks- 500, nowTicks, 500),
             new(nowTicks- 200, nowTicks, 500),
             new(nowTicks- 100, 0, 0),
         }, httpRetriesCode));
-        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "1timeout", 090902, timeout, SlimDataInterpreter.Retries, new List<QueueHttpTryElement>()
+        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "1timeout", 090902, timeout, Retries, new List<QueueHttpTryElement>()
         {
             new(nowTicks - 1000, nowTicks, 500),
             new(nowTicks- 500, nowTicks, 500),
             new(nowTicks- 400, nowTicks, 500),
             new(nowTicks- timeoutSpanTicks, 0, 0),
         }, httpRetriesCode));
-        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "2", 090902, timeout, SlimDataInterpreter.Retries, new List<QueueHttpTryElement>(), httpRetriesCode));
-        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "3", 090902, timeout, SlimDataInterpreter.Retries, new List<QueueHttpTryElement>(), httpRetriesCode));
-        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "4", 090902, timeout, SlimDataInterpreter.Retries, new List<QueueHttpTryElement>(), httpRetriesCode));
+        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "2", 090902, timeout, Retries, new List<QueueHttpTryElement>(), httpRetriesCode));
+        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "3", 090902, timeout, Retries, new List<QueueHttpTryElement>(), httpRetriesCode));
+        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "4", 090902, timeout, Retries, new List<QueueHttpTryElement>(), httpRetriesCode));
 
         var availableElements = queueElements.GetQueueAvailableElement(nowTicks, 3);
 

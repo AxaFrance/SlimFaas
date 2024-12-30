@@ -51,8 +51,6 @@ public class SlimDataInterpreter : CommandInterpreter
         return DoListRightPopAsync(addHashSetCommand, SlimDataState.Queues);
     }
     
-    public static readonly List<int> Retries = [2, 6, 10];
-    public static readonly int RetryTimeout = 30;
 
     internal static ValueTask DoListRightPopAsync(ListRightPopCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
     {
