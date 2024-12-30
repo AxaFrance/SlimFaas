@@ -6,14 +6,14 @@
 
 Why use SlimFaas?
 - Scale to 0 after a period of inactivity (work with deployment and statefulset)
-- Scale up : compatible with HPA (Horizontal Auto Scaler) and Keda
+- Scale up : compatible with HPA (Horizontal Auto Scaler) and Keda (SlimFaas integrated autonomous Scale Up coming soon)
 - Synchronous HTTP calls
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
-- Retry Pattern Configurable: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
+- Retry Pattern fully Configurable: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
 - Private and Public functions
   - Private functions can be accessed only by internal namespace http call from pods
-- Synchronous Publish/Subscribe internal events via HTTP calls to every replicas via HTTP  without any use of specific drivers/libraries (**Couple your application with SlimFaas**)
+- Synchronous Publish/Subscribe internal events via HTTP calls to every replicas via HTTP without any use of specific drivers/libraries (**Couple your application with SlimFaas**)
 - Mind Changer: REST API that show the status of your functions and allow to wake up your infrastructure (**Couple your application with Slimfaas**)
   - Very useful to inform end users that your infrastructure is starting
 - Plug and Play: just deploy a standard pod
