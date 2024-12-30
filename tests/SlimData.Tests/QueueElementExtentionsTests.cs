@@ -9,11 +9,19 @@ public class QueueElementExtentionsTests
         var nowTicks = DateTime.UtcNow.Ticks;
         List<int> Retries = [2, 6, 10];
         int RetryTimeout = 30;
+        int[] HttpStatusCodesWorthRetrying =
+            [
+                // 408 , // HttpStatusCode.RequestTimeout,
+                500, // HttpStatusCode.InternalServerError,
+                502, // HttpStatusCode.BadGateway,
+                503, // HttpStatusCode.ServiceUnavailable,
+                //504, // HttpStatusCode.GatewayTimeout
+            ];
 
         var timeout = 30;
         var timeoutSpanTicks = TimeSpan.FromSeconds(31).Ticks;
         List<QueueElement> queueElements = new();
-        var httpRetriesCode = new List<int>(Endpoints.HttpStatusCodesWorthRetrying) ;
+        var httpRetriesCode = new List<int>(HttpStatusCodesWorthRetrying) ;
         queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "-1", 090902, timeout, Retries, new List<QueueHttpTryElement>()
         {
             new(nowTicks -100, nowTicks, 500),

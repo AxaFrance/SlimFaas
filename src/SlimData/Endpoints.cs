@@ -146,7 +146,6 @@ public class Endpoints
                 var queueElements = queue.GetQueueAvailableElement(nowTicks, count);
                 foreach (var queueElement in queueElements)
                 {
-                    Console.WriteLine("Endpoint ListRightPopCommand " + queueElement.Id);
                     values.Items.Add(new QueueData(queueElement.Id ,queueElement.Value.ToArray()));
                 }
                 
@@ -185,15 +184,7 @@ public class Endpoints
             await ListLeftPushCommand(provider, key, value, cluster, source);
         });
     }
-
-    public static int[] HttpStatusCodesWorthRetrying =
-    [
-        // 408 , // HttpStatusCode.RequestTimeout,
-        500, // HttpStatusCode.InternalServerError, 
-        502, // HttpStatusCode.BadGateway, 
-        503, // HttpStatusCode.ServiceUnavailable,
-        //504, // HttpStatusCode.GatewayTimeout 
-    ];
+    
     public static async Task ListLeftPushCommand(SlimPersistentState provider, string key, byte[] value,
         IRaftCluster cluster, CancellationTokenSource source)
     {

@@ -77,7 +77,7 @@ public static class Retry
             if (attempt >= 0)
             {
                 var delay = delays[attempt];
-                logger.LogWarning("Try {Attempt} : wait number {Delay} second", attempt, delay);
+                logger.LogWarning("DoRequestAsync Try {Attempt} : wait number {Delay} second", attempt+1, delay);
                 await Task.Delay(delay * 1000);
             }
 
@@ -88,7 +88,7 @@ public static class Retry
                 return responseMessage;
             }
             responseMessage.Dispose();
-            exceptions.Add(new Exception($"Received code Http {statusCode}"));
+            exceptions.Add(new Exception($"DoRequestAsync received code Http {statusCode}"));
         }
 
         throw new AggregateException(exceptions);

@@ -54,7 +54,6 @@ public class SlimDataInterpreter : CommandInterpreter
 
     internal static ValueTask DoListRightPopAsync(ListRightPopCommand addHashSetCommand, Dictionary<string, List<QueueElement>> queues)
     {
-        Console.WriteLine("DoListRightPopAsync Key " +  addHashSetCommand.Key);
         if (queues.TryGetValue(addHashSetCommand.Key, out var queue))
         {
             var nowTicks =addHashSetCommand.NowTicks;
@@ -78,23 +77,8 @@ public class SlimDataInterpreter : CommandInterpreter
                 queueAvailableElement.RetryQueueElements.Add(new QueueHttpTryElement(nowTicks));
             }
 
-            // print all queue elements
-            foreach (var queueElemen in queue)
-            {
-                Console.WriteLine("DoListRightPopAsync QueueElement Id " +  queueElemen.Id);
-                Console.WriteLine("DoListRightPopAsync QueueElement Value " +  queueElemen.Value);
-                Console.WriteLine("DoListRightPopAsync QueueElement InsertTimeStamp " +  queueElemen.InsertTimeStamp);
-                foreach (var retryQueueElemen in queueElemen.RetryQueueElements)
-                {
-                    Console.WriteLine("DoListRightPopAsync QueueElement RetryQueueElement StartTimeStamp " +  retryQueueElemen.StartTimeStamp);
-                    Console.WriteLine("DoListRightPopAsync QueueElement RetryQueueElement EndTimeStamp " +  retryQueueElemen.EndTimeStamp);
-                    Console.WriteLine("DoListRightPopAsync QueueElement RetryQueueElement HttpCode " +  retryQueueElemen.HttpCode);
-                }
-            }
         }
         
-
-
         return default;
     }
 
@@ -110,21 +94,6 @@ public class SlimDataInterpreter : CommandInterpreter
             value.Add(new QueueElement(listLeftPushCommand.Value, listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks, listLeftPushCommand.RetryTimeout, listLeftPushCommand.Retries,new List<QueueHttpTryElement>(), listLeftPushCommand.HttpStatusCodesWorthRetrying));
         else
             queues.Add(listLeftPushCommand.Key, new List<QueueElement>() {new(listLeftPushCommand.Value,listLeftPushCommand.Identifier, listLeftPushCommand.NowTicks, listLeftPushCommand.RetryTimeout, listLeftPushCommand.Retries,new List<QueueHttpTryElement>(), listLeftPushCommand.HttpStatusCodesWorthRetrying)});
-        // print all queue elements
-        Console.WriteLine("DoListLeftPushAsync key " +  listLeftPushCommand.Key + " Identifier " + listLeftPushCommand.Identifier);
-        var elements = queues[listLeftPushCommand.Key];
-        foreach (var queueElemen in elements)
-        {
-            Console.WriteLine("DoListLeftPushAsync QueueElement Id " +  queueElemen.Id);
-            Console.WriteLine("DoListLeftPushAsync QueueElement Value " +  queueElemen.Value);
-            Console.WriteLine("DoListLeftPushAsync QueueElement InsertTimeStamp " +  queueElemen.InsertTimeStamp);
-            foreach (var retryQueueElemen in queueElemen.RetryQueueElements)
-            {
-                Console.WriteLine("DoListLeftPushAsync QueueElement RetryQueueElement StartTimeStamp " +  retryQueueElemen.StartTimeStamp);
-                Console.WriteLine("DoListLeftPushAsync QueueElement RetryQueueElement EndTimeStamp " +  retryQueueElemen.EndTimeStamp);
-                Console.WriteLine("DoListLeftPushAsync QueueElement RetryQueueElement HttpCode " +  retryQueueElemen.HttpCode);
-            }
-        }
         return default;
     }
     
@@ -137,8 +106,7 @@ public class SlimDataInterpreter : CommandInterpreter
     internal static ValueTask DoListCallbackAsync(ListCallbackCommand listCallbackCommand, Dictionary<string, List<QueueElement>> queues)
     {
         if (!queues.TryGetValue(listCallbackCommand.Key, out List<QueueElement>? value)) return default;
-
-        Console.WriteLine("DoListCallbackAsync QueueKey " +  listCallbackCommand.Key + " Identifier " + listCallbackCommand.Identifier);
+        
         var queueElement = value.FirstOrDefault(x => x.Id == listCallbackCommand.Identifier);
         if (queueElement == null)
         {
@@ -153,19 +121,6 @@ public class SlimDataInterpreter : CommandInterpreter
             value.Remove(queueElement);
         }
        
-        // print all queue elements
-        foreach (var queueElemen in value)
-        {
-            Console.WriteLine("DoListCallbackAsync QueueElement Id " +  queueElemen.Id);
-            Console.WriteLine("DoListCallbackAsync QueueElement Value " +  queueElemen.Value);
-            Console.WriteLine("DoListCallbackAsync QueueElement InsertTimeStamp " +  queueElemen.InsertTimeStamp);
-            foreach (var retryQueueElemen in queueElemen.RetryQueueElements)
-            {
-                Console.WriteLine("DoListCallbackAsync QueueElement RetryQueueElement StartTimeStamp " +  retryQueueElemen.StartTimeStamp);
-                Console.WriteLine("DoListCallbackAsync QueueElement RetryQueueElement EndTimeStamp " +  retryQueueElemen.EndTimeStamp);
-                Console.WriteLine("DoListCallbackAsync QueueElement RetryQueueElement HttpCode " +  retryQueueElemen.HttpCode);
-            }
-        }
         return default;
     }
 
@@ -207,24 +162,6 @@ public class SlimDataInterpreter : CommandInterpreter
         {
             keyValues[keyValue.Key] = keyValue.Value;
         }
-        // Print all data from queues
-        foreach (var queue in command.queues)
-        {
-            Console.WriteLine("SnapshotCommand Queue Key " +  queue.Key);
-            foreach (var element in queue.Value)
-            {
-                Console.WriteLine("SnapshotCommand QueueElement Id " +  element.Id);
-                Console.WriteLine("SnapshotCommand QueueElement Value " +  element.Value);
-                Console.WriteLine("SnapshotCommand QueueElement InsertTimeStamp " +  element.InsertTimeStamp);
-                foreach (var retryQueueElement in element.RetryQueueElements)
-                {
-                    Console.WriteLine("SnapshotCommand QueueElement RetryQueueElement StartTimeStamp " +  retryQueueElement.StartTimeStamp);
-                    Console.WriteLine("SnapshotCommand QueueElement RetryQueueElement EndTimeStamp " +  retryQueueElement.EndTimeStamp);
-                    Console.WriteLine("SnapshotCommand QueueElement RetryQueueElement HttpCode " +  retryQueueElement.HttpCode);
-                }
-            }
-        }
-    
         
         queues.Clear();
         foreach (var queue in command.queues)
