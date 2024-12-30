@@ -11,18 +11,18 @@ public static class Retry
     {
         var exceptions = new List<Exception>();
 
-        for (int attempt = 0; attempt < delays.Count; attempt++)
+        for (int attempt = -1; attempt < delays.Count; attempt++)
         {
             try
             {
-                if (attempt <= 0)
+                if (attempt < 0)
                 {
                     return await action();
                 }
 
                 var delay = delays[attempt];
                 logger.LogWarning("Try {Attempt} : wait number {Delay} second", attempt, delay);
-                await Task.Delay((int)delay * 1000);
+                await Task.Delay(delay * 1000);
 
                 return await action();
             }
@@ -43,16 +43,20 @@ public static class Retry
     {
         var exceptions = new List<Exception>();
 
-        for (int attempt = 0; attempt < delays.Count; attempt++)
+        for (int attempt = -1; attempt < delays.Count; attempt++)
         {
             try
             {
-                if (attempt > 0)
+
+                if (attempt < 0)
                 {
-                    var delay = delays[attempt];
-                    logger.LogWarning("Try {Attempt} : wait numnber {Delay} second", attempt, delay);
-                    await Task.Delay(delay * 1000);
+                     await action();
+                     return;
                 }
+
+                var delay = delays[attempt];
+                logger.LogWarning("Try {Attempt} : wait numnber {Delay} second", attempt, delay);
+                await Task.Delay(delay * 1000);
 
                 await action();
                 return;
@@ -75,11 +79,11 @@ public static class Retry
     {
         var exceptions = new List<Exception>();
 
-        for (int attempt = 0; attempt < delays.Count; attempt++)
+        for (int attempt = -1; attempt < delays.Count; attempt++)
         {
             try
             {
-                if (attempt <= 0)
+                if (attempt < 0)
                 {
                     return await action();
                 }

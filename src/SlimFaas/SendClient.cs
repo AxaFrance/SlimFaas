@@ -41,7 +41,7 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Error in SendHttpRequestAsync to {FunctionName} to {FunctionPath} ", customRequest.FunctionName, customRequest.FunctionName);
+            logger.LogError(e, "Error in SendHttpRequestAsync to {FunctionName} to {FunctionPath} ", customRequest.FunctionName, customRequest.Path);
             throw;
         }
     }
@@ -55,7 +55,7 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
             logger.LogDebug("Sending sync request to {TargetUrl}", targetUrl);
             HttpRequestMessage targetRequestMessage = CreateTargetMessage(context, new Uri(targetUrl));
             httpClient.Timeout = TimeSpan.FromSeconds(slimFaasDefaultConfiguration.HttpTimeout);
-            HttpResponseMessage responseMessage = await  Retry.DoRequestAsync(() =>  httpClient.SendAsync(targetRequestMessage,
+            HttpResponseMessage responseMessage = await  Retry.DoRequestAsync(() => httpClient.SendAsync(targetRequestMessage,
                 HttpCompletionOption.ResponseHeadersRead, context.RequestAborted),
                 logger, slimFaasDefaultConfiguration.TimeoutRetries, slimFaasDefaultConfiguration.HttpStatusRetries).ConfigureAwait(false);
             return responseMessage;

@@ -1,4 +1,5 @@
-﻿using SlimFaas.Kubernetes;
+﻿using System.Text.Json;
+using SlimFaas.Kubernetes;
 using NodaTime;
 using NodaTime.TimeZones;
 
@@ -72,12 +73,13 @@ public class ReplicasService(IKubernetesService kubernetesService,
                                                   "with {ResourceVersion} resource version \n"+
                                                   "with {NumberParallelRequest} number parallel request \n" +
                                                   "with dependOn {DependsOn}  \n" +
-                                                  "with {EndpointReady} endpoint ready \n",
+                                                  "with {EndpointReady} endpoint ready \n" +
+                                                  "with {Configuration} configuration \n",
                                 deploymentInformation.Deployment, deploymentInformation.Replicas, deploymentInformation.ReplicasAtStart, deploymentInformation.ReplicasMin,
                                 deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest, deploymentInformation.TimeoutSecondBeforeSetReplicasMin,
                                 deploymentInformation.PodType, deploymentInformation.ResourceVersion, deploymentInformation.NumberParallelRequest,
                                                   deploymentInformation.DependsOn,
-                                                  deploymentInformation.EndpointReady);
+                                                  deploymentInformation.EndpointReady, JsonSerializer.Serialize(deploymentInformation.Configuration, SlimFaasConfigurationSerializerContext.Default.SlimFaasConfiguration));
                         }
                     }
             }
