@@ -42,7 +42,7 @@ kubectl apply -f deployment-functions.yml
 # Install MySql
 kubectl apply -f deployment-mysql.yml
 # to run Single Page webapp demo (optional) on http://localhost:8000
-docker run -p 8000:8000 --rm axaguildev/fibonacci-webapp:latest
+docker run -d -p 8000:8000 --rm axaguildev/fibonacci-webapp:latest
 kubectl port-forward svc/slimfaas-nodeport 30021:5000 -n slimfaas-demo
 ```
 

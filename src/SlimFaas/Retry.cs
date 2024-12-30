@@ -15,14 +15,12 @@ public static class Retry
         {
             try
             {
-                if (attempt < 0)
+                if (attempt >= 0)
                 {
-                    return await action();
+                    var delay = delays[attempt];
+                    logger.LogWarning("Try {Attempt} : wait number {Delay} second", attempt, delay);
+                    await Task.Delay(delay * 1000);
                 }
-
-                var delay = delays[attempt];
-                logger.LogWarning("Try {Attempt} : wait number {Delay} second", attempt, delay);
-                await Task.Delay(delay * 1000);
 
                 return await action();
             }
@@ -47,17 +45,12 @@ public static class Retry
         {
             try
             {
-
-                if (attempt < 0)
+                if (attempt >= 0)
                 {
-                     await action();
-                     return;
+                    var delay = delays[attempt];
+                    logger.LogWarning("Try {Attempt} : wait numnber {Delay} second", attempt, delay);
+                    await Task.Delay(delay * 1000);
                 }
-
-                var delay = delays[attempt];
-                logger.LogWarning("Try {Attempt} : wait numnber {Delay} second", attempt, delay);
-                await Task.Delay(delay * 1000);
-
                 await action();
                 return;
             }
@@ -83,14 +76,12 @@ public static class Retry
         {
             try
             {
-                if (attempt < 0)
+                if (attempt >= 0)
                 {
-                    return await action();
+                    var delay = delays[attempt];
+                    logger.LogWarning("Try {Attempt} : wait number {Delay} second", attempt, delay);
+                    await Task.Delay(delay * 1000);
                 }
-
-                var delay = delays[attempt];
-                logger.LogWarning("Try {Attempt} : wait number {Delay} second", attempt, delay);
-                await Task.Delay(delay * 1000);
 
                 var responseMessage = await action();
                 var statusCode = (int)responseMessage.StatusCode;
