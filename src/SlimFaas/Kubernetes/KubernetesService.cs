@@ -43,7 +43,7 @@ public record SlimFaasConfiguration {
 
 public record SlimFaasDefaultConfiguration {
 
-    public int HttpTimeout { get; init; } = 30;
+    public int HttpTimeout { get; init; } = 120;
     public List<int> TimeoutRetries { get; init; } = [2, 4, 8];
     public List<int> HttpStatusRetries { get; init; } = [500, 502, 503];
 }

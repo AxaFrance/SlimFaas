@@ -168,8 +168,6 @@ spec:
         SlimFaas/SubscribeEvents: "Public:my-event-name1,Private:my-event-name2,my-event-name3" # comma separated list of event names
         SlimFaas/DefaultVisibility: "Public" # Public or Private (private can be accessed only by internal namespace https call from pods)
         SlimFaas/UrlsPathStartWithVisibility: "Private:/mypath/subPath,Private:/mysecondpath" # Public or Private (private can be accessed only by internal namespace https call from pods)
-        SlimFaas/SynchrounousRetry: "2;4;8"
-        SlimFaas/AsynchrounousRetry: "2;4;8"
     spec:
       serviceAccountName: default
       containers:
@@ -383,17 +381,17 @@ spec:
 ````bash
 {
     "DefaultSync":{
-        "HttpTimeout": 30, # Timeout in seconds
+        "HttpTimeout": 120, # Timeout in seconds
         "TimeoutRetries": [2,4,8] # Retry pattern in seconds
         "HttpStatusRetries": [500,502,503] # Retry only for 500,502,503 HTTP status codes
     }
     "DefaultAsync":{
-        "HttpTimeout": 30, # Timeout in seconds
+        "HttpTimeout": 120, # Timeout in seconds
         "TimeoutRetries": [2,4,8] # Retry pattern in seconds
         "HttpStatusRetries": [500,502,503] # Retry only for 500,502,503 HTTP status codes
     },
     "DefaultPublish":{
-        "HttpTimeout": 30, # Timeout in seconds
+        "HttpTimeout": 120, # Timeout in seconds
         "TimeoutRetries": [2,4,8] # Retry pattern in seconds
         "HttpStatusRetries": [500,502,503] # Retry only for 500,502,503 HTTP status codes
     }

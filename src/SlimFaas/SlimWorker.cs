@@ -193,20 +193,11 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                 queueItemStatusList.Add(new QueueItemStatus(processing.Id, statusCode));
                 httpResponseMessage.Dispose();
             }
-            // Filter by InnerException.
-            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
-            {
-                queueItemStatusList.Add(new QueueItemStatus(processing.Id, 504));
-                httpResponseMessagesToDelete.Add(processing);
-                logger.LogWarning("Request HttpTimeout Error: {Message} {StackTrace}", ex.Message, ex.StackTrace);
-                historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
-            }
             catch (Exception e)
             {
                 queueItemStatusList.Add(new QueueItemStatus(processing.Id, 500));
                 httpResponseMessagesToDelete.Add(processing);
                 logger.LogWarning("Request Error: {Message} {StackTrace}", e.Message, e.StackTrace);
-                historyHttpService.SetTickLastCall(functionDeployment, DateTime.UtcNow.Ticks);
             }
         }
 
