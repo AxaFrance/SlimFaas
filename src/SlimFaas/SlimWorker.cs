@@ -65,7 +65,10 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                 {
                     continue;
                 }
-                logger.LogDebug("Function {FunctionDeployment} is ready,NumberLimitProcessingTasks {NumberLimitProcessingTasks}, QueueLength {QueueLength} ", functionDeployment, numberProcessingTasks, queueLength);
+                logger.LogDebug("Function {FunctionDeployment} is ready, " +
+                                "NumberProcessingTasks {NumberProcessingTasks}, " +
+                                "NumberLimitProcessingTasks {NumberLimitProcessingTasks}, " +
+                                "QueueLength {QueueLength} ", functionDeployment, numberProcessingTasks, numberProcessingTasks, queueLength);
 
                 if (numberProcessingTasks >= numberLimitProcessingTasks)
                 {
