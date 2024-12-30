@@ -31,11 +31,16 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
             string targetUrl =
                 ComputeTargetUrl(functionUrl, customRequestFunctionName, customRequestPath, customRequestQuery, _namespaceSlimFaas);
             logger.LogDebug("Sending async request to {TargetUrl}", targetUrl);
-            HttpRequestMessage targetRequestMessage = CreateTargetMessage(customRequest, new Uri(targetUrl));
+
 
             httpClient.Timeout = TimeSpan.FromSeconds(slimFaasDefaultConfiguration.HttpTimeout);
-            return await Retry.DoRequestAsync(() => httpClient.SendAsync(targetRequestMessage,
-                        HttpCompletionOption.ResponseHeadersRead, cancellationToken?.Token ?? CancellationToken.None),
+            return await Retry.DoRequestAsync(() =>
+                    {
+                        HttpRequestMessage targetRequestMessage = CreateTargetMessage(customRequest, new Uri(targetUrl));
+                        return httpClient.SendAsync(targetRequestMessage,
+                            HttpCompletionOption.ResponseHeadersRead,
+                            cancellationToken?.Token ?? CancellationToken.None);
+                    },
                     logger, slimFaasDefaultConfiguration.TimeoutRetries, slimFaasDefaultConfiguration.HttpStatusRetries)
                 .ConfigureAwait(false);
         }
@@ -53,10 +58,13 @@ public class SendClient(HttpClient httpClient, ILogger<SendClient> logger) : ISe
         {
             string targetUrl = ComputeTargetUrl(baseUrl ?? _baseFunctionUrl, functionName, functionPath, functionQuery, _namespaceSlimFaas);
             logger.LogDebug("Sending sync request to {TargetUrl}", targetUrl);
-            HttpRequestMessage targetRequestMessage = CreateTargetMessage(context, new Uri(targetUrl));
             httpClient.Timeout = TimeSpan.FromSeconds(slimFaasDefaultConfiguration.HttpTimeout);
-            HttpResponseMessage responseMessage = await  Retry.DoRequestAsync(() => httpClient.SendAsync(targetRequestMessage,
-                HttpCompletionOption.ResponseHeadersRead, context.RequestAborted),
+            HttpResponseMessage responseMessage = await  Retry.DoRequestAsync(() =>
+                {
+                    HttpRequestMessage targetRequestMessage = CreateTargetMessage(context, new Uri(targetUrl));
+                    return httpClient.SendAsync(targetRequestMessage,
+                        HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
+                },
                 logger, slimFaasDefaultConfiguration.TimeoutRetries, slimFaasDefaultConfiguration.HttpStatusRetries).ConfigureAwait(false);
             return responseMessage;
         }
