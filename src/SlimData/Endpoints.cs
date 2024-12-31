@@ -5,6 +5,21 @@ using SlimData.Commands;
 
 namespace SlimData;
 
+[MemoryPackable]
+public partial record ListLeftPushInput(byte[] Value, byte[] RetryInformation);
+
+[MemoryPackable]
+public partial record RetryInformation(List<int> Retries, int RetryTimeoutSeconds, List<int> HttpStatusRetries);
+
+[MemoryPackable]
+public partial record QueueItemStatus(string Id="", int HttpCode=0);
+
+[MemoryPackable]
+public partial record ListQueueItemStatus
+{
+    public List<QueueItemStatus>? Items { get; set; }
+}
+
 public class Endpoints
 {
     public delegate Task RespondDelegate(IRaftCluster cluster, SlimPersistentState provider,
@@ -46,7 +61,7 @@ public class Endpoints
         }
     }
 
-    public static Task AddHashSet(HttpContext context)
+    public static Task AddHashSetAsync(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
@@ -80,7 +95,7 @@ public class Endpoints
         await cluster.ReplicateAsync(logEntry, source.Token);
     }
 
-    public static Task ListRightPop(HttpContext context)
+    public static Task ListRightPopAsync(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
@@ -102,11 +117,11 @@ public class Endpoints
     }
     
     private static readonly IDictionary<string,SemaphoreSlim> SemaphoreSlims = new Dictionary<string, SemaphoreSlim>();
-    public static async Task<ListString> ListRightPopCommand(SlimPersistentState provider, string key, int count, IRaftCluster cluster,
+    public static async Task<ListItems> ListRightPopCommand(SlimPersistentState provider, string key, int count, IRaftCluster cluster,
         CancellationTokenSource source)
     {
-        var values = new ListString();
-        values.Items = new List<byte[]>();
+        var values = new ListItems();
+        values.Items = new List<QueueData>();
 
         if(SemaphoreSlims.TryGetValue(key, out var semaphoreSlim))
         {
@@ -124,18 +139,19 @@ public class Endpoints
                 Console.WriteLine("Master node is waiting for lease token");
                 await Task.Delay(10);
             }
+            var nowTicks = DateTime.UtcNow.Ticks;
             var queues = ((ISupplier<SlimDataPayload>)provider).Invoke().Queues;
             if (queues.TryGetValue(key, out var queue))
             {
-                for (var i = 0; i < count; i++)
+                var queueElements = queue.GetQueueAvailableElement(nowTicks, count);
+                foreach (var queueElement in queueElements)
                 {
-                    if (queue.Count <= i) break;
-                    values.Items.Add(queue[i].ToArray());
+                    values.Items.Add(new QueueData(queueElement.Id ,queueElement.Value.ToArray()));
                 }
                 
                 var logEntry =
                     provider.Interpreter.CreateLogEntry(
-                        new ListRightPopCommand { Key = key, Count = count },
+                        new ListRightPopCommand { Key = key, Count = count, NowTicks = nowTicks },
                         cluster.Term);
                 await cluster.ReplicateAsync(logEntry, source.Token);
             }
@@ -148,7 +164,8 @@ public class Endpoints
         
     }
 
-    public static Task ListLeftPush(HttpContext context)
+
+    public static Task ListLeftPushAsync(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {
@@ -167,14 +184,66 @@ public class Endpoints
             await ListLeftPushCommand(provider, key, value, cluster, source);
         });
     }
-
+    
     public static async Task ListLeftPushCommand(SlimPersistentState provider, string key, byte[] value,
         IRaftCluster cluster, CancellationTokenSource source)
     {
+        ListLeftPushInput input = MemoryPackSerializer.Deserialize<ListLeftPushInput>(value);
+        RetryInformation retryInformation = MemoryPackSerializer.Deserialize<RetryInformation>(input.RetryInformation);
         var logEntry =
-            provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, Value = value },
+            provider.Interpreter.CreateLogEntry(new ListLeftPushCommand { Key = key, 
+                    Identifier = Guid.NewGuid().ToString(), 
+                    Value = input.Value, 
+                    NowTicks = DateTime.UtcNow.Ticks,
+                    Retries = retryInformation.Retries,
+                    RetryTimeout = retryInformation.RetryTimeoutSeconds,
+                    HttpStatusCodesWorthRetrying = retryInformation.HttpStatusRetries
+                },
                 cluster.Term);
         await cluster.ReplicateAsync(logEntry, source.Token);
+    }
+    
+    public static Task ListCallbackAsync(HttpContext context)
+    {
+        return DoAsync(context, async (cluster, provider, source) =>
+        {
+            context.Request.Query.TryGetValue("key", out var key);
+            if (string.IsNullOrEmpty(key))
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                await context.Response.WriteAsync("not data found", context.RequestAborted);
+                return;
+            }
+            
+            var inputStream = context.Request.Body;
+            await using var memoryStream = new MemoryStream();
+            await inputStream.CopyToAsync(memoryStream, source.Token);
+            var value = memoryStream.ToArray();
+            var list = MemoryPackSerializer.Deserialize<ListQueueItemStatus>(value);
+            await ListCallbackCommandAsync(provider, key, list, cluster, source);
+        });
+    }
+
+    public static async Task ListCallbackCommandAsync(SlimPersistentState provider, string key, ListQueueItemStatus list, IRaftCluster cluster, CancellationTokenSource source)
+    {
+        if (list.Items == null)
+        {
+            return;
+        }
+
+        foreach (var queueItemStatus in list.Items)
+        {
+            var logEntry =
+                provider.Interpreter.CreateLogEntry(new ListCallbackCommand
+                    {
+                        Identifier = queueItemStatus.Id,
+                        Key = key,
+                        HttpCode = queueItemStatus.HttpCode,
+                        NowTicks = DateTime.UtcNow.Ticks
+                    },
+                    cluster.Term);
+            await cluster.ReplicateAsync(logEntry, source.Token);
+        }
     }
 
     private static (string key, string value) GetKeyValue(IFormCollection form)
@@ -192,7 +261,7 @@ public class Endpoints
         return (key, value);
     }
 
-    public static Task AddKeyValue(HttpContext context)
+    public static Task AddKeyValueAsync(HttpContext context)
     {
         return DoAsync(context, async (cluster, provider, source) =>
         {

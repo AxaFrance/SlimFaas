@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using SlimData;
 
 namespace SlimFaas;
 
@@ -7,7 +8,7 @@ public class DatabaseMockService : IDatabaseService
     private readonly ConcurrentDictionary<string, IDictionary<string, string>> hashSet = new();
 
     private readonly ConcurrentDictionary<string, byte[]> keys = new();
-    private readonly ConcurrentDictionary<string, List<byte[]>> queue = new();
+    private readonly ConcurrentDictionary<string, List<QueueData>> queue = new();
 
     public Task<byte[]?> GetAsync(string key)
     {
@@ -57,51 +58,67 @@ public class DatabaseMockService : IDatabaseService
         return Task.FromResult<IDictionary<string, string>>(new Dictionary<string, string>());
     }
 
-    public Task ListLeftPushAsync(string key, byte[] field)
+    public Task ListLeftPushAsync(string key, byte[] field, RetryInformation retryInformation)
     {
-        List<byte[]> list;
+        List<QueueData> list;
         if (queue.ContainsKey(key))
         {
             list = queue[key];
         }
         else
         {
-            list = new List<byte[]>();
+            list = new List<QueueData>();
             queue.TryAdd(key, list);
         }
 
-        list.Add(field);
+        list.Add(new QueueData(Guid.NewGuid().ToString(), field));
         return Task.CompletedTask;
     }
 
-    public Task<IList<byte[]>> ListRightPopAsync(string key, int count = 1)
+    public Task<IList<QueueData>?> ListRightPopAsync(string key, int count = 1)
     {
         if (!queue.ContainsKey(key))
         {
-            return Task.FromResult<IList<byte[]>>(new List<byte[]>());
+            return Task.FromResult<IList<QueueData>?>(new List<QueueData>());
         }
 
-        List<byte[]> list = queue[key];
-
-        List<byte[]> listToReturn = list.TakeLast((int)count).ToList();
+        var list = queue[key];
+        var listToReturn = list.TakeLast(count).ToList();
         if (listToReturn.Count > 0)
         {
             list.RemoveRange(listToReturn.Count - 1, listToReturn.Count);
-            return Task.FromResult<IList<byte[]>>(listToReturn);
+            return Task.FromResult<IList<QueueData>?>(listToReturn);
         }
 
-        return Task.FromResult<IList<byte[]>>(new List<byte[]>());
+        return Task.FromResult<IList<QueueData>?>(new List<QueueData>());
     }
 
-    public Task<long> ListLengthAsync(string key)
+    public Task<long> ListCountAvailableElementAsync(string key, int maximum = int.MaxValue)
     {
         if (!queue.ContainsKey(key))
         {
             return Task.FromResult<long>(0);
         }
 
-        List<byte[]> list = queue[key];
+        var list = queue[key];
 
         return Task.FromResult<long>(list.Count);
+    }
+
+    public Task<long> ListCountElementAsync(string key, int maximum = Int32.MaxValue)
+    {
+        if (!queue.ContainsKey(key))
+        {
+            return Task.FromResult<long>(0);
+        }
+
+        var list = queue[key];
+
+        return Task.FromResult<long>(list.Count);
+    }
+
+    public async Task ListCallbackAsync(string key, ListQueueItemStatus queueItemStatus)
+    {
+        await Task.Delay(100);
     }
 }

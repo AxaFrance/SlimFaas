@@ -21,7 +21,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci1
-          image: axaguildev/fibonacci:0.24.18
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -29,9 +29,20 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 1
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
+            - name: Logging__LogLevel__Default
+              value: Debug
           resources:
             limits:
               memory: "96Mi"
@@ -65,7 +76,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci2
-          image: axaguildev/fibonacci:0.24.18
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -73,6 +84,15 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 1
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -109,7 +129,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci3
-          image: axaguildev/fibonacci:0.24.18
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -117,6 +137,15 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 1
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000
@@ -158,7 +187,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: fibonacci4
-          image: axaguildev/fibonacci:0.24.18
+          image: axaguildev/fibonacci:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -166,6 +195,15 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 1
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
           env:
             - name: ASPNETCORE_URLS
               value: http://+:5000

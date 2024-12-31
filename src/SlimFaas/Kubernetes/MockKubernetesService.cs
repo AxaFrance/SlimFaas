@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Configuration;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SlimFaas.Kubernetes;
@@ -64,7 +65,8 @@ public class MockKubernetesService : IKubernetesService
                 Namespace: "default",
                 ReplicasStartAsSoonAsOneFunctionRetrieveARequest: false,
                 NumberParallelRequest: function.NumberParallelRequest,
-                Pods: new List<PodInformation>() { new("", true, true, "", "") }
+                Pods: new List<PodInformation>() { new("", true, true, "", "") },
+                Configuration : new SlimFaasConfiguration()
                 );
             _deploymentInformations.Functions.Add(deploymentInformation);
         }
@@ -74,7 +76,7 @@ public class MockKubernetesService : IKubernetesService
         return Task.FromResult(request);
     }
 
-    public Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace)
+    public Task<DeploymentsInformations> ListFunctionsAsync(string kubeNamespace, DeploymentsInformations previousDeployments)
     {
         return Task.FromResult(_deploymentInformations);
     }

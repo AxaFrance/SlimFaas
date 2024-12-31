@@ -1,4 +1,5 @@
-﻿using SlimFaas.Kubernetes;
+﻿using System.Text.Json;
+using SlimFaas.Kubernetes;
 using NodaTime;
 using NodaTime.TimeZones;
 
@@ -49,7 +50,7 @@ public class ReplicasService(IKubernetesService kubernetesService,
 
     public async Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace)
     {
-        DeploymentsInformations deployments = await kubernetesService.ListFunctionsAsync(kubeNamespace);
+        DeploymentsInformations deployments = await kubernetesService.ListFunctionsAsync(kubeNamespace, Deployments);
         lock (Lock)
         {
             if (logger.IsEnabled(LogLevel.Information))
@@ -61,6 +62,12 @@ public class ReplicasService(IKubernetesService kubernetesService,
                             f.ResourceVersion == deploymentInformation.ResourceVersion);
                         if (currentDeployment == null)
                         {
+
+                            string podsInformationString = "";
+                            foreach (PodInformation deploymentInformationPod in deploymentInformation.Pods)
+                            {
+                                podsInformationString += deploymentInformationPod.Name + " " + deploymentInformationPod.Ready + " " + deploymentInformationPod.Started + " " + deploymentInformationPod.Ip + " " + deploymentInformationPod.DeploymentName + "\n";
+                            }
                             // Un log information avec toutes les informations de toutes les propriété de la fonction
                             logger.LogInformation("New deployment {Deployment} \n" +
                                                   "with {Replicas} replicas \n" +
@@ -70,18 +77,21 @@ public class ReplicasService(IKubernetesService kubernetesService,
                                                   "with {TimeoutSecondBeforeSetReplicasMin} timeout second before set replicas min \n" +
                                                   "with {PodType} pod type \n" +
                                                   "with {ResourceVersion} resource version \n"+
-                                                  "with {NumberParallelRequest} number parallel request \n",
-                                                  "with dependOn {DependsOn}  \n",
+                                                  "with {NumberParallelRequest} number parallel request \n" +
+                                                  "with dependOn {DependsOn}  \n" +
+                                                  "with {EndpointReady} endpoint ready \n" +
+                                                  "with {Configuration} configuration \n" +
+                                                  "with pods {Pods}",
                                 deploymentInformation.Deployment, deploymentInformation.Replicas, deploymentInformation.ReplicasAtStart, deploymentInformation.ReplicasMin,
                                 deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest, deploymentInformation.TimeoutSecondBeforeSetReplicasMin,
-                                deploymentInformation.PodType, deploymentInformation.ResourceVersion, deploymentInformation.NumberParallelRequest, deploymentInformation.DependsOn);
-
+                                deploymentInformation.PodType, deploymentInformation.ResourceVersion, deploymentInformation.NumberParallelRequest,
+                                                  deploymentInformation.DependsOn,
+                                                  deploymentInformation.EndpointReady,
+                                JsonSerializer.Serialize(deploymentInformation.Configuration, SlimFaasConfigurationSerializerContext.Default.SlimFaasConfiguration),
+                                podsInformationString);
                         }
                     }
-
             }
-
-
             _deployments = deployments;
         }
         return deployments;
@@ -145,7 +155,9 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 if (currentScale == deploymentInformation.ReplicasMin)
                 {
                     continue;
-                } else if(currentScale < deploymentInformation.ReplicasMin)
+                }
+
+                if(currentScale < deploymentInformation.ReplicasMin)
                 {
                     logger.LogInformation("Scale up {Deployment} from {CurrentScale} to {ReplicaAtStart}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasAtStart);
                 }

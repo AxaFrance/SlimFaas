@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using SlimFaas.Kubernetes;
 
 namespace SlimFaas.Tests;
 
@@ -36,7 +37,7 @@ public class SendClientShould
         CustomRequest customRequest =
             new CustomRequest(new List<CustomHeader> { new() { Key = "key", Values = new[] { "value1" } } },
                 new byte[1], "fibonacci", "health", httpMethod, "");
-        HttpResponseMessage response = await sendClient.SendHttpRequestAsync(customRequest);
+        HttpResponseMessage response = await sendClient.SendHttpRequestAsync(customRequest, new SlimFaasDefaultConfiguration());
 
         Uri expectedUri = new Uri("http://fibonacci:8080/health");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -83,7 +84,9 @@ public class SendClientShould
         httpContextRequest.ContentLength = 1;
         httpContextRequest.ContentType = "application/json";
 
-        HttpResponseMessage response = await sendClient.SendHttpRequestSync(httpContext, "fibonacci", "health", "");
+        SlimFaasDefaultConfiguration slimFaasDefaultConfiguration = new();
+
+        HttpResponseMessage response = await sendClient.SendHttpRequestSync(httpContext, "fibonacci", "health", "", slimFaasDefaultConfiguration);
 
         Uri expectedUri = new Uri("http://fibonacci:8080/health");
         Assert.NotNull(sendedRequest);

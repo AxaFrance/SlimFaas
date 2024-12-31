@@ -60,6 +60,31 @@ roleRef:
   name: deployment-statefulset-manager
   apiGroup: rbac.authorization.k8s.io
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: endpoints-viewer
+  namespace: slimfaas-demo
+rules:
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: slimfaas-endpoints-viewer
+  namespace: slimfaas-demo
+subjects:
+  - kind: ServiceAccount
+    name: slimfaas
+    namespace: slimfaas-demo
+roleRef:
+  kind: Role
+  name: endpoints-viewer
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -84,7 +109,7 @@ spec:
       serviceAccountName: slimfaas
       containers:
         - name: slimfaas
-          image: axaguildev/slimfaas:0.24.18
+          image: axaguildev/slimfaas:latest
           livenessProbe:
             httpGet:
               path: /health
@@ -112,6 +137,9 @@ spec:
               value: "1"
             - name: Logging__LogLevel__SlimFaas
               value: "Debug"
+            #- name: SLIMDATA_CONFIGURATION
+            #  value: |
+            #      {"coldStart":"true"}
             #- name: SLIMDATA_CONFIGURATION
             #  value: |
             #    {"lowerElectionTimeout":"500","upperElectionTimeout":"1000","requestTimeout":"00:01:20.0000000","rpcTimeout":"00:00:40.0000000","heartbeatThreshold":"0.5"}

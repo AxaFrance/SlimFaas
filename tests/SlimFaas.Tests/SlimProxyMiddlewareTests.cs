@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Moq;
 using SlimFaas.Kubernetes;
 using MemoryPack;
+using SlimData;
 using SlimFaas.Database;
 
 namespace SlimFaas.Tests;
@@ -20,7 +21,7 @@ internal class MemoryReplicasService : IReplicasService
             new List<DeploymentInformation>
             {
                 new(Replicas: 0, Deployment: "fibonacci", Namespace: "default",
-                    Pods: new List<PodInformation> { new("", true, true, "", "") })
+                    Pods: new List<PodInformation> { new("", true, true, "", "") }, Configuration: new SlimFaasConfiguration())
             }, new SlimFaasDeploymentInformation(1, new List<PodInformation>()), new List<PodInformation>());
 
     public Task<DeploymentsInformations> SyncDeploymentsAsync(string kubeNamespace) => throw new NotImplementedException();
@@ -53,6 +54,7 @@ internal class MemoryReplicas2ReplicasService : IReplicasService
                         "/noprefix",
                     },
                     Namespace: "default",
+                    Configuration: new SlimFaasConfiguration(),
                     Pods: new List<PodInformation> {
                         new("fibonacci-1", true, true, "0", "fibonacci"),
                         new("fibonacci-2", true, true, "0", "fibonacci"),
@@ -72,11 +74,15 @@ internal class MemoryReplicas2ReplicasService : IReplicasService
 
 internal class MemorySlimFaasQueue : ISlimFaasQueue
 {
-    public Task<IList<byte[]>> DequeueAsync(string key, long count = 1) => throw new NotImplementedException();
+    public Task<IList<QueueData>?> DequeueAsync(string key, int count = 1) => throw new NotImplementedException();
 
-    public Task<long> CountAsync(string key) => throw new NotImplementedException();
+    public Task<long> CountAvailableElementAsync(string key, int maximum) => throw new NotImplementedException();
+    public Task<long> CountElementAsync(string key, int maximum) => throw new NotImplementedException();
 
-    public async Task EnqueueAsync(string key, byte[] message) => await Task.Delay(100);
+    public Task ListCallbackAsync(string key, ListQueueItemStatus queueItemStatus) => throw new NotImplementedException();
+
+    public async Task EnqueueAsync(string key, byte[] message, RetryInformation retryInformation) => await Task.Delay(100);
+
 }
 
 internal record SendData(string FunctionName, string Path, string BaseUrl);
@@ -84,7 +90,7 @@ internal record SendData(string FunctionName, string Path, string BaseUrl);
 internal class SendClientMock : ISendClient
 {
     public IList<SendData> SendDatas = new List<SendData>();
-    public Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, HttpContext? context = null, string? baseUrl = null)
+    public Task<HttpResponseMessage> SendHttpRequestAsync(CustomRequest customRequest, SlimFaasDefaultConfiguration slimFaasDefaultConfiguration, string? baseUrl = null, CancellationTokenSource? cancellationToken = null)
     {
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
@@ -94,7 +100,7 @@ internal class SendClientMock : ISendClient
     }
 
     public Task<HttpResponseMessage> SendHttpRequestSync(HttpContext httpContext, string functionName,
-        string functionPath, string functionQuery, string? baseUrl = null)
+        string functionPath, string functionQuery, SlimFaasDefaultConfiguration slimFaasDefaultConfiguration, string? baseUrl = null)
     {
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
@@ -169,7 +175,8 @@ public class ProxyMiddlewareTests
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.StatusCode = HttpStatusCode.OK;
         Mock<ISendClient> sendClientMock = new Mock<ISendClient>();
-        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(), It.IsAny<HttpContext>(), It.IsAny<string?>()))
+        sendClientMock.Setup(s => s.SendHttpRequestAsync(It.IsAny<CustomRequest>(),
+                It.IsAny<SlimFaasDefaultConfiguration>(), It.IsAny<string?>(), It.IsAny<CancellationTokenSource?>()))
             .ReturnsAsync(responseMessage);
 
         using IHost host = await new HostBuilder()

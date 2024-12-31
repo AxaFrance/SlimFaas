@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using MemoryPack;
+using SlimData;
 using SlimFaas.Database;
 using SlimFaas.Kubernetes;
 
@@ -286,7 +287,8 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             await InitCustomRequest(context, context.Request, functionName, functionPath);
 
         var bin = MemoryPackSerializer.Serialize(customRequest);
-        await slimFaasQueue.EnqueueAsync(functionName, bin);
+        var defaultAsync = function.Configuration.DefaultAsync;
+        await slimFaasQueue.EnqueueAsync(functionName, bin, new RetryInformation(defaultAsync.TimeoutRetries, defaultAsync.HttpTimeout, defaultAsync.HttpStatusRetries));
 
         context.Response.StatusCode = 202;
     }
@@ -310,6 +312,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             await InitCustomRequest(context, context.Request, "", functionPath);
 
         List<Task> tasks = new();
+        var queryString = context.Request.QueryString.ToUriComponent();
         foreach (DeploymentInformation function in functions)
         {
             foreach (var pod in function.Pods)
@@ -332,7 +335,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
 
                 var baseUrl = SlimDataEndpoint.Get(pod, baseFunctionPodUrl);
                 logger.LogDebug("Sending event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, function.Deployment, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
-                Task task = SendRequest(context, sendClient, customRequest with {FunctionName =  function.Deployment}, baseUrl, logger, eventName);
+                Task task = SendRequest(queryString, sendClient, customRequest with {FunctionName =  function.Deployment}, baseUrl, logger, eventName, function.Configuration.DefaultPublish);
                 tasks.Add(task);
             }
         }
@@ -342,7 +345,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             foreach (string baseUrl in slimFaasSubscribeEvent.Value)
             {
                 logger.LogDebug("Sending event {EventName} to {BaseUrl} with path {FunctionPath} and query {UriComponent}", eventName, baseUrl, functionPath, context.Request.QueryString.ToUriComponent());
-                Task task = SendRequest(context, sendClient, customRequest with {FunctionName = ""}, baseUrl, logger, eventName);
+                Task task = SendRequest(queryString, sendClient, customRequest with {FunctionName = ""}, baseUrl, logger, eventName, new SlimFaasDefaultConfiguration());
                 tasks.Add(task);
             }
         }
@@ -366,20 +369,20 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         context.Response.StatusCode = 204;
     }
 
-    private static async Task SendRequest(HttpContext context, ISendClient sendClient, CustomRequest customRequest, string baseUrl, ILogger<SlimProxyMiddleware> logger, string eventName)
+    private static async Task SendRequest(string queryString, ISendClient sendClient, CustomRequest customRequest, string baseUrl, ILogger<SlimProxyMiddleware> logger, string eventName, SlimFaasDefaultConfiguration slimFaasDefaultConfiguration)
     {
         try
         {
-            using HttpResponseMessage responseMessage = await sendClient.SendHttpRequestAsync(customRequest, context, baseUrl);
+            using HttpResponseMessage responseMessage = await sendClient.SendHttpRequestAsync(customRequest, slimFaasDefaultConfiguration, baseUrl);
             logger.LogDebug(
                 "Response from event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent} is {StatusCode}",
-                eventName, customRequest.FunctionName, baseUrl, customRequest.Path, context.Request.QueryString.ToUriComponent(),
+                eventName, customRequest.FunctionName, baseUrl, customRequest.Path, queryString,
                 responseMessage.StatusCode);
         }
         catch (Exception e)
         {
             logger.LogError(e, "Error in sending event {EventName} to {FunctionDeployment} at {BaseUrl} with path {FunctionPath} and query {UriComponent}",
-                eventName, customRequest.FunctionName, baseUrl, customRequest.Path, context.Request.QueryString.ToUriComponent());
+                eventName, customRequest.FunctionName, baseUrl, customRequest.Path, queryString);
         }
     }
 
@@ -401,10 +404,10 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             return;
         }
 
-        await WaitForAnyPodStartedAsync(context, historyHttpService, replicasService, functionName);
+        await WaitForAnyPodStartedAsync(logger, context, historyHttpService, replicasService, functionName);
 
         Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, functionName,
-            functionPath, context.Request.QueryString.ToUriComponent());
+            functionPath, context.Request.QueryString.ToUriComponent(), function.Configuration.DefaultSync);
 
         long lastSetTicks = DateTime.UtcNow.Ticks;
         historyHttpService.SetTickLastCall(functionName, lastSetTicks);
@@ -428,7 +431,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         await responseMessage.Content.CopyToAsync(context.Response.Body);
     }
 
-    private async Task WaitForAnyPodStartedAsync(HttpContext context, HistoryHttpMemoryService historyHttpService,
+    private async Task WaitForAnyPodStartedAsync(ILogger<SlimProxyMiddleware> logger, HttpContext context, HistoryHttpMemoryService historyHttpService,
         IReplicasService replicasService, string functionName)
     {
         int numberLoop = _timeoutMaximumWaitWakeSyncFunctionMilliSecond / 10;
@@ -436,9 +439,14 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         historyHttpService.SetTickLastCall(functionName, lastSetTicks);
         while (numberLoop > 0)
         {
-            bool isAnyContainerStarted = replicasService.Deployments.Functions.Any(f =>
-                f is { Replicas: > 0, Pods: not null } && f.Pods.Any(p => p.Ready.HasValue && p.Ready.Value));
-            if (!isAnyContainerStarted && !context.RequestAborted.IsCancellationRequested)
+            DeploymentInformation? function = SearchFunction(replicasService, functionName);
+            if(function == null)
+            {
+                continue;
+            }
+            bool? isAnyContainerStarted = function.Pods.Any(p => p.Ready.HasValue && p.Ready.Value);
+            bool isReady = isAnyContainerStarted.Value && function.EndpointReady;
+            if (!isReady && !context.RequestAborted.IsCancellationRequested)
             {
                 numberLoop--;
                 await Task.Delay(10, context.RequestAborted);
