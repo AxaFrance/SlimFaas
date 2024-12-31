@@ -439,9 +439,14 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         historyHttpService.SetTickLastCall(functionName, lastSetTicks);
         while (numberLoop > 0)
         {
-            bool isAnyContainerStarted = replicasService.Deployments.Functions.Where(d => d.Deployment == functionName).Any(f =>
-                f is { Replicas: > 0, EndpointReady: true } && f.Pods.Any(p => p.Ready.HasValue && p.Ready.Value));
-            if (!isAnyContainerStarted && !context.RequestAborted.IsCancellationRequested)
+            DeploymentInformation? function = SearchFunction(replicasService, functionName);
+            if(function == null)
+            {
+                continue;
+            }
+            bool? isAnyContainerStarted = function.Pods.Any(p => p.Ready.HasValue && p.Ready.Value);
+            bool notReady = !isAnyContainerStarted.Value || !function.EndpointReady;
+            if (notReady && !context.RequestAborted.IsCancellationRequested)
             {
                 numberLoop--;
                 await Task.Delay(10, context.RequestAborted);
