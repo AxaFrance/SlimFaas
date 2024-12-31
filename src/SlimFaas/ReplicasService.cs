@@ -62,6 +62,12 @@ public class ReplicasService(IKubernetesService kubernetesService,
                             f.ResourceVersion == deploymentInformation.ResourceVersion);
                         if (currentDeployment == null)
                         {
+
+                            string podsInformationString = "";
+                            foreach (PodInformation deploymentInformationPod in deploymentInformation.Pods)
+                            {
+                                podsInformationString += deploymentInformationPod.Name + " " + deploymentInformationPod.Ready + " " + deploymentInformationPod.Started + " " + deploymentInformationPod.Ip + " " + deploymentInformationPod.DeploymentName + "\n";
+                            }
                             // Un log information avec toutes les informations de toutes les propriété de la fonction
                             logger.LogInformation("New deployment {Deployment} \n" +
                                                   "with {Replicas} replicas \n" +
@@ -74,12 +80,15 @@ public class ReplicasService(IKubernetesService kubernetesService,
                                                   "with {NumberParallelRequest} number parallel request \n" +
                                                   "with dependOn {DependsOn}  \n" +
                                                   "with {EndpointReady} endpoint ready \n" +
-                                                  "with {Configuration} configuration \n",
+                                                  "with {Configuration} configuration \n" +
+                                                  "with pods {Pods}",
                                 deploymentInformation.Deployment, deploymentInformation.Replicas, deploymentInformation.ReplicasAtStart, deploymentInformation.ReplicasMin,
                                 deploymentInformation.ReplicasStartAsSoonAsOneFunctionRetrieveARequest, deploymentInformation.TimeoutSecondBeforeSetReplicasMin,
                                 deploymentInformation.PodType, deploymentInformation.ResourceVersion, deploymentInformation.NumberParallelRequest,
                                                   deploymentInformation.DependsOn,
-                                                  deploymentInformation.EndpointReady, JsonSerializer.Serialize(deploymentInformation.Configuration, SlimFaasConfigurationSerializerContext.Default.SlimFaasConfiguration));
+                                                  deploymentInformation.EndpointReady,
+                                JsonSerializer.Serialize(deploymentInformation.Configuration, SlimFaasConfigurationSerializerContext.Default.SlimFaasConfiguration),
+                                podsInformationString);
                         }
                     }
             }
@@ -146,7 +155,9 @@ public class ReplicasService(IKubernetesService kubernetesService,
                 if (currentScale == deploymentInformation.ReplicasMin)
                 {
                     continue;
-                } else if(currentScale < deploymentInformation.ReplicasMin)
+                }
+
+                if(currentScale < deploymentInformation.ReplicasMin)
                 {
                     logger.LogInformation("Scale up {Deployment} from {CurrentScale} to {ReplicaAtStart}", deploymentInformation.Deployment, currentScale, deploymentInformation.ReplicasAtStart);
                 }

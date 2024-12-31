@@ -10,7 +10,7 @@ Why use SlimFaas?
 - Synchronous HTTP calls
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function
-- Retry Pattern fully Configurable: 3 times with graduation: 2 seconds, 4 seconds, 8 seconds
+- Retry Pattern configurable
 - Private and Public functions
   - Private functions can be accessed only by internal namespace http call from pods
 - Synchronous Publish/Subscribe internal events via HTTP calls to every replicas via HTTP without any use of specific drivers/libraries (**Couple your application with SlimFaas**)
@@ -375,7 +375,7 @@ spec:
 - **SlimFaas/ExcludeDeploymentsFromVisibilityPrivate** : ""
   - Comma separated list of deployment names or statefulset names
   - Message from that pods will be considered as public. It is useful if you want to exclude some pods from the private visibility, for example for a backend for frontend.
-- **SlimFaas/Configuration** : json configuration
+- **SlimFaas/Configuration** : json configuration default values displayed below
     - Allows you to define a configuration for your functions. For example, you can define a timeout for HTTP calls, a retry pattern for timeouts and HTTP status codes.
 
 ````bash

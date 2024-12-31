@@ -268,8 +268,8 @@ public class KubernetesService : IKubernetesService
                 SlimFaasConfiguration configuration = GetConfiguration(annotations, name, logger);
                 var previousDeployment = previousDeploymentInformationList.FirstOrDefault(d => d.Deployment == name);
                 bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeployment, name, pods);
-                var resourceVersion = deploymentListItem.Metadata.ResourceVersion;
-                if (previousDeployment != null && endpointReady == previousDeployment.EndpointReady && previousDeployment.ResourceVersion ==  resourceVersion)
+                var resourceVersion = $"{deploymentListItem.Metadata.ResourceVersion}-{endpointReady}";
+                if (previousDeployment != null && previousDeployment.ResourceVersion ==  resourceVersion)
                 {
                     deploymentInformationList.Add(previousDeployment);
                 } else {
@@ -408,8 +408,8 @@ public class KubernetesService : IKubernetesService
                 SlimFaasConfiguration configuration = GetConfiguration(annotations, name, logger);
                 var previousDeployment = previousDeploymentInformationList.FirstOrDefault(d => d.Deployment == name);
                 bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeployment, name, pods);
-                var resourceVersion = deploymentListItem.Metadata.ResourceVersion;
-                if (previousDeployment != null && endpointReady == previousDeployment.EndpointReady && previousDeployment.ResourceVersion ==  resourceVersion)
+                var resourceVersion = $"{deploymentListItem.Metadata.ResourceVersion}-{endpointReady}";
+                if (previousDeployment != null && previousDeployment.ResourceVersion ==  resourceVersion)
                 {
                     deploymentInformationList.Add(previousDeployment);
                 }
