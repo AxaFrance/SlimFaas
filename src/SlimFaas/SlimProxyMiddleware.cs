@@ -445,7 +445,6 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 continue;
             }
             bool? isAnyContainerStarted = function.Pods.Any(p => p.Ready.HasValue && p.Ready.Value);
-            logger.LogDebug("WaitForAnyPodStartedAsync {FunctionName} isAnyContainerStarted: {IsAnyContainerStarted} EndpointReady: {EndpointReady}", functionName, isAnyContainerStarted, function.EndpointReady);
             bool isReady = isAnyContainerStarted.Value && function.EndpointReady;
             if (!isReady && !context.RequestAborted.IsCancellationRequested)
             {
