@@ -404,7 +404,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             return;
         }
 
-        await WaitForAnyPodStartedAsync(context, historyHttpService, replicasService, functionName);
+        await WaitForAnyPodStartedAsync(logger, context, historyHttpService, replicasService, functionName);
 
         Task<HttpResponseMessage> responseMessagePromise = sendClient.SendHttpRequestSync(context, functionName,
             functionPath, context.Request.QueryString.ToUriComponent(), function.Configuration.DefaultSync);
@@ -431,7 +431,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         await responseMessage.Content.CopyToAsync(context.Response.Body);
     }
 
-    private async Task WaitForAnyPodStartedAsync(HttpContext context, HistoryHttpMemoryService historyHttpService,
+    private async Task WaitForAnyPodStartedAsync(ILogger<SlimProxyMiddleware> logger, HttpContext context, HistoryHttpMemoryService historyHttpService,
         IReplicasService replicasService, string functionName)
     {
         int numberLoop = _timeoutMaximumWaitWakeSyncFunctionMilliSecond / 10;
@@ -445,8 +445,9 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 continue;
             }
             bool? isAnyContainerStarted = function.Pods.Any(p => p.Ready.HasValue && p.Ready.Value);
-            bool notReady = !isAnyContainerStarted.Value || !function.EndpointReady;
-            if (notReady && !context.RequestAborted.IsCancellationRequested)
+            logger.LogDebug("WaitForAnyPodStartedAsync {FunctionName} isAnyContainerStarted: {IsAnyContainerStarted} EndpointReady: {EndpointReady}", functionName, isAnyContainerStarted, function.EndpointReady);
+            bool isReady = isAnyContainerStarted.Value && function.EndpointReady;
+            if (!isReady && !context.RequestAborted.IsCancellationRequested)
             {
                 numberLoop--;
                 await Task.Delay(10, context.RequestAborted);
