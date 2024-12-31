@@ -75,7 +75,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
                     continue;
                 }
 
-                await SendHttpRequestToFunction(processingTasks, numberLimitProcessingTasks, numberProcessingTasks,
+                await SendHttpRequestToFunction(processingTasks, numberLimitProcessingTasks,
                     function);
             }
         }
@@ -86,12 +86,11 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
     }
 
     private async Task SendHttpRequestToFunction(Dictionary<string, IList<RequestToWait>> processingTasks,
-        int numberLimitProcessingTasks, int numberProcessingTasks,
+        int numberLimitProcessingTasks,
         DeploymentInformation function)
     {
         string functionDeployment = function.Deployment;
-        int numberTasksToDequeue = numberLimitProcessingTasks - numberProcessingTasks;
-        var jsons = await slimFaasQueue.DequeueAsync(functionDeployment, numberTasksToDequeue);
+        var jsons = await slimFaasQueue.DequeueAsync(functionDeployment, numberLimitProcessingTasks);
         if (jsons == null)
         {
             return;

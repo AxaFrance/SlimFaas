@@ -11,9 +11,9 @@ public class SlimFaasQueue(IDatabaseService databaseService) : ISlimFaasQueue
     public async Task EnqueueAsync(string key, byte[] data, RetryInformation retryInformation) =>
         await databaseService.ListLeftPushAsync($"{KeyPrefix}{key}", data, retryInformation);
 
-    public async Task<IList<QueueData>?> DequeueAsync(string key, long count = 1)
+    public async Task<IList<QueueData>?> DequeueAsync(string key, int count = 1)
     {
-        var data = await databaseService.ListRightPopAsync($"{KeyPrefix}{key}");
+        var data = await databaseService.ListRightPopAsync($"{KeyPrefix}{key}", count);
         return data;
     }
 
