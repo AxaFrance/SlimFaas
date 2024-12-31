@@ -440,7 +440,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         while (numberLoop > 0)
         {
             bool isAnyContainerStarted = replicasService.Deployments.Functions.Any(f =>
-                f is { Replicas: > 0, EndpointReady: true } && f.Pods.Any(p => p.Ready.HasValue && p.Ready.Value));
+                f is { Replicas: > 0, EndpointReady: true } && f.Pods.Any(p => p.Ready.HasValue && p.Ready.Value && p.DeploymentName == functionName));
             if (!isAnyContainerStarted && !context.RequestAborted.IsCancellationRequested)
             {
                 numberLoop--;
