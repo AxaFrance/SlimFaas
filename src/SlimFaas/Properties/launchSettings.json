@@ -9,10 +9,11 @@
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "NAMESPACE": "slimfaas-demo",
                 "HOSTNAME": "slimfaas-1",
-                "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}]}",
+                "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}],\"Slimfaas\":[{\"Name\":\"slimfaas-1\"}]}",
                 "SLIMFAAS_PORT": "5002",
                 "SLIMDATA_DIRECTORY": "C:\\Demo4",
-                "BASE_SLIMDATA_URL": "http://localhost:3262/"
+                "BASE_SLIMDATA_URL": "http://localhost:3262/",
+                "SLIMDATA_CONFIGURATION": "{\"coldStart\":\"true\"}"
             }
         },
         "http_2": {
@@ -24,7 +25,7 @@
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "NAMESPACE": "slimfaas-demo",
                 "HOSTNAME": "slimfaas-2",
-                "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}]}",
+                "MOCK_KUBERNETES_FUNCTIONS": "{\"Functions\":[{\"Name\":\"fibonacci1\",\"NumberParallelRequest\":1},{\"Name\":\"fibonacci2\",\"NumberParallelRequest\":1}],\"Slimfaas\":[{\"Name\":\"slimfaas-1\"}]}",
                 "SLIMFAAS_PORT": "5001",
                 "SLIMDATA_DIRECTORY": "C:\\Demo4",
                 "BASE_SLIMDATA_URL": "http://localhost:3263/"

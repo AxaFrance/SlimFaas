@@ -254,6 +254,7 @@ builder.WebHost.ConfigureKestrel((context, serverOptions) =>
     serverOptions.ListenAnyIP(uri.Port);
     foreach (int slimFaasPort in slimFaasPorts)
     {
+        Console.WriteLine($"Slimfaas listening on port {slimFaasPort}");
         serverOptions.ListenAnyIP(slimFaasPort, listenOptions =>
         {
             listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
@@ -297,9 +298,11 @@ app.Use(async (context, next) =>
     {
         await context.Response.WriteAsync("OK");
     }
+    else
+    {
+        await next.Invoke();
+    }
 });
-
-startup.Configure(app);
 
 app.UseRouting();
 
@@ -310,6 +313,9 @@ app.UseHttpMetrics(options =>
     options.ReduceStatusCodeCardinality();
 });
 app.UseMetricServer();
+
+startup.Configure(app);
+
 
 app.Run(async context =>
 {
