@@ -5,8 +5,10 @@
 ![SlimFaas.png](https://github.com/AxaFrance/SlimFaas/blob/main/documentation/SlimFaas.png)
 
 Why use SlimFaas?
-- Scale to 0 after a period of inactivity (work with deployment and statefulset)
-- Scale up : compatible with HPA (Horizontal Auto Scaler) and Keda (SlimFaas integrated autonomous Scale Up coming soon)
+- Scale
+  - to 0 after a period of inactivity (work with deployment and statefulset)
+  - up from 0 to n at start
+  - up from n to n+m : compatible with HPA (Horizontal Auto Scaler) and Keda + Prometheus via /metrics routes (SlimFaas integrated autonomous Scale Up coming soon)
 - Synchronous HTTP calls
 - Asynchronous HTTP calls
   - Allows you to limit the number of parallel HTTP requests for each underlying function

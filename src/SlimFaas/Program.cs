@@ -173,6 +173,8 @@ serviceCollectionSlimFaas.AddHttpClient(SlimDataService.HttpClientName)
 
         return httpClientHandler;
     });
+// Export metrics from all HTTP clients registered in services
+builder.Services.UseHttpClientMetrics();
 
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
 
@@ -252,6 +254,7 @@ builder.WebHost.ConfigureKestrel((context, serverOptions) =>
     serverOptions.ListenAnyIP(uri.Port);
     foreach (int slimFaasPort in slimFaasPorts)
     {
+        Console.WriteLine($"Slimfaas listening on port {slimFaasPort}");
         serverOptions.ListenAnyIP(slimFaasPort, listenOptions =>
         {
             listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
@@ -295,12 +298,24 @@ app.Use(async (context, next) =>
     {
         await context.Response.WriteAsync("OK");
     }
+    else
+    {
+        await next.Invoke();
+    }
 });
+
+app.UseRouting();
+
+app.UseHttpMetrics(options =>
+{
+    // This will preserve only the first digit of the status code.
+    // For example: 200, 201, 203 -> 2xx
+    options.ReduceStatusCodeCardinality();
+});
+app.UseMetricServer();
 
 startup.Configure(app);
 
-app.UseMetricServer();
-app.UseHttpMetrics();
 
 app.Run(async context =>
 {
