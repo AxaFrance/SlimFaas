@@ -173,6 +173,8 @@ serviceCollectionSlimFaas.AddHttpClient(SlimDataService.HttpClientName)
 
         return httpClientHandler;
     });
+// Export metrics from all HTTP clients registered in services
+builder.Services.UseHttpClientMetrics();
 
 serviceCollectionSlimFaas.AddSingleton<IMasterService, MasterSlimDataService>();
 
@@ -299,8 +301,15 @@ app.Use(async (context, next) =>
 
 startup.Configure(app);
 
+app.UseRouting();
+
+app.UseHttpMetrics(options =>
+{
+    // This will preserve only the first digit of the status code.
+    // For example: 200, 201, 203 -> 2xx
+    options.ReduceStatusCodeCardinality();
+});
 app.UseMetricServer();
-app.UseHttpMetrics();
 
 app.Run(async context =>
 {
