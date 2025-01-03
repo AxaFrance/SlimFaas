@@ -72,9 +72,11 @@ serviceCollectionSlimFaas.AddHostedService<SlimWorker>();
 serviceCollectionSlimFaas.AddHostedService<ScaleReplicasWorker>();
 serviceCollectionSlimFaas.AddHostedService<ReplicasSynchronizationWorker>();
 serviceCollectionSlimFaas.AddHostedService<HistorySynchronizationWorker>();
+serviceCollectionSlimFaas.AddHostedService<MetricsWorker>();
 serviceCollectionSlimFaas.AddHostedService<HealthWorker>();
 serviceCollectionSlimFaas.AddHttpClient();
 serviceCollectionSlimFaas.AddSingleton<ISlimFaasQueue, SlimFaasQueue>();
+serviceCollectionSlimFaas.AddSingleton<DynamicGaugeService>();
 serviceCollectionSlimFaas.AddSingleton<ISlimDataStatus, SlimDataStatus>();
 serviceCollectionSlimFaas.AddSingleton<IReplicasService, ReplicasService>(sp =>
     (ReplicasService)serviceProviderStarter.GetService<IReplicasService>()!);
