@@ -68,6 +68,7 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
 
                 if (numberProcessingTasks >= numberLimitProcessingTasks)
                 {
+                    Console.WriteLine($"{functionDeployment} {numberProcessingTasks} => {numberLimitProcessingTasks}");
                     continue;
                 }
 
