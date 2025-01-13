@@ -1,6 +1,15 @@
 ﻿using SlimData;
+using SlimFaas.Database;
 
 namespace SlimFaas;
+
+public enum CountType
+{
+    Available,
+    Running,
+    WaitingForRetry
+}
+
 
 public interface IDatabaseService
 {
@@ -10,7 +19,6 @@ public interface IDatabaseService
     Task<IDictionary<string, string>> HashGetAllAsync(string key);
     Task ListLeftPushAsync(string key, byte[] field, RetryInformation retryInformation);
     Task<IList<QueueData>?> ListRightPopAsync(string key, int count = 1);
-    Task<long> ListCountAvailableElementAsync(string key, int maximum = int.MaxValue);
-    Task<long> ListCountElementAsync(string key, int maximum = int.MaxValue);
+    Task<long> ListCountElementAsync(string key, IList<CountType> countTypes, int maximum = int.MaxValue);
     Task ListCallbackAsync(string key, ListQueueItemStatus queueItemStatus);
 }

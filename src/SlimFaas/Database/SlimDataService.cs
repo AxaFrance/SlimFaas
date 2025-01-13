@@ -6,8 +6,13 @@ using MemoryPack;
 using SlimData;
 using SlimData.Commands;
 
+
+
 namespace SlimFaas.Database;
 #pragma warning disable CA2252
+
+
+
 public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvider serviceProvider, IRaftCluster cluster, ILogger<SlimDataService> logger)
     : IDatabaseService
 {
@@ -167,12 +172,13 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         }
     }
 
-    public Task<long> ListCountElementAsync(string key, int maximum = Int32.MaxValue)
+    public Task<long> ListCountElementAsync(string key, IList<CountType> countTypes, int maximum = Int32.MaxValue)
     {
-        return Retry.DoAsync(() => DoListCountElementAsync(key, maximum), logger, _retryInterval);
+
+        return Retry.DoAsync(() => DoListCountElementAsync(key, countTypes, maximum), logger, _retryInterval);
     }
 
-    private async Task<long> DoListCountElementAsync(string key, int maximum)
+    private async Task<long> DoListCountElementAsync(string key, IList<CountType> countTypes, int maximum)
     {
         await GetAndWaitForLeader();
         await MasterWaitForleaseToken();
@@ -182,10 +188,30 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
         if (data.Queues.TryGetValue(key, out List<QueueElement>? value))
         {
             var nowTicks = DateTime.UtcNow.Ticks;
-            var elements = value.GetQueueAvailableElement(nowTicks, maximum);
-            var runningElements = value.GetQueueRunningElement(nowTicks);
-            var runningWaitingForRetryElements = value.GetQueueWaitingForRetryElement(nowTicks);
-            return elements.Count + runningElements.Count + runningWaitingForRetryElements.Count;
+            if (countTypes.Count == 0)
+            {
+                return 0L;
+            }
+
+            var availableElements = new List<QueueElement>();
+            if (countTypes.Contains(CountType.Available))
+            {
+                availableElements = value.GetQueueAvailableElement(nowTicks, maximum);
+            }
+
+            var runningElements = new List<QueueElement>();
+            if (countTypes.Contains(CountType.Running))
+            {
+                runningElements = value.GetQueueRunningElement(nowTicks);
+            }
+
+            var runningWaitingForRetryElements = new List<QueueElement>();
+
+            if (countTypes.Contains(CountType.WaitingForRetry))
+            {
+                runningWaitingForRetryElements = value.GetQueueWaitingForRetryElement(nowTicks);
+            }
+            return availableElements.Count + runningElements.Count + runningWaitingForRetryElements.Count;
         }
 
         return 0L;
@@ -216,28 +242,6 @@ public class SlimDataService(IHttpClientFactory httpClientFactory, IServiceProvi
                 throw new DataException("Error in calling SlimData HTTP Service");
             }
         }
-    }
-
-    public async Task<long> ListCountAvailableElementAsync(string key, int maximum)
-    {
-        return await Retry.DoAsync(() => DoListCountAvailableElementAsync(key, maximum), logger, _retryInterval);
-    }
-
-    private async Task<long> DoListCountAvailableElementAsync(string key, int maximum)
-    {
-        await GetAndWaitForLeader();
-        await MasterWaitForleaseToken();
-
-        SlimDataPayload data = SimplePersistentState.Invoke();
-
-        if (data.Queues.TryGetValue(key, out List<QueueElement>? value))
-        {
-            var elements = value.GetQueueAvailableElement(DateTime.UtcNow.Ticks, maximum);
-            var number = elements.Count;
-            return number;
-        }
-
-        return 0L;
     }
 
     private async Task MasterWaitForleaseToken()
