@@ -3,7 +3,7 @@ using SlimFaas.Database;
 
 namespace SlimFaas;
 
-public class HealthWorker(IHostApplicationLifetime  hostApplicationLifetime, IRaftCluster raftCluster, ISlimDataStatus slimDataStatus,
+public class HealthWorker(IHostApplicationLifetime  hostApplicationLifetime, IRaftCluster raftCluster,
         ILogger<HealthWorker> logger,
         int delay = EnvironmentVariables.HealthWorkerDelayMillisecondsDefault,
         int delayToExitSeconds = EnvironmentVariables.HealthWorkerDelayToExitSecondsDefault,

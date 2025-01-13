@@ -1,8 +1,9 @@
-﻿using SlimFaas.Database;
+﻿using DotNext.Net.Cluster.Consensus.Raft;
+using SlimFaas.Database;
 
 namespace SlimFaas;
 
-public class MetricsWorker(IReplicasService replicasService, ISlimFaasQueue slimFaasQueue, DynamicGaugeService dynamicGaugeService,
+public class MetricsWorker(IReplicasService replicasService, ISlimFaasQueue slimFaasQueue, DynamicGaugeService dynamicGaugeService, IRaftCluster raftCluster,
         ILogger<MetricsWorker> logger,
         int delay = EnvironmentVariables.ScaleReplicasWorkerDelayMillisecondsDefault)
     : BackgroundService
@@ -17,6 +18,10 @@ public class MetricsWorker(IReplicasService replicasService, ISlimFaasQueue slim
             try
             {
                 await Task.Delay(_delay, stoppingToken);
+                if (raftCluster.Leader == null)
+                {
+                    continue;
+                }
                 var deployments = replicasService.Deployments;
                 foreach (var deployment in deployments.Functions)
                 {
