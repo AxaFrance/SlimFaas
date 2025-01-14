@@ -160,6 +160,10 @@ public class SlimWorker(ISlimFaasQueue slimFaasQueue, IReplicasService replicasS
         else
         {
             numberLimitProcessingTasks = function.NumberParallelRequest / slimFaas.Replicas;
+            if(masterService.IsMaster)
+            {
+                numberLimitProcessingTasks = function.NumberParallelRequest - numberLimitProcessingTasks * (numberReplicas - 1);
+            }
         }
 
         return numberLimitProcessingTasks;

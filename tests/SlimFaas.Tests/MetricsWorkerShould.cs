@@ -35,8 +35,12 @@ public class MetricsWorkerShould
                 loggerReplicasService.Object);
         masterService.Setup(ms => ms.IsMaster).Returns(true);
         kubernetesService.Setup(k => k.ListFunctionsAsync(It.IsAny<string>(), It.IsAny<DeploymentsInformations>())).ReturnsAsync(deploymentsInformations);
-        Mock<IRaftCluster> raftCluster = new();
 
+        Mock<IRaftClusterMember> raftClusterMember = new();
+
+
+        Mock<IRaftCluster> raftCluster = new();
+        raftCluster.Setup(rc => rc.Leader).Returns(raftClusterMember.Object);
 
         await replicasService.SyncDeploymentsAsync("default");
 
@@ -48,8 +52,8 @@ public class MetricsWorkerShould
         var retryInformation = new RetryInformation([], 30, []);
         await slimFaasQueue.EnqueueAsync("fibonacci1", jsonCustomRequest, retryInformation);
         var dynamicGaugeService = new DynamicGaugeService();
-        //MetricsWorker service = new(replicasService, slimFaasQueue, dynamicGaugeService, logger.Object, 100);
-        //Task task = service.StartAsync(CancellationToken.None);
+        MetricsWorker service = new(replicasService, slimFaasQueue, dynamicGaugeService, raftCluster.Object, logger.Object, 100);
+        Task task = service.StartAsync(CancellationToken.None);
         await Task.Delay(3000);
 
 
