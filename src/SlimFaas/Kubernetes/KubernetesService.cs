@@ -231,23 +231,6 @@ public class KubernetesService : IKubernetesService
         }
     }
 
-    private static IList<int> ReadRetryAnnotation( IDictionary<string, string>? annotations)
-    {
-        if (annotations != null && annotations.TryGetValue(AsynchrounousRetry, out string? valueAsynchrounousRetry))
-        {
-            var result = new List<int>();
-            var array = valueAsynchrounousRetry.Split(';');
-            foreach (string s in array)
-            {
-                result.Add( int.Parse(s, NumberStyles.Integer));
-            }
-
-            return result;
-        }
-
-        return new List<int>(){2, 4, 8};
-    }
-
     private static async Task AddDeployments(string kubeNamespace, V1DeploymentList deploymentList, IEnumerable<PodInformation> podList,
         IList<DeploymentInformation> deploymentInformationList, ILogger<KubernetesService> logger, k8s.Kubernetes client , IList<DeploymentInformation> previousDeploymentInformationList)
     {
@@ -267,7 +250,7 @@ public class KubernetesService : IKubernetesService
                 ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
                 SlimFaasConfiguration configuration = GetConfiguration(annotations, name, logger);
                 var previousDeployment = previousDeploymentInformationList.FirstOrDefault(d => d.Deployment == name);
-                bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeployment, name, pods);
+                bool endpointReady = await GetEndpointReady(logger, kubeNamespace, client, previousDeployment, name, pods);
                 var resourceVersion = $"{deploymentListItem.Metadata.ResourceVersion}-{endpointReady}";
                 if (previousDeployment != null && previousDeployment.ResourceVersion ==  resourceVersion)
                 {
@@ -320,7 +303,7 @@ public class KubernetesService : IKubernetesService
         }
     }
 
-    private static async Task<bool> GetEndpointReady(string kubeNamespace, k8s.Kubernetes client,
+    private static async Task<bool> GetEndpointReady(ILogger<KubernetesService> logger, string kubeNamespace, k8s.Kubernetes client,
         DeploymentInformation? previousDeployment, string name, List<PodInformation> pods)
     {
         try
@@ -349,7 +332,7 @@ public class KubernetesService : IKubernetesService
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            logger.LogDebug("Error while getting endpoint ready {Name} : {Exception}", name, e.ToString());
         }
         return false;
     }
@@ -407,7 +390,7 @@ public class KubernetesService : IKubernetesService
                 ScheduleConfig? scheduleConfig = GetScheduleConfig(annotations, name, logger);
                 SlimFaasConfiguration configuration = GetConfiguration(annotations, name, logger);
                 var previousDeployment = previousDeploymentInformationList.FirstOrDefault(d => d.Deployment == name);
-                bool endpointReady = await GetEndpointReady(kubeNamespace, client, previousDeployment, name, pods);
+                bool endpointReady = await GetEndpointReady(logger, kubeNamespace, client, previousDeployment, name, pods);
                 var resourceVersion = $"{deploymentListItem.Metadata.ResourceVersion}-{endpointReady}";
                 if (previousDeployment != null && previousDeployment.ResourceVersion ==  resourceVersion)
                 {
