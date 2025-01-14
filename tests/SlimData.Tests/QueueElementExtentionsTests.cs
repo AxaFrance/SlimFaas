@@ -60,7 +60,7 @@ public class QueueElementExtentionsTests
 
         var availableElements = queueElements.GetQueueAvailableElement(nowTicks, 3);
 
-        Assert.Equal(2, availableElements.Count);
+        Assert.Equal(3, availableElements.Count);
         Assert.Equal("2", availableElements[0].Id);
         Assert.Equal("3", availableElements[1].Id);
 
@@ -73,31 +73,4 @@ public class QueueElementExtentionsTests
         Assert.Equal(4, finishedElements.Count);
     }
 
-   /*  [Fact]
-    public static void QueueElementExtensionsGetQueueRunningElement2()
-    {
-        // I want a test which text my extention
-        var nowTicks = DateTime.UtcNow.Ticks;
-        List<QueueElement> queueElements = new();
-        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "1", nowTicks, new List<QueueHttpTryElement>()));
-        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "2", nowTicks, new List<QueueHttpTryElement>()));
-        queueElements.Add(new QueueElement(new ReadOnlyMemory<byte>([1]), "3", nowTicks, new List<QueueHttpTryElement>()));
-
-        var availableElements = queueElements.GetQueueAvailableElement(SlimDataInterpreter.TimeoutRetries, nowTicks, 1, 30);
-
-        foreach (QueueElement queueElement in queueElements)
-        {
-            Assert.Equal(2, availableElements.Count);
-            Assert.Equal("2", availableElements[0].Id);
-            Assert.Equal("3", availableElements[1].Id);
-        }
-
-        var runningElements = queueElements.GetQueueRunningElement(nowTicks);
-        Assert.Equal(1, runningElements.Count);
-        Assert.Equal("1", runningElements[0].Id);
-
-
-        var finishedElements = queueElements.GetQueueFinishedElement(nowTicks, SlimDataInterpreter.TimeoutRetries);
-        Assert.Equal(4, finishedElements.Count);
-    }*/
 }

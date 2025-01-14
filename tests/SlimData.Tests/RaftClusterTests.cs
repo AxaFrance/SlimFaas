@@ -251,7 +251,10 @@ public class RaftClusterTests
 
        await databaseServiceSlave.ListLeftPushAsync("listKey1",   MemoryPackSerializer.Serialize("value1"), new RetryInformation([], 30, []));
        await GetLocalClusterView(host1).ForceReplicationAsync();
-        long listLength = await databaseServiceSlave.ListCountAvailableElementAsync("listKey1");
+        long listLength = await databaseServiceSlave.ListCountElementAsync("listKey1" , new List<CountType>()
+        {
+            CountType.Available
+        });
         Assert.Equal(1, listLength);
 
         IList<QueueData>? listRightPop = await databaseServiceSlave.ListRightPopAsync("listKey1");
@@ -272,7 +275,7 @@ public class RaftClusterTests
         await databaseServiceSlave.ListCallbackAsync("listKey1", queueItemStatus);
 
         await GetLocalClusterView(host1).ForceReplicationAsync();
-        var listLength2 = await databaseServiceSlave.ListCountAvailableElementAsync("listKey1");
+        var listLength2 = await databaseServiceSlave.ListCountElementAsync("listKey1", new List<CountType>() { CountType.Available });
 
         Assert.Equal(0, listLength2);
 

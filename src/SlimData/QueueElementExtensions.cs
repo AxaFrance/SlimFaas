@@ -124,13 +124,14 @@ public static class QueueElementExtensions
         var runningWaitingForRetryElements = elements.GetQueueWaitingForRetryElement(nowTicks);
         var finishedElements = elements.GetQueueFinishedElement(nowTicks);
         var availableElements = new List<QueueElement>();
-        var currentCount = runningElements.Count + runningWaitingForRetryElements.Count;
+        //var currentCount = runningElements.Count + runningWaitingForRetryElements.Count;
         var currentElements = elements.Except(runningElements).Except(runningWaitingForRetryElements).Except(finishedElements);
         
-        if (currentCount >= maximum)
+        /*if (currentCount >= maximum)
         {
             return availableElements;
-        }
+        }*/
+        var currentCount = 0;
        
         foreach (var queueElement in currentElements)
         {
