@@ -5,18 +5,14 @@ public interface IJobService
    Task CreateJobAsync(string jobName);
 }
 
-public class JobService : IJobService
+public class JobService(IKubernetesService kubernetesService) : IJobService
 {
-    private readonly IKubernetesService _kubernetesService;
-
-    public JobService(IKubernetesService kubernetesService)
-    {
-        _kubernetesService = kubernetesService;
-    }
+    private readonly string _namespace = Environment.GetEnvironmentVariable(EnvironmentVariables.Namespace) ??
+                                         EnvironmentVariables.NamespaceDefault;
 
     public async Task CreateJobAsync(string jobName)
     {
-        await _kubernetesService.CreateJobAsync(jobName);
+        await kubernetesService.CreateJobAsync(jobName, _namespace);
     }
 
 

@@ -472,7 +472,7 @@ public class KubernetesService : IKubernetesService
         return result;
     }
 
-    public async Task CreateJobAsync(string jobName)
+    public async Task CreateJobAsync(string jobName, string kubeNamespace)
     {
         var client = _client;
         var job = new V1Job
@@ -482,7 +482,7 @@ public class KubernetesService : IKubernetesService
             Metadata = new V1ObjectMeta
             {
                 Name =  jobName + "-job-" + Guid.NewGuid(),
-                NamespaceProperty = "default"
+                NamespaceProperty = kubeNamespace
             },
             Spec = new V1JobSpec
             {
@@ -510,18 +510,18 @@ public class KubernetesService : IKubernetesService
             }
         };
 
-        var jobResponse = await client.CreateNamespacedJobAsync(job, "default");
+        var jobResponse = await client.CreateNamespacedJobAsync(job, kubeNamespace);
 
         Console.WriteLine($"Job created with name: {jobResponse.Metadata.Name}");
     }
 
     public record JobStatus(string JobName, bool IsCompleted, bool IsFailed, bool IsRunning);
 
-    public async Task ListJobsAsync()
+    public async Task ListJobsAsync(string kubeNamespace)
     {
         var jobStatus = new List<JobStatus>();
         var client = _client;
-        var jobList = await client.ListNamespacedJobAsync("default");
+        var jobList = await client.ListNamespacedJobAsync(kubeNamespace);
         foreach (V1Job v1Job in jobList)
         {
             jobStatus.Add(new JobStatus(v1Job.Metadata.Name, v1Job.Status.Succeeded.HasValue && v1Job.Status.Succeeded.Value > 0, v1Job.Status.Failed.HasValue && v1Job.Status.Failed.Value > 0, v1Job.Status.Active.HasValue && v1Job.Status.Active.Value > 0));
