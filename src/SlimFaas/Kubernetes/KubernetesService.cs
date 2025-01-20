@@ -472,7 +472,7 @@ public class KubernetesService : IKubernetesService
         return result;
     }
 
-    public async Task CreateJobAsync(string jobName, string kubeNamespace)
+    public async Task CreateJobAsync( string kubeNamespace, string jobName)
     {
         var client = _client;
         var job = new V1Job

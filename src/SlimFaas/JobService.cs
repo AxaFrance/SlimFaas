@@ -12,7 +12,7 @@ public class JobService(IKubernetesService kubernetesService) : IJobService
 
     public async Task CreateJobAsync(string jobName)
     {
-        await kubernetesService.CreateJobAsync(jobName, _namespace);
+        await kubernetesService.CreateJobAsync(_namespace, jobName);
     }
 
 
