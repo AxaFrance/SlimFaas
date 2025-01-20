@@ -13,6 +13,7 @@ public enum FunctionType
     Wake,
     Status,
     Publish,
+    Job,
     NotAFunction
 }
 
@@ -45,6 +46,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     private const string WakeFunction = "/wake-function";
     private const string Function = "/function";
     private const string PublishEvent = "/publish-event";
+    private const string AsyncJob = "/async-job";
 
     private readonly int[] _slimFaasPorts = EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts,
         EnvironmentVariables.SlimFaasPortsDefault);
@@ -58,7 +60,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         slimFaasSubscribeEventsDefault);
 
     public async Task InvokeAsync(HttpContext context,
-        HistoryHttpMemoryService historyHttpService, ISendClient sendClient, IReplicasService replicasService)
+        HistoryHttpMemoryService historyHttpService, ISendClient sendClient, IReplicasService replicasService, IJobService? jobService=null)
     {
 
         if (!HostPort.IsSamePort(context.Request.Host.Port, _slimFaasPorts))
@@ -87,6 +89,12 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         {
             case FunctionType.NotAFunction:
                 await next(context);
+                return;
+            case  FunctionType.Job:
+                if(jobService != null)
+                {
+                    await jobService.CreateJobAsync(functionName);
+                }
                 return;
             case FunctionType.Wake:
                 BuildWakeResponse(replicasService, wakeUpFunction, functionName, contextResponse);

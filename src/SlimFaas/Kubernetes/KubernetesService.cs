@@ -472,5 +472,83 @@ public class KubernetesService : IKubernetesService
         return result;
     }
 
+    public async Task CreateJobAsync(string jobName)
+    {
+        var client = _client;
+        var job = new V1Job
+        {
+            ApiVersion = "batch/v1",
+            Kind = "Job",
+            Metadata = new V1ObjectMeta
+            {
+                Name =  jobName + "-job-" + Guid.NewGuid(),
+                NamespaceProperty = "default"
+            },
+            Spec = new V1JobSpec
+            {
+                Template = new V1PodTemplateSpec
+                {
+                    Metadata = new V1ObjectMeta
+                    {
+                        Labels = new Dictionary<string, string> { { "job-name", "dynamic-job" } }
+                    },
+                    Spec = new V1PodSpec
+                    {
+                        Containers = new List<V1Container>
+                        {
+                            new()
+                            {
+                                Name = "my-container",
+                                Image = "busybox",
+                                Command = new List<string> { "sh", "-c", "echo Hello Kubernetes!" }
+                            }
+                        },
+                        RestartPolicy = "Never"
+                    }
+                },
+                BackoffLimit = 4
+            }
+        };
+
+        var jobResponse = await client.CreateNamespacedJobAsync(job, "default");
+
+        Console.WriteLine($"Job created with name: {jobResponse.Metadata.Name}");
+    }
+
+    public record JobStatus(string JobName, bool IsCompleted, bool IsFailed, bool IsRunning);
+
+    public async Task ListJobsAsync()
+    {
+        var jobStatus = new List<JobStatus>();
+        var client = _client;
+        var jobList = await client.ListNamespacedJobAsync("default");
+        foreach (V1Job v1Job in jobList)
+        {
+            jobStatus.Add(new JobStatus(v1Job.Metadata.Name, v1Job.Status.Succeeded.HasValue && v1Job.Status.Succeeded.Value > 0, v1Job.Status.Failed.HasValue && v1Job.Status.Failed.Value > 0, v1Job.Status.Active.HasValue && v1Job.Status.Active.Value > 0));
+        }
+    }
+
+    /*public void JobStatus(string jobName)
+    {
+        var client = _client;
+
+
+        var jobStatus = client.ReadNamespacedJobStatus(jobName, "default");
+
+        if (jobStatus.Status.Succeeded.HasValue && jobStatus.Status.Succeeded.Value > 0)
+        {
+            Console.WriteLine($"Job {jobName} has completed successfully.");
+        }
+        else if (jobStatus.Status.Failed.HasValue && jobStatus.Status.Failed.Value > 0)
+        {
+            Console.WriteLine($"Job {jobName} has failed.");
+        }
+        else
+        {
+            Console.WriteLine($"Job {jobName} is still running.");
+        }
+    }*/
+
+
 
 }
