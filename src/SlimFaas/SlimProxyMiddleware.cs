@@ -90,7 +90,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             case FunctionType.NotAFunction:
                 await next(context);
                 return;
-            case  FunctionType.Job:
+            case  FunctionType.AsyncJob:
                 if(jobService != null)
                 {
                     await jobService.CreateJobAsync(functionName);
