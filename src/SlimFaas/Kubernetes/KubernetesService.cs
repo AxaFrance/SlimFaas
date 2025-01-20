@@ -475,13 +475,14 @@ public class KubernetesService : IKubernetesService
     public async Task CreateJobAsync( string kubeNamespace, string jobName)
     {
         var client = _client;
+        var fullName = jobName + "-job-" + Guid.NewGuid();
         var job = new V1Job
         {
             ApiVersion = "batch/v1",
             Kind = "Job",
             Metadata = new V1ObjectMeta
             {
-                Name =  jobName + "-job-" + Guid.NewGuid(),
+                Name =  fullName,
                 NamespaceProperty = kubeNamespace
             },
             Spec = new V1JobSpec
@@ -490,7 +491,7 @@ public class KubernetesService : IKubernetesService
                 {
                     Metadata = new V1ObjectMeta
                     {
-                        Labels = new Dictionary<string, string> { { "job-name", "dynamic-job" } }
+                        Labels = new Dictionary<string, string> { { "job-name", fullName } }
                     },
                     Spec = new V1PodSpec
                     {
