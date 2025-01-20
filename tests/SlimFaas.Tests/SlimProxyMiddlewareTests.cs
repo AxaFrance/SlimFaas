@@ -302,4 +302,38 @@ public class ProxyMiddlewareTests
         Assert.Equal(expectedBody, body);
         Assert.Equal(expectedHttpStatusCode, response.StatusCode);
     }
+
+    [Theory]
+    [InlineData("/async-job/daisy", HttpStatusCode.NoContent, 1)]
+    public async Task RunJobAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode,
+        int numberFireJob)
+    {
+        Mock<IWakeUpFunction> wakeUpFunctionMock = new();
+        Mock<IJobService> jobServiceMock = new();
+        jobServiceMock.Setup(k => k.CreateJobAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+        using IHost host = await new HostBuilder()
+            .ConfigureWebHost(webBuilder =>
+            {
+                webBuilder
+                    .UseTestServer()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddSingleton<HistoryHttpMemoryService, HistoryHttpMemoryService>();
+                        services.AddSingleton<ISendClient, SendClientMock>();
+                        services.AddSingleton<ISlimFaasQueue, MemorySlimFaasQueue>();
+                        services.AddSingleton<IReplicasService, MemoryReplicasService>();
+                        services.AddSingleton<IWakeUpFunction>(sp => wakeUpFunctionMock.Object);
+                        services.AddSingleton<IJobService>(sp => jobServiceMock.Object);
+                    })
+                    .Configure(app => { app.UseMiddleware<SlimProxyMiddleware>(); });
+            })
+            .StartAsync();
+
+        HttpResponseMessage response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
+        HistoryHttpMemoryService historyHttpMemoryService =
+            host.Services.GetRequiredService<HistoryHttpMemoryService>();
+
+        jobServiceMock.Verify(k => k.CreateJobAsync(It.IsAny<string>()), Times.AtMost(numberFireJob));
+        Assert.Equal(expectedHttpStatusCode, response.StatusCode);
+    }
 }

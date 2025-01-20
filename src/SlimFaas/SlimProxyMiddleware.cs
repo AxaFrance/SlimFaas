@@ -94,6 +94,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 if(jobService != null)
                 {
                     await jobService.CreateJobAsync(functionName);
+                    contextResponse.StatusCode = 204;
                 }
                 return;
             case FunctionType.Wake:
@@ -577,6 +578,10 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         else if (path.StartsWithSegments(PublishEvent))
         {
             functionBeginPath = $"{PublishEvent}";
+        }
+        else if (path.StartsWithSegments(AsyncJob))
+        {
+            functionBeginPath = $"{AsyncJob}";
         }
 
         return functionBeginPath;
