@@ -13,7 +13,7 @@ public enum FunctionType
     Wake,
     Status,
     Publish,
-    Job,
+    AsyncJob,
     NotAFunction
 }
 
@@ -549,6 +549,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             StatusFunction => FunctionType.Status,
             WakeFunction => FunctionType.Wake,
             PublishEvent => FunctionType.Publish,
+            AsyncJob => FunctionType.AsyncJob,
             _ => FunctionType.NotAFunction
         };
         return new FunctionInfo(functionPath, functionName, functionType);
