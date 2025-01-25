@@ -93,12 +93,6 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 return;
             case  FunctionType.AsyncJob:
 
-                if (!MessageComeFromNamespaceInternal(logger, context, replicasService))
-                {
-                    contextResponse.StatusCode = (int)HttpStatusCode.NotFound;
-                    return;
-                }
-
                 if (jobService == null)
                 {
                     return;
