@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Net;
+using System.Text.Json.Serialization;
 using MemoryPack;
 using SlimData;
 using SlimFaas.Database;
@@ -91,11 +92,34 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                 await next(context);
                 return;
             case  FunctionType.AsyncJob:
-                if(jobService != null)
+
+                if (!MessageComeFromNamespaceInternal(logger, context, replicasService))
                 {
-                    await jobService.CreateJobAsync(functionName);
-                    contextResponse.StatusCode = 204;
+                    contextResponse.StatusCode = (int)HttpStatusCode.NotFound;
+                    return;
                 }
+
+                if (jobService == null)
+                {
+                    return;
+                }
+                if (contextRequest.Method != HttpMethods.Post)
+                {
+                    contextResponse.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
+                    return;
+                }
+
+                CreateJob? createJob = await contextRequest.ReadFromJsonAsync(CreateJobSerializerContext.Default.CreateJob);
+                if (createJob == null)
+                {
+                    contextResponse.StatusCode = (int)HttpStatusCode.BadRequest;
+                    return;
+                }
+
+
+
+                await jobService.CreateJobAsync(functionName, createJob);
+                contextResponse.StatusCode = 204;
                 return;
             case FunctionType.Wake:
                 BuildWakeResponse(replicasService, wakeUpFunction, functionName, contextResponse);
@@ -120,7 +144,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         }
     }
 
-    private static Boolean MessageComeFromNamespaceInternal(ILogger<SlimProxyMiddleware> logger, HttpContext context, IReplicasService replicasService, DeploymentInformation currentFunction)
+    private static bool MessageComeFromNamespaceInternal(ILogger<SlimProxyMiddleware> logger, HttpContext context, IReplicasService replicasService, DeploymentInformation? currentFunction=null)
     {
         IList<string> podIps = replicasService.Deployments.Functions.Select(p => p.Pods).SelectMany(p => p).Where(p => currentFunction?.ExcludeDeploymentsFromVisibilityPrivate?.Contains(p.DeploymentName) == false).Select(p => p.Ip).ToList();
         var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();

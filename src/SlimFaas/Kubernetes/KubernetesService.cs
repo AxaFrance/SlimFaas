@@ -64,6 +64,7 @@ public enum PodType
     StatefulSet
 }
 
+
 public record ReplicaRequest(string Deployment, string Namespace, int Replicas, PodType PodType);
 
 public record SlimFaasDeploymentInformation(int Replicas, IList<PodInformation> Pods);
@@ -97,6 +98,16 @@ public record DeploymentInformation(string Deployment,
     );
 
 public record PodInformation(string Name, bool? Started, bool? Ready, string Ip, string DeploymentName);
+
+public record CreateJob(
+    string Image,
+    List<string> Command,
+    int BackoffLimit = 4,
+    string RestartPolicy = "Nerver");
+
+[JsonSerializable(typeof(CreateJob))]
+[JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class CreateJobSerializerContext : JsonSerializerContext;
 
 [ExcludeFromCodeCoverage]
 public class KubernetesService : IKubernetesService
@@ -472,10 +483,12 @@ public class KubernetesService : IKubernetesService
         return result;
     }
 
-    public async Task CreateJobAsync( string kubeNamespace, string jobName)
+
+
+    public async Task CreateJobAsync( string kubeNamespace, string name, CreateJob createJob)
     {
         var client = _client;
-        var fullName = jobName + "-job-" + Guid.NewGuid();
+        var fullName = name + "-job-" + Guid.NewGuid();
         var job = new V1Job
         {
             ApiVersion = "batch/v1",
@@ -499,15 +512,15 @@ public class KubernetesService : IKubernetesService
                         {
                             new()
                             {
-                                Name = "my-container",
-                                Image = "busybox",
-                                Command = new List<string> { "sh", "-c", "echo Hello Kubernetes!" }
+                                Name = name,
+                                Image = createJob.Image,
+                                Command = createJob.Command,
                             }
                         },
-                        RestartPolicy = "Never"
+                        RestartPolicy = createJob.RestartPolicy
                     }
                 },
-                BackoffLimit = 4
+                BackoffLimit = createJob.BackoffLimit
             }
         };
 

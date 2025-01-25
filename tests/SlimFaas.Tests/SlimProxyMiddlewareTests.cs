@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Http.Json;
 using DotNext.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -310,7 +311,7 @@ public class ProxyMiddlewareTests
     {
         Mock<IWakeUpFunction> wakeUpFunctionMock = new();
         Mock<IJobService> jobServiceMock = new();
-        jobServiceMock.Setup(k => k.CreateJobAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+        jobServiceMock.Setup(k => k.CreateJobAsync(It.IsAny<string>(), It.IsAny<CreateJob>() )).Returns(Task.CompletedTask);
         using IHost host = await new HostBuilder()
             .ConfigureWebHost(webBuilder =>
             {
@@ -329,11 +330,11 @@ public class ProxyMiddlewareTests
             })
             .StartAsync();
 
-        HttpResponseMessage response = await host.GetTestClient().GetAsync($"http://localhost:5000{path}");
+        HttpResponseMessage response = await host.GetTestClient().PostAsync($"http://localhost:5000{path}",  JsonContent.Create(new CreateJob("youhou", new List<string>())) );
         HistoryHttpMemoryService historyHttpMemoryService =
             host.Services.GetRequiredService<HistoryHttpMemoryService>();
 
-        jobServiceMock.Verify(k => k.CreateJobAsync(It.IsAny<string>()), Times.AtMost(numberFireJob));
+        jobServiceMock.Verify(k => k.CreateJobAsync(It.IsAny<string>(), It.IsAny<CreateJob>()), Times.AtMost(numberFireJob));
         Assert.Equal(expectedHttpStatusCode, response.StatusCode);
     }
 }
