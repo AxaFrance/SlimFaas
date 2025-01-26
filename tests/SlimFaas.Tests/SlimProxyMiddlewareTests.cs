@@ -305,7 +305,7 @@ public class ProxyMiddlewareTests
     }
 
     [Theory]
-    [InlineData("/async-job/daisy", HttpStatusCode.NoContent, 1)]
+    [InlineData("/job/daisy", HttpStatusCode.NoContent, 1)]
     public async Task RunJobAndReturnOk(string path, HttpStatusCode expectedHttpStatusCode,
         int numberFireJob)
     {

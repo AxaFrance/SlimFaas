@@ -14,7 +14,7 @@ public enum FunctionType
     Wake,
     Status,
     Publish,
-    AsyncJob,
+    Job,
     NotAFunction
 }
 
@@ -47,7 +47,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
     private const string WakeFunction = "/wake-function";
     private const string Function = "/function";
     private const string PublishEvent = "/publish-event";
-    private const string AsyncJob = "/async-job";
+    private const string Job = "/job";
 
     private readonly int[] _slimFaasPorts = EnvironmentVariables.ReadIntegers(EnvironmentVariables.SlimFaasPorts,
         EnvironmentVariables.SlimFaasPortsDefault);
@@ -91,7 +91,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             case FunctionType.NotAFunction:
                 await next(context);
                 return;
-            case  FunctionType.AsyncJob:
+            case  FunctionType.Job:
 
                 if (jobService == null)
                 {
@@ -568,7 +568,7 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
             StatusFunction => FunctionType.Status,
             WakeFunction => FunctionType.Wake,
             PublishEvent => FunctionType.Publish,
-            AsyncJob => FunctionType.AsyncJob,
+            Job => FunctionType.Job,
             _ => FunctionType.NotAFunction
         };
         return new FunctionInfo(functionPath, functionName, functionType);
@@ -597,9 +597,9 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
         {
             functionBeginPath = $"{PublishEvent}";
         }
-        else if (path.StartsWithSegments(AsyncJob))
+        else if (path.StartsWithSegments(Job))
         {
-            functionBeginPath = $"{AsyncJob}";
+            functionBeginPath = $"{Job}";
         }
 
         return functionBeginPath;
