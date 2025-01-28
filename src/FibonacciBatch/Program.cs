@@ -1,9 +1,11 @@
 ﻿
 
 foreach(string arg in args){
+    Console.WriteLine($"Calculating Fibonacci for {arg}");
     int i = int.Parse(arg);
     var fibonacci = new Fibonacci();
-    Console.WriteLine(fibonacci.Run(i));
+    var result = fibonacci.Run(i);
+    Console.WriteLine($"Fibonacci for {arg} is {result}");
 }
 
 internal class Fibonacci

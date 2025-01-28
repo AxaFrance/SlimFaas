@@ -101,7 +101,7 @@ public record PodInformation(string Name, bool? Started, bool? Ready, string Ip,
 
 public record CreateJob(
     string Image,
-    List<string> Command,
+    List<string> Args,
     int BackoffLimit = 4,
     string RestartPolicy = "Never");
 
@@ -514,7 +514,7 @@ public class KubernetesService : IKubernetesService
                             {
                                 Name = name,
                                 Image = createJob.Image,
-                                Command = createJob.Command,
+                                Args = createJob.Args,
                             }
                         },
                         RestartPolicy = createJob.RestartPolicy
