@@ -103,7 +103,7 @@ public record CreateJob(
     string Image,
     List<string> Command,
     int BackoffLimit = 4,
-    string RestartPolicy = "Nerver");
+    string RestartPolicy = "Never");
 
 [JsonSerializable(typeof(CreateJob))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
