@@ -535,6 +535,7 @@ public class KubernetesService : IKubernetesService
                                 Args = createJob.Args,
                             }
                         },
+                        RestartPolicy = createJob.RestartPolicy,
                         Resources = new V1ResourceRequirements()
                         {
                             Requests = requests,
