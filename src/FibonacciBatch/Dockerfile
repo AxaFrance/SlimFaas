@@ -5,10 +5,8 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["FibonacciBatch/FibonacciBatch.csproj", "FibonacciBatch/"]
-RUN dotnet restore "FibonacciBatch/FibonacciBatch.csproj"
 COPY . .
-WORKDIR "/src/FibonacciBatch"
+RUN dotnet restore "FibonacciBatch.csproj"
 RUN dotnet build "FibonacciBatch.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
