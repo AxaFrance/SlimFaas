@@ -103,7 +103,10 @@ public record CreateJob(
     string Image,
     List<string> Args,
     int BackoffLimit = 4,
-    string RestartPolicy = "Never");
+    string RestartPolicy = "Never",
+    CreateJobResources? Resources = null);
+
+public record CreateJobResources(Dictionary<string,string> Requests, Dictionary<string,string> Limits);
 
 [JsonSerializable(typeof(CreateJob))]
 [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
@@ -489,6 +492,21 @@ public class KubernetesService : IKubernetesService
     {
         var client = _client;
         var fullName = name + "-job-" + Guid.NewGuid();
+
+        var requests = new Dictionary<string, ResourceQuantity>
+        {
+            { "cpu", new ResourceQuantity("100m") }, { "memory", new ResourceQuantity("512Mi") }
+        };
+        if( createJob.Resources?.Requests != null )
+        {
+            requests = createJob.Resources.Requests.ToDictionary(r => r.Key, r => new ResourceQuantity(r.Value));
+        }
+        var limits = requests;
+        if(createJob.Resources?.Limits != null)
+        {
+            limits = createJob.Resources.Limits.ToDictionary(r => r.Key, r => new ResourceQuantity(r.Value));
+        }
+
         var job = new V1Job
         {
             ApiVersion = "batch/v1",
@@ -517,7 +535,11 @@ public class KubernetesService : IKubernetesService
                                 Args = createJob.Args,
                             }
                         },
-                        RestartPolicy = createJob.RestartPolicy
+                        Resources = new V1ResourceRequirements()
+                        {
+                            Requests = requests,
+                            Limits = limits
+                        }
                     }
                 },
                 BackoffLimit = createJob.BackoffLimit
