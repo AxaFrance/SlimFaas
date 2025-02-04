@@ -104,7 +104,8 @@ public record CreateJob(
     List<string> Args,
     int BackoffLimit = 4,
     string RestartPolicy = "Never",
-    CreateJobResources? Resources = null);
+    CreateJobResources? Resources = null,
+    Dictionary<string, string>? Environments = null);
 
 public record CreateJobResources(Dictionary<string,string> Requests, Dictionary<string,string> Limits);
 
@@ -533,6 +534,7 @@ public class KubernetesService : IKubernetesService
                                 Name = name,
                                 Image = createJob.Image,
                                 Args = createJob.Args,
+                                Env = new List<V1EnvVar>(createJob.Environments?.Select(e => new V1EnvVar(e.Key, e.Value)) ?? new List<V1EnvVar>()),
                             }
                         },
                         RestartPolicy = createJob.RestartPolicy,
