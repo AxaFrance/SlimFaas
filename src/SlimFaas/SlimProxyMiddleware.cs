@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using MemoryPack;
 using SlimData;
@@ -109,8 +110,12 @@ public class SlimProxyMiddleware(RequestDelegate next, ISlimFaasQueue slimFaasQu
                     contextResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
                 }
-
-
+                logger.LogInformation("Create job {JobName} with {CreateJob}", functionName, createJob);
+                if(logger.IsEnabled(LogLevel.Debug))
+                {
+                    logger.LogDebug("Create job details {CreateJob} ", JsonSerializer.Serialize(createJob,
+                        CreateJobSerializerContext.Default.CreateJob));
+                }
 
                 await jobService.CreateJobAsync(functionName, createJob);
                 contextResponse.StatusCode = 204;
