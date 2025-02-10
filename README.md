@@ -483,5 +483,10 @@ Why .NET?
 
 <img src="https://www.cncf.io/wp-content/uploads/2022/07/cncf-stacked-color-bg.svg" />
 
+### SlimFaas Slack Channel
+
+Join us on Slack:
+https://cloud-native.slack.com/archives/C08CRC77VDE
+
 ### Trademark Guidelines
 The Linux Foundation® (TLF) has registered trademarks and uses trademarks. For a list of TLF trademarks, see [Trademark Usage](https://www.linuxfoundation.org/legal/trademark-usage).
