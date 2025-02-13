@@ -22,9 +22,6 @@ on:
         required: false
         type: string
         default: linux/amd64
-      docker_push:
-        required: true
-        type: boolean
     secrets:
       DOCKER_USERNAME:
         required: true
@@ -71,7 +68,7 @@ jobs:
         context: ${{ inputs.image_context }}
         file : ${{ inputs.image_file }}
         build-args: ${{ inputs.image_build_args }}
-        push: ${{ inputs.docker_push }}
+        push: true
         tags: ${{ inputs.image_name }}:${{ inputs.image_version }},${{ inputs.image_name }}:latest
         labels: ${{ steps.meta.outputs.labels }}
         platforms: ${{ inputs.platforms }}
@@ -85,7 +82,7 @@ jobs:
         context: ${{ inputs.image_context }}
         file : ${{ inputs.image_file }}
         build-args: ${{ inputs.image_build_args }}
-        push: ${{ inputs.docker_push }}
+        push: true
         tags: ${{ inputs.image_name }}:${{ inputs.image_version }}
         labels: ${{ steps.meta.outputs.labels }}
         platforms: ${{ inputs.platforms }}

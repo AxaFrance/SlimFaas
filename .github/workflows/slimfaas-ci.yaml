@@ -156,9 +156,9 @@ jobs:
           fi
           if [[ '${{ steps.which_tag.outputs.tag }}' = 'default' ]]; then
             if [ '${{ github.ref }}' = 'refs/heads/main' ]; then
-              echo "new_version=$version-alpha.${{ github.run_number }}" >> $GITHUB_OUTPUT
+              echo "new_version=$version-dev.${{ github.run_number }}" >> $GITHUB_OUTPUT
             else
-              echo "new_version=pr-${{ github.event.number }}-${{ github.run_number }}" >> $GITHUB_OUTPUT
+              echo "new_version=$version-pr.${{ github.event.number }}${{ github.run_number }}" >> $GITHUB_OUTPUT
             fi
           fi
 
@@ -174,7 +174,6 @@ jobs:
       image_context: "."
       image_file: "./Dockerfile"
       platforms: "linux/amd64,linux/arm64"
-      docker_push: ${{ !github.event.pull_request.head.repo.fork }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -189,7 +188,6 @@ jobs:
       image_build_args: ""
       image_context: "./src/Fibonacci"
       image_file: "./src/Fibonacci/Dockerfile"
-      docker_push: ${{ !github.event.pull_request.head.repo.fork }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -204,7 +202,6 @@ jobs:
       image_build_args: ""
       image_context: "./src/FibonacciReact"
       image_file: "./src/FibonacciReact/Dockerfile"
-      docker_push: ${{ !github.event.pull_request.head.repo.fork }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
