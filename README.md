@@ -476,3 +476,7 @@ Why .NET?
 3. Aggregate all swaggers from functions in one exposed by SlimFaas
 4. New pod to "Wake up" from External Source (example: Kafka, etc.) using https://cloudevents.io/ as standard https://github.com/cloudevents/sdk-csharp
 5. Continue Optimization
+
+## Code of Conduct
+
+SlimFaas project has adopted the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/main/code-of-conduct.md)
