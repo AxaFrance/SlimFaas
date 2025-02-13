@@ -159,7 +159,7 @@ jobs:
           fi
   build_slimfaas:
     needs: tags
-    if: needs.skip_ci.outputs.canSkip != 'true' && (github.ref == 'refs/heads/main' && steps.which_tag.outputs.tag == 'release') || steps.which_tag.outputs.tag == 'alpha' || steps.which_tag.outputs.tag == 'beta'
+    if: needs.skip_ci.outputs.canSkip != 'true'
     uses: ./.github/workflows/Docker.yml
     with:
       image_name: "axaguildev/slimfaas"
