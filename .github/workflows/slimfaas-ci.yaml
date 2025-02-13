@@ -159,6 +159,7 @@ jobs:
           fi
   build_slimfaas:
     needs: tags
+    if: needs.skip_ci.outputs.canSkip != 'true' && needs.tags.outputs.new_version != null
     uses: ./.github/workflows/Docker.yml
     with:
       image_name: "axaguildev/slimfaas"
