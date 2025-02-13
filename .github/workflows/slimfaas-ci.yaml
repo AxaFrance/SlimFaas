@@ -159,7 +159,7 @@ jobs:
           fi
   build_slimfaas:
     needs: tags
-    if: needs.skip_ci.outputs.canSkip != 'true' && needs.tags.outputs.new_version != null
+    if: needs.skip_ci.outputs.canSkip != 'true' && (github.ref == 'refs/heads/main' && steps.which_tag.outputs.tag == 'release') || steps.which_tag.outputs.tag == 'alpha' || steps.which_tag.outputs.tag == 'beta'
     uses: ./.github/workflows/Docker.yml
     with:
       image_name: "axaguildev/slimfaas"
@@ -224,13 +224,13 @@ jobs:
           git config --global user.email "github-action@bot.com"
           git config --global user.name "GitHub"
       - name: pnpm version ${{ needs.tags.outputs.new_version }}
-        if: github.ref == 'refs/heads/main'
+        if: (github.ref == 'refs/heads/main' && steps.which_tag.outputs.tag == 'release') || steps.which_tag.outputs.tag == 'alpha' || steps.which_tag.outputs.tag == 'beta'
         run: |
           pnpm version ${{ needs.tags.outputs.new_version }}
         working-directory: ./src/SlimFaasPlanetSaver
       - id: Publish
         uses: JS-DevTools/npm-publish@v1
-        if: github.ref == 'refs/heads/main'
+        if: (github.ref == 'refs/heads/main' && steps.which_tag.outputs.tag == 'release') || steps.which_tag.outputs.tag == 'alpha' || steps.which_tag.outputs.tag == 'beta'
         with:
           token: ${{ secrets.NPM_TOKEN }}
           package: ./src/SlimFaasPlanetSaver/package.json
