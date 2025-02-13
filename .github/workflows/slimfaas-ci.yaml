@@ -142,14 +142,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN  }}
           dry_run: true
-      - name: Add tag to output step for main branch
-        id: tag
-        run: |
-          if [ '${{ github.ref }}' = 'refs/heads/main' ]; then
-            echo "new_version=${{ steps.tag_version.outputs.new_version }}" >> $GITHUB_OUTPUT
-          else
-            echo "new_version=pr-${{ github.event.number }}-${{ github.run_number }}" >> $GITHUB_OUTPUT
-          fi
       - name: Compute new version number to publish
         id: tag
         if: (github.ref == 'refs/heads/main' && steps.which_tag.outputs.tag == 'release') || steps.which_tag.outputs.tag == 'alpha' || steps.which_tag.outputs.tag == 'beta'
