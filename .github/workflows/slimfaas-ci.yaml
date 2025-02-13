@@ -115,38 +115,35 @@ jobs:
           fi
           echo "last commit message is: $last_commit_message"
           # Check if last comment and with "(alpha)", "(beta)" or "(release)"
+          echo "tag=default" >> $GITHUB_OUTPUT
           if [[ $last_commit_message == *alpha* ]]; then
             echo "tag=alpha" >> $GITHUB_OUTPUT
           fi
           if [[ $last_commit_message == *beta* ]]; then
             echo "tag=beta" >> $GITHUB_OUTPUT
           fi
-          if [[ $last_commit_message == *release* ]]; then
+          if [[ $last_commit_message == *release* && ${{ github.ref }} == 'refs/heads/main' ]]; then
             echo "tag=release" >> $GITHUB_OUTPUT
           fi
 
       - name: Bump version and push tag
         id: tag_release
-        if: github.ref == 'refs/heads/main' && steps.which_tag.outputs.tag == 'release'
+        if: steps.which_tag.outputs.tag == 'release'
         uses: mathieudutour/github-tag-action@v6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN  }}
       - name: Bump version and push tag
         id: tag_version
-        if: steps.which_tag.outputs.tag == 'alpha' || steps.which_tag.outputs.tag == 'beta'
+        if: steps.which_tag.outputs.tag != 'release'
         uses: mathieudutour/github-tag-action@v6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN  }}
           dry_run: true
       - name: Compute new version number to publish
         id: tag
-        if: (github.ref == 'refs/heads/main' && steps.which_tag.outputs.tag == 'release') || steps.which_tag.outputs.tag == 'alpha' || steps.which_tag.outputs.tag == 'beta'
         run: |
-          if [[ '${{ steps.which_tag.outputs.tag }}' == 'release' ]]; then
-            version=${{ steps.tag_release.outputs.new_version }}
-          else
-            version=${{ steps.tag_version.outputs.new_version }}
-          fi
+
+          version=${{ steps.tag_version.outputs.new_version }}
 
           if [[ '${{ steps.which_tag.outputs.tag }}' = 'release' ]]; then
             echo "new_version=$version" >> $GITHUB_OUTPUT
@@ -157,9 +154,18 @@ jobs:
           if [[ '${{ steps.which_tag.outputs.tag }}' = 'beta' ]]; then
             echo "new_version=$version-beta.${{ github.run_number }}" >> $GITHUB_OUTPUT
           fi
+          if [[ '${{ steps.which_tag.outputs.tag }}' = 'default' ]]; then
+            if [ '${{ github.ref }}' = 'refs/heads/main' ]; then
+              echo "new_version=$version-alpha.${{ github.run_number }}" >> $GITHUB_OUTPUT
+            else
+              echo "new_version=pr-${{ github.event.number }}-${{ github.run_number }}" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+
   build_slimfaas:
     needs: tags
-    if: needs.skip_ci.outputs.canSkip != 'true'
+    if: needs.skip_ci.outputs.canSkip != 'true' && !github.event.pull_request.head.repo.fork
     uses: ./.github/workflows/Docker.yml
     with:
       image_name: "axaguildev/slimfaas"
@@ -175,6 +181,7 @@ jobs:
 
   build_fibonacci:
     needs: tags
+    if: needs.skip_ci.outputs.canSkip != 'true' && !github.event.pull_request.head.repo.fork
     uses: ./.github/workflows/Docker.yml
     with:
       image_name: "axaguildev/fibonacci"
@@ -189,6 +196,7 @@ jobs:
 
   build_fibonacci_webapp:
     needs: tags
+    if: needs.skip_ci.outputs.canSkip != 'true' && !github.event.pull_request.head.repo.fork
     uses: ./.github/workflows/Docker.yml
     with:
       image_name: "axaguildev/fibonacci-webapp"
@@ -224,18 +232,16 @@ jobs:
           git config --global user.email "github-action@bot.com"
           git config --global user.name "GitHub"
       - name: pnpm version ${{ needs.tags.outputs.new_version }}
-        if: (github.ref == 'refs/heads/main' && steps.which_tag.outputs.tag == 'release') || steps.which_tag.outputs.tag == 'alpha' || steps.which_tag.outputs.tag == 'beta'
         run: |
           pnpm version ${{ needs.tags.outputs.new_version }}
         working-directory: ./src/SlimFaasPlanetSaver
       - id: Publish
         uses: JS-DevTools/npm-publish@v1
-        if: (github.ref == 'refs/heads/main' && steps.which_tag.outputs.tag == 'release') || steps.which_tag.outputs.tag == 'alpha' || steps.which_tag.outputs.tag == 'beta'
         with:
           token: ${{ secrets.NPM_TOKEN }}
           package: ./src/SlimFaasPlanetSaver/package.json
       - name: Commit and push
-        if: github.ref == 'refs/heads/main' && steps.which_tag.outputs.tag == 'release'
+        if: steps.which_tag.outputs.tag == 'release'
         run: |
           git config --global user.name "GitHub"
           git config --global user.email "github-action@bot.com"
