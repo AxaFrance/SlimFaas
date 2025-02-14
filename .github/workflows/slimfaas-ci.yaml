@@ -59,6 +59,21 @@ jobs:
         run: |
           New-Item -Path .\.sonar\scanner -ItemType Directory
           dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+      - name: pnpm ci
+        run: pnpm i --frozen-lockfile
+        working-directory: ./src/SlimFaasPlanetSaver
+      - name: pnpm run coverage
+        run: pnpm run coverage
+        working-directory: ./src/SlimFaasPlanetSaver
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
