@@ -276,7 +276,7 @@ jobs:
         run: |
           git config --global user.name "GitHub"
           git config --global user.email "github-action@bot.com"
-          chmod +x ./bin/generate-changelog.sh
+          chmod +x ./.bin/generate-changelog.sh
           ./.bin/generate-changelog.sh
           git add .
           git commit -m "[skip ci] Generate changelog to version ${{ steps.tag.outputs.new_version }}"
