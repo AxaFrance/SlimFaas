@@ -19,19 +19,28 @@ describe('PlanetSaver Component', () => {
         const handleVisibilityChange = vi.fn();
         render(<PlanetSaver baseUrl={baseUrl} fetch={mockFetch(false)} noActivityTimeout={8000} >Child Component</PlanetSaver>);
         await waitFor(() => screen.getByText('🌳 Starting the environment.... 🌳'));
+        // assert with html shot
+        expect(screen.getByText('🌳 Starting the environment.... 🌳')).toBeTruthy();
+
+
         screen.debug();
         await waitFor(() => screen.getByText('Child Component'), { timeout: 10000 });
+        expect(screen.getByText('Child Component')).toBeTruthy();
         screen.debug();
         setDocumentVisibility('hidden');
         await waitFor(() => console.log("Wait 10 secondes"), { timeout: 10000 });
         screen.debug();
         setDocumentVisibility('visible');
         await waitFor(() => screen.getByText('Waiting activity to start environment...'), { timeout: 8000 });
+        expect(screen.getByText('Waiting activity to start environment...')).toBeTruthy();
         screen.debug();
         // mouve mousse over document with coordinates
-        /*document.dispatchEvent(new MouseEvent('mousemove', { clientX: 100, clientY: 100 }));
-        document.dispatchEvent(new MouseEvent('mousemove', { clientX: 300, clientY: 200 }));
 
+/*
+        document.dispatchEvent(new MouseEvent('mousemove', { clientX: 100, clientY: 100 }));
+        await waitFor(() => console.log("Wait 0.1 secondes"), { timeout: 100 });
+        document.dispatchEvent(new MouseEvent('mousemove', { clientX: 300, clientY: 200 }));
+        await waitFor(() => console.log("Wait 0.1 secondes"), { timeout: 100 });
         await waitFor(() => screen.getByText('🌳 Starting the environment.... 🌳'), { timeout: 10000 });
         screen.debug();*/
 
