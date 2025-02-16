@@ -265,7 +265,7 @@ jobs:
 
   change_log:
     runs-on: ubuntu-latest
-    needs: [ build_slimfaas_planet_saver, build_slimfaas ]
+    needs: [ tags,  build_slimfaas_planet_saver, build_slimfaas ]
     steps:
       - uses: actions/checkout@v4
         with:
