@@ -8,7 +8,7 @@ on:
     types: [opened, synchronize, reopened]
 
 env:
-  PNPM_VERSION: 8.6.11
+  PNPM_VERSION: 10.3.0
   NODE_VERSION: 18
 
 permissions:
@@ -16,18 +16,10 @@ permissions:
   contents: write
 
 jobs:
-  skip_ci:
-    runs-on: ubuntu-latest
-    outputs:
-      canSkip: ${{ steps.check.outputs.canSkip }}
-    steps:
-      - id: check
-        uses: Legorooj/skip-ci@main
   sonarcloud:
     name: SonarCloud
     runs-on: windows-latest
-    needs: skip_ci
-    if: needs.skip_ci.outputs.canSkip != 'true' && !github.event.pull_request.head.repo.fork
+    if: github.event.pull_request.head.repo.fork == false
     steps:
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -59,21 +51,36 @@ jobs:
         run: |
           New-Item -Path .\.sonar\scanner -ItemType Directory
           dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+      - name: pnpm ci
+        run: pnpm i --frozen-lockfile
+        working-directory: ./src/SlimFaasPlanetSaver
+      - name: pnpm run coverage
+        run: |
+          pnpm run coverage
+          #effacer le dossier coverage/lcov-report
+          Remove-Item -Path .\coverage\lcov-report -Recurse -Force
+        working-directory: ./src/SlimFaasPlanetSaver
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"SlimPlanet_SlimFaas" /o:"slimplanet" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml /d:sonar.coverage.exclusions="src/Fibonacci/**/*,src/FibonacciReact/**/*,demo/**/*"
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"SlimPlanet_SlimFaas" /o:"slimplanet" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml /d:sonar.coverage.exclusions="src/Fibonacci/**/*,src/FibonacciReact/**/*,demo/**/*,src/SlimFaasPlanetSaver/coverage/**/*" /d:sonar.javascript.lcov.reportPaths="src/SlimFaasPlanetSaver/coverage/lcov.info" /d:sonar.javascript.file.suffixes="js,jsx"
           dotnet tool install --global dotnet-coverage
           dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
   unit_tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    needs: skip_ci
-    if: needs.skip_ci.outputs.canSkip != 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -90,17 +97,32 @@ jobs:
           reports: './**/TestResults/**/*.cobertura.xml'
           targetdir: 'coveragereport'
           reporttypes: 'HtmlInline;MarkdownSummaryGithub'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+      - name: pnpm ci
+        run: pnpm i --frozen-lockfile
+        working-directory: ./src/SlimFaasPlanetSaver
+      - name: pnpm run coverage
+        run: pnpm run coverage
+        working-directory: ./src/SlimFaasPlanetSaver
       - name: Upload coverage report artifact
         uses: actions/upload-artifact@v4
         with:
           name: CoverageReport # Artifact name
           path: coveragereport # Directory containing files to upload
   tags:
-    needs: [unit_tests, skip_ci]
+    needs: [unit_tests]
     runs-on: ubuntu-latest
-    if: needs.skip_ci.outputs.canSkip != 'true' && !github.event.pull_request.head.repo.fork
+    if: github.event.pull_request.head.repo.fork == false
     outputs:
       new_version: ${{ steps.tag.outputs.new_version }}
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -143,7 +165,11 @@ jobs:
         id: tag
         run: |
 
-          version=${{ steps.tag_version.outputs.new_version }}
+          if [[ '${{ steps.which_tag.outputs.tag }}' == 'release' ]]; then
+            version=${{ steps.tag_release.outputs.new_version }}
+          else
+            version=${{ steps.tag_version.outputs.new_version }}
+          fi
 
           if [[ '${{ steps.which_tag.outputs.tag }}' = 'release' ]]; then
             echo "new_version=$version" >> $GITHUB_OUTPUT
@@ -161,11 +187,13 @@ jobs:
               echo "new_version=$version-pr.${{ github.event.number }}${{ github.run_number }}" >> $GITHUB_OUTPUT
             fi
           fi
+          tag=${{ steps.which_tag.outputs.tag }}
+          echo "tag=$tag" >> $GITHUB_OUTPUT
 
 
   build_slimfaas:
     needs: tags
-    if: needs.skip_ci.outputs.canSkip != 'true' && !github.event.pull_request.head.repo.fork
+    if: github.event.pull_request.head.repo.fork == false
     uses: ./.github/workflows/Docker.yml
     with:
       image_name: "axaguildev/slimfaas"
@@ -180,7 +208,7 @@ jobs:
 
   build_fibonacci:
     needs: tags
-    if: needs.skip_ci.outputs.canSkip != 'true' && !github.event.pull_request.head.repo.fork
+    if: github.event.pull_request.head.repo.fork == false
     uses: ./.github/workflows/Docker.yml
     with:
       image_name: "axaguildev/fibonacci"
@@ -194,7 +222,7 @@ jobs:
 
   build_fibonacci_webapp:
     needs: tags
-    if: needs.skip_ci.outputs.canSkip != 'true' && !github.event.pull_request.head.repo.fork
+    if: github.event.pull_request.head.repo.fork == false
     uses: ./.github/workflows/Docker.yml
     with:
       image_name: "axaguildev/fibonacci-webapp"
@@ -207,8 +235,8 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
   build_slimfaas_planet_saver:
-    needs: [tags, skip_ci]
-    if: needs.skip_ci.outputs.canSkip != 'true' && !github.event.pull_request.head.repo.fork
+    needs: tags
+    if: github.event.pull_request.head.repo.fork == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -237,18 +265,23 @@ jobs:
         with:
           token: ${{ secrets.NPM_TOKEN }}
           package: ./src/SlimFaasPlanetSaver/package.json
+
+  change_log:
+    runs-on: ubuntu-latest
+    needs: [ tags,  build_slimfaas_planet_saver, build_slimfaas ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GIT_TOKEN }}
+          fetch-depth: 0
       - name: Commit and push
-        if: steps.which_tag.outputs.tag == 'release'
+        if: needs.tags.outputs.tag == 'release'
         run: |
           git config --global user.name "GitHub"
           git config --global user.email "github-action@bot.com"
+          chmod +x ./.bin/generate-changelog.sh
+          ./.bin/generate-changelog.sh
           git add .
-          git commit -m "[skip ci] Update to version ${{ steps.tag.outputs.new_version }} in package.json"
+          git commit -s -m "[skip ci] Generate changelog to version ${{ steps.tag.outputs.new_version }}"
           git tag ${{ steps.tag.outputs.new_version }}
-          git push --set-upstream origin "HEAD:main" --follow-tags -f
-
-          chmod +x ./bin/generate-changelog.sh
-          ./bin/generate-changelog.sh
-          git add .
-          git commit -m "[skip ci] Generate changelog to version ${{ steps.tag.outputs.new_version }}"
           git push --set-upstream origin "HEAD:main" --follow-tags -f
