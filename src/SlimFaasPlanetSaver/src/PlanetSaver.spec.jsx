@@ -42,6 +42,8 @@ describe('PlanetSaver Component', () => {
         expect(screen.getByText('🌳 Starting the environment.... 🌳')).toBeTruthy();
         screen.debug();
 
+        render(null);
+
     }, {timeout: 40000} );
 
     it('Should display SlimFaasPlanetSaver Error', async () => {
@@ -49,6 +51,8 @@ describe('PlanetSaver Component', () => {
         await waitFor(() => screen.getByText('An error occurred when starting environment. Please contact an administrator.'), { timeout: 10000 });
         expect(screen.getByText('An error occurred when starting environment. Please contact an administrator.')).toBeTruthy();
         screen.debug();
+
+        render(null);
     }, {timeout: 20000} );
 
 });

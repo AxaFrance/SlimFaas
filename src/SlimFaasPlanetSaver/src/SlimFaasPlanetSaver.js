@@ -101,12 +101,11 @@ export default class SlimFaasPlanetSaver {
             this.errorCallback(errorMessage);
             console.error('Error fetching slimfaas data:', errorMessage);
         } finally {
-            if(!this.intervalId)  {
-                return;
+            if(this.intervalId)  {
+                this.intervalId = setTimeout(() => {
+                    this.fetchStatus();
+                }, this.interval);
             }
-            this.intervalId = setTimeout(() => {
-                this.fetchStatus();
-            }, this.interval);
         }
     }
 
