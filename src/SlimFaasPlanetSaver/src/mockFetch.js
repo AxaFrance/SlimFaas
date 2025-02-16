@@ -1,31 +1,34 @@
-﻿// Initial state for /status-functions
-let currentStatusFunctionsBody = [
+﻿export const alternateStatusFunctionsBodyOff = [
     { NumberReady: 0, numberRequested: 0, PodType: "Deployment", Visibility: "Public", Name: "fibonacci1" },
     { NumberReady: 0, numberRequested: 0, PodType: "Deployment", Visibility: "Public", Name: "fibonacci2" },
     { NumberReady: 0, numberRequested: 1, PodType: "Deployment", Visibility: "Public", Name: "fibonacci3" },
     { NumberReady: 0, numberRequested: 2, PodType: "Deployment", Visibility: "Private", Name: "fibonacci4" }
-];
+]
+
+// Initial state for /status-functions
+let currentStatusFunctionsBody = alternateStatusFunctionsBodyOff;
+
+export const setAlternateStatusFunctionsBody = (body) => {
+    currentStatusFunctionsBody = body;
+}
 
 // Alternate body for /status-functions
-const alternateStatusFunctionsBody = [
+export const alternateStatusFunctionsBodyOn = [
     { NumberReady: 1, numberRequested: 1, PodType: "Deployment", Visibility: "Public", Name: "fibonacci1" },
     { NumberReady: 1, numberRequested: 1, PodType: "Deployment", Visibility: "Public", Name: "fibonacci2" },
     { NumberReady: 1, numberRequested: 1, PodType: "Deployment", Visibility: "Public", Name: "fibonacci3" },
     { NumberReady: 2, numberRequested: 2, PodType: "Deployment", Visibility: "Private", Name: "fibonacci4" }
 ];
 
+
+
 // Function to toggle between the two bodies
 let timeoutId;
 function toggleStatusFunctionsBody() {
     currentStatusFunctionsBody =
-        currentStatusFunctionsBody === alternateStatusFunctionsBody
-            ? [
-                { NumberReady: 0, numberRequested: 0, PodType: "Deployment", Visibility: "Public", Name: "fibonacci1" },
-                { NumberReady: 0, numberRequested: 0, PodType: "Deployment", Visibility: "Public", Name: "fibonacci2" },
-                { NumberReady: 0, numberRequested: 1, PodType: "Deployment", Visibility: "Public", Name: "fibonacci3" },
-                { NumberReady: 0, numberRequested: 2, PodType: "Deployment", Visibility: "Private", Name: "fibonacci4" }
-            ]
-            : alternateStatusFunctionsBody;
+        currentStatusFunctionsBody === alternateStatusFunctionsBodyOn
+            ? alternateStatusFunctionsBodyOff
+            : alternateStatusFunctionsBodyOn;
 
 }
 
@@ -46,15 +49,21 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
-// Start the initial toggle logic
-setTimeout(toggleStatusFunctionsBody, 8000);
+
 // Mock fetch function
-function mockFetch(url, options = {}) {
+const mockFetch = (isError=true, errorProbability=20, toggleStatusFunctionsBody=true) => (url, options = {}) => {
+    if(!toggleStatusFunctionsBody) {
+        // Start the initial toggle logic
+        setTimeout(toggleStatusFunctionsBody, 8000);
+    }
+
     return new Promise((resolve, reject) => {
-        // Lancer une exception aléatoirement 1 fois sur 20
-        if (Math.floor(Math.random() * 20) === 0) {
-            reject(new Error("Exception aléatoire"));
-            return;
+        if(isError) {
+            // Lancer une exception aléatoirement 1 fois sur 20
+            if (Math.floor(Math.random() * errorProbability) === 0) {
+                reject(new Error("Exception aléatoire"));
+                return;
+            }
         }
 
         // Route: /status-functions
