@@ -37,9 +37,7 @@ describe('PlanetSaver Component', () => {
         expect(screen.getByText('Waiting activity to start environment...')).toBeTruthy();
         screen.debug();
 
-        // mouve mousse over document with coordinates
         document.dispatchEvent(new MouseEvent('mousemove', { clientX: 100, clientY: 100 }));
-
         await waitFor(() => screen.getByText('🌳 Starting the environment.... 🌳'), { timeout: 10000 });
         expect(screen.getByText('🌳 Starting the environment.... 🌳')).toBeTruthy();
         screen.debug();
@@ -49,6 +47,7 @@ describe('PlanetSaver Component', () => {
     it('Should display SlimFaasPlanetSaver Error', async () => {
         render(<PlanetSaver baseUrl={baseUrl} fetch={mockFetch(true, 1)} noActivityTimeout={10000} >Child Component</PlanetSaver>);
         await waitFor(() => screen.getByText('An error occurred when starting environment. Please contact an administrator.'), { timeout: 10000 });
+        expect(screen.getByText('An error occurred when starting environment. Please contact an administrator.')).toBeTruthy();
         screen.debug();
     }, {timeout: 20000} );
 
