@@ -79,7 +79,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"SlimPlanet_SlimFaas" /o:"slimplanet" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml /d:sonar.coverage.exclusions="src/Fibonacci/**/*,src/FibonacciReact/**/*,demo/**/*,src/SlimFaasPlanetSaver/coverage/**/*" /d:sonar.javascript.lcov.reportPaths="src/SlimFaasPlanetSaver/coverage/lcov.info" /d:sonar.javascript.file.suffixes="js,jsx"
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"SlimPlanet_SlimFaas" /o:"slimplanet" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml /d:sonar.coverage.exclusions="src/Fibonacci/**/*,src/FibonacciReact/**/*,demo/**/*,src/SlimFaasPlanetSaver/coverage/**/*,src/SlimFaasPlanetSaver/coverage/lcov-report/**/*" /d:sonar.javascript.lcov.reportPaths="src/SlimFaasPlanetSaver/coverage/lcov.info" /d:sonar.javascript.file.suffixes="js,jsx"
           dotnet tool install --global dotnet-coverage
           dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
@@ -171,7 +171,11 @@ jobs:
         id: tag
         run: |
 
-          version=${{ steps.tag_version.outputs.new_version }}
+          if [[ '${{ steps.which_tag.outputs.tag }}' == 'release' ]]; then
+            version=${{ steps.tag_release.outputs.new_version }}
+          else
+            version=${{ steps.tag_version.outputs.new_version }}
+          fi
 
           if [[ '${{ steps.which_tag.outputs.tag }}' = 'release' ]]; then
             echo "new_version=$version" >> $GITHUB_OUTPUT
