@@ -195,6 +195,7 @@ jobs:
             fi
           fi
           tag=${{ steps.which_tag.outputs.tag }}
+          echo "tag=$tag" >> $GITHUB_OUTPUT
 
 
   build_slimfaas:
