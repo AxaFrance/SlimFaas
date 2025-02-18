@@ -132,9 +132,6 @@ public class KubernetesService : IKubernetesService
 
     private const string TimeoutSecondBeforeSetReplicasMin = "SlimFaas/TimeoutSecondBeforeSetReplicasMin";
     private const string NumberParallelRequest = "SlimFaas/NumberParallelRequest";
-    private const string SynchrounousRetry = "SlimFaas/SynchrounousRetry";
-    private const string AsynchrounousRetry = "SlimFaas/AsynchrounousRetry";
-
 
     private const string SlimfaasDeploymentName = "slimfaas";
     private readonly ILogger<KubernetesService> _logger;
