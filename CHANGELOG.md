@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.35.9
+
+- [c514233](https://github.com/AxaFrance/oidc-client/commit/c5142335172fa936e17c3d0cb31065741878d196) - refactor(PlanetSaver): add test (#89) (release), 2025-02-16 by *Guillaume Chervet*
+
+
 ## v0.35.8
 
 - [2dfe2a7](https://github.com/AxaFrance/oidc-client/commit/2dfe2a71c807018625350a0b1f3c1fa268ecc4c1) - fix(ci): generate changelog (release), 2025-02-16 by *Guillaume Chervet*
@@ -293,10 +298,5 @@
 ## v0.23.2
 
 - [ccf6d48](https://github.com/AxaFrance/oidc-client/commit/ccf6d480545c6bc99923c1ac36093f5324245a0e) - refactor(slimfaas): update libraries, 2024-08-19 by *Guillaume Chervet*
-
-
-## v0.23.1
-
-- [78f6adb](https://github.com/AxaFrance/oidc-client/commit/78f6adbd372a63c164959a980b64689c6f7465c9) - fix(slimdata): Update EnvironmentVariables.cs, 2024-07-27 by *Guillaume Chervet*
 
 
