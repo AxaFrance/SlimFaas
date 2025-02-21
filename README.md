@@ -478,6 +478,7 @@ Why .NET?
 5. Continue Optimization
 
 ## We are a Cloud Native Computing Foundation sandbox project.
+https://landscape.cncf.io
 
 <img src="https://www.cncf.io/wp-content/uploads/2022/07/cncf-stacked-color-bg.svg" />
 
